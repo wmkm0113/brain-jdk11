@@ -1,0 +1,12 @@
+Brain Data Source Package
+[02/27/2024]
+[Add] Add sharding support
+[Update] Rewrite query information define
+[Update] I18n support
+
+[06/01/2023]
+[Add] Global data source implementation class
+[Add] Cross data source query support
+[Add] Database dialect define
+[Add] Jdbc connection pool implementation class
+[Add] Query information define
