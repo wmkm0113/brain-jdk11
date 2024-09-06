@@ -19,6 +19,7 @@ package org.nervousync.brain.dialects;
 
 import jakarta.annotation.Nonnull;
 import org.nervousync.brain.annotations.dialect.SchemaDialect;
+import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.utils.LoggerUtils;
 import org.nervousync.utils.StringUtils;
 
@@ -100,6 +101,6 @@ public final class DialectFactory {
 	 */
 	public static Dialect retrieve(final String dialectName) throws SQLException {
 		return Optional.ofNullable(REGISTERED_DIALECTS.get(dialectName))
-				.orElseThrow(() -> new SQLException("Initialize dialect: " + dialectName + " failed"));
+				.orElseThrow(() -> new MultilingualSQLException(0x00DB00000001L, dialectName));
 	}
 }

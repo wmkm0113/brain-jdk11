@@ -17,9 +17,6 @@
 
 package org.nervousync.brain.defines;
 
-import jakarta.xml.bind.annotation.*;
-import org.nervousync.beans.core.BeanObject;
-
 import java.util.List;
 
 /**
@@ -29,35 +26,22 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 4, 2020 16:33:28 $
  */
-@XmlType(name = "index_define", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "index_define", namespace = "https://nervousync.org/schemas/database")
-@XmlAccessorType(XmlAccessType.NONE)
-public final class IndexDefine extends BeanObject {
-
-	/**
-	 * <span class="en-US">Serial version UID</span>
-	 * <span class="zh-CN">序列化UID</span>
-	 */
-	private static final long serialVersionUID = -5837891022386585126L;
+public final class IndexDefine {
 
 	/**
 	 * <span class="en-US">Index name</span>
 	 * <span class="zh-CN">索引名称</span>
 	 */
-	@XmlElement(name = "index_name")
 	private String indexName;
 	/**
 	 * <span class="en-US">Index contains column name list</span>
 	 * <span class="zh-CN">索引包含的列名列表</span>
 	 */
-	@XmlElement(name = "column_name")
-	@XmlElementWrapper(name = "column_list")
 	private List<String> columnList;
 	/**
 	 * <span class="en-US">Index is unique</span>
 	 * <span class="zh-CN">索引是唯一索引</span>
 	 */
-	@XmlElement
 	private boolean unique;
 
 	/**

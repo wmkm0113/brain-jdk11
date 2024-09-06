@@ -77,7 +77,7 @@ public final class MultilingualSQLException extends SQLException {
 	 * @param collections <span class="en-US">given parameters of information formatter</span>
 	 *                    <span class="zh-CN">用于资源信息格式化的参数</span>
 	 */
-	public MultilingualSQLException(final long errorCode, String SQLState, final Object... collections) {
+	public MultilingualSQLException(final long errorCode, final String SQLState, final Object... collections) {
 		super(Globals.DEFAULT_VALUE_STRING, SQLState);
 		this.detailMessage = this.multiAgent.errorMessage(errorCode, collections);
 	}
@@ -97,7 +97,8 @@ public final class MultilingualSQLException extends SQLException {
 	 * @param collections <span class="en-US">given parameters of information formatter</span>
 	 *                    <span class="zh-CN">用于资源信息格式化的参数</span>
 	 */
-	public MultilingualSQLException(final long errorCode, String SQLState, int vendorCode, final Object... collections) {
+	public MultilingualSQLException(final long errorCode, final String SQLState, final int vendorCode,
+	                                final Object... collections) {
 		super(Globals.DEFAULT_VALUE_STRING, SQLState, vendorCode);
 		this.detailMessage = this.multiAgent.errorMessage(errorCode, collections);
 	}

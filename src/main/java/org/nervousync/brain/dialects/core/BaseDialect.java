@@ -80,7 +80,7 @@ public abstract class BaseDialect implements Dialect {
 	 */
 	protected BaseDialect() throws DialectException {
 		SchemaDialect schemaDialect = Optional.ofNullable(this.getClass().getAnnotation(SchemaDialect.class))
-				.orElseThrow(() -> new DialectException(0x00DB00010001L));
+				.orElseThrow(() -> new DialectException(0x00DB00000005L, this.getClass().getName()));
 		this.dialectName = schemaDialect.name();
 		this.supportJoin = schemaDialect.supportJoin();
 		this.connectionPool = schemaDialect.connectionPool();

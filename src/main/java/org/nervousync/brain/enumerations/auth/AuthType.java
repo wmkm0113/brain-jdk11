@@ -34,6 +34,11 @@ public enum AuthType {
 	 */
 	BASIC,
 	/**
+     * <span class="en-US">Trust store</span>
+     * <span class="zh-CN">信任证书库</span>
+	 */
+	TRUST_STORE,
+	/**
      * <span class="en-US">Certificate</span>
      * <span class="zh-CN">证书</span>
 	 */

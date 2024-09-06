@@ -29,6 +29,7 @@ import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.enumerations.ddl.GenerationType;
 import org.nervousync.brain.enumerations.query.LockOption;
 import org.nervousync.brain.exceptions.dialects.DialectException;
+import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
@@ -369,9 +370,9 @@ public abstract class JdbcDialect extends BaseDialect {
 				}
 			}
 		} catch (Exception e) {
-			this.logger.warn("Read BLOB data error! ");
+			this.logger.warn("Read_Lob_Error", "BLOB");
 			if (this.logger.isDebugEnabled()) {
-				this.logger.debug("Stack message: ", e);
+				this.logger.debug("Stack_Message_Error", e);
 			}
 		}
 		return new byte[0];
@@ -398,7 +399,11 @@ public abstract class JdbcDialect extends BaseDialect {
 					return buffer;
 				}
 			}
-		} catch (Exception ignore) {
+		} catch (Exception e) {
+			this.logger.warn("Read_Lob_Error", "CLOB");
+			if (this.logger.isDebugEnabled()) {
+				this.logger.debug("Stack_Message_Error", e);
+			}
 		}
 		return new char[0];
 	}
@@ -616,8 +621,8 @@ public abstract class JdbcDialect extends BaseDialect {
 							|| existColumn.getScale() != columnDefine.getScale()) {
 						String columnType = this.columnType(columnDefine);
 						if (StringUtils.isEmpty(columnType)) {
-							throw new SQLException("Unknown column type! Column name: " + columnDefine.getColumnName()
-									+ " JDBC type: " + columnDefine.getJdbcType());
+							throw new MultilingualSQLException(0x00DB00000006L,
+									new Object[]{columnDefine.getColumnName(), columnDefine.getJdbcType()});
 						}
 						String sqlCmd = ALTER_TABLE + tableName + this.alterColumn()
 								+ this.nameCase(columnDefine.getColumnName()) + BrainCommons.WHITE_SPACE
@@ -847,7 +852,7 @@ public abstract class JdbcDialect extends BaseDialect {
 		}
 		StringBuilder sqlBuilder = new StringBuilder(COMMAND_INSERT).append(this.nameCase(tableName));
 		if (columnBuilder.length() == 0) {
-			throw new SQLException("Insert columns cannot be empty!");
+			throw new MultilingualSQLException(0x00DB00000007L);
 		}
 		sqlBuilder.append(columnBuilder).append(COMMAND_VALUES).append(valueBuilder);
 		return new SQLCommand(sqlBuilder.toString(), values);
@@ -874,7 +879,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	                                      @Nonnull final Map<String, Serializable> dataMap,
 	                                      @Nonnull final Map<String, Serializable> filterMap) throws SQLException {
 		if (dataMap.isEmpty()) {
-			throw new SQLException("Update parameter map is empty!");
+			throw new MultilingualSQLException(0x00DB00000008L);
 		}
 		StringBuilder columnBuilder = new StringBuilder();
 		List<Object> values = new ArrayList<>();
@@ -914,7 +919,7 @@ public abstract class JdbcDialect extends BaseDialect {
 		StringBuilder sqlBuilder =
 				new StringBuilder(COMMAND_UPDATE).append(this.nameCase(tableName));
 		if (columnBuilder.length() == 0) {
-			throw new SQLException("Update columns cannot be empty!");
+			throw new MultilingualSQLException(0x00DB00000008L);
 		}
 		sqlBuilder.append(COMMAND_SET).append(columnBuilder).append(WHERE_COMMAND)
 				.append(BrainCommons.DEFAULT_WHERE_CLAUSE).append(this.whereClause(filterMap, values));
@@ -938,7 +943,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	                                      @Nonnull final Map<String, Serializable> filterMap) throws SQLException {
 		StringBuilder sqlBuilder = new StringBuilder(COMMAND_DELETE).append(this.nameCase(tableName));
 		if (filterMap.isEmpty()) {
-			throw new SQLException("Conditions cannot be empty!");
+			throw new MultilingualSQLException(0x00DB00000009L);
 		}
 		List<Object> values = new ArrayList<>();
 		sqlBuilder.append(WHERE_COMMAND)
@@ -1023,7 +1028,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 */
 	public final SQLCommand queryCommand(final QueryInfo queryInfo) throws SQLException {
 		if (!queryInfo.getQueryJoins().isEmpty() && !this.isSupportJoin()) {
-			throw new SQLException("Current dialect can't support query joins!");
+			throw new MultilingualSQLException(0x00DB00000010L);
 		}
 		final Map<String, String> aliasMap = new HashMap<>();
 		aliasMap.put(queryInfo.getTableName(), "t_0");
@@ -1047,7 +1052,7 @@ public abstract class JdbcDialect extends BaseDialect {
 		}
 
 		if (itemBuilder.length() == 0) {
-			throw new SQLException("No query column found! ");
+			throw new MultilingualSQLException(0x00DB00000011L);
 		}
 
 		String aliasCommand = this.aliasCommand();
@@ -1113,7 +1118,7 @@ public abstract class JdbcDialect extends BaseDialect {
 				sqlBuilder.append(COLUMN_NOT_NULL);
 				if (alterTable && StringUtils.isEmpty(columnDefine.getDefaultValue())) {
 					//  Throw exception if not configure the default value when alter table
-					throw new SQLException("Add not null column must setting default value");
+					throw new MultilingualSQLException(0x00DB00000012L, columnDefine.getColumnName());
 				}
 			}
 			if (columnDefine.isUnique()) {
@@ -1158,7 +1163,7 @@ public abstract class JdbcDialect extends BaseDialect {
 				sqlBuilder.append(COMMAND_JOIN_RIGHT);
 				break;
 			default:
-				throw new SQLException("Unknown join type: " + queryJoin.getJoinType());
+				throw new MultilingualSQLException(0x00DB00000013L, queryJoin.getJoinType());
 		}
 		sqlBuilder.append(this.nameCase(queryJoin.getJoinTable()))
 				.append(aliasCommand)
@@ -1218,7 +1223,7 @@ public abstract class JdbcDialect extends BaseDialect {
 					}
 					break;
 				default:
-					throw new SQLException("Unknown condition type: " + condition.getConditionType());
+					throw new MultilingualSQLException(0x00DB00000014L, condition.getConditionType());
 			}
 		}
 		return sqlBuilder.toString();
@@ -1377,7 +1382,7 @@ public abstract class JdbcDialect extends BaseDialect {
 				break;
 			case QUERY:
 				if (StringUtils.isEmpty(abstractItem.getAliasName())) {
-					throw new SQLException("Sub-query must specify an alias");
+					throw new MultilingualSQLException(0x00DB00000015L);
 				}
 				QueryItem queryItem = abstractItem.unwrap(QueryItem.class);
 				sqlBuilder.append(BrainCommons.BRACKETS_BEGIN)
@@ -1398,7 +1403,7 @@ public abstract class JdbcDialect extends BaseDialect {
 				}
 				break;
 			default:
-				throw new SQLException("Unknown item type: " + abstractItem.getItemType());
+				throw new MultilingualSQLException(0x00DB00000016L, abstractItem.getItemType());
 		}
 		return sqlBuilder.toString();
 	}
@@ -1449,10 +1454,10 @@ public abstract class JdbcDialect extends BaseDialect {
 			case ARRAY:
 				ArrayData arrayData = abstractParameter.unwrap(ArraysParameter.class).getItemValue();
 				if (arrayData.getArrayObject().length == 0) {
-					throw new SQLException("Array is empty");
+					throw new MultilingualSQLException(0x00DB00000017L);
 				}
 				if (arrayData.getArrayObject().length == 1) {
-					throw new SQLException("Array length is 1, using EQUAL condition instead");
+					throw new MultilingualSQLException(0x00DB00000018L);
 				}
 				for (Object object : arrayData.getArrayObject()) {
 					if (sqlBuilder.length() > 0) {
@@ -1476,7 +1481,7 @@ public abstract class JdbcDialect extends BaseDialect {
 			case RANGE:
 				RangesData rangesData = abstractParameter.unwrap(RangesParameter.class).getItemValue();
 				if (rangesData == null) {
-					throw new SQLException("Can't found range value");
+					throw new MultilingualSQLException(0x00DB00000019L);
 				}
 				values.add(rangesData.getBeginValue());
 				values.add(rangesData.getEndValue());

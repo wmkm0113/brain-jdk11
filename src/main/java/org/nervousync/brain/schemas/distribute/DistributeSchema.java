@@ -29,6 +29,7 @@ import org.nervousync.brain.dialects.distribute.Operator;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.enumerations.query.LockOption;
+import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.schemas.BaseSchema;
@@ -89,7 +90,7 @@ public final class DistributeSchema extends BaseSchema implements DistributeSche
 				(schemaConfig.getServerList() == null) ? new ArrayList<>() : schemaConfig.getServerList();
 		serverList.sort((o1, o2) -> Integer.compare(o2.getServerLevel(), o1.getServerLevel()));
 		if (serverList.isEmpty()) {
-			throw new SQLException("");
+			throw new MultilingualSQLException(0x00DB00000021L);
 		}
 		this.serverList = serverList;
 		this.serverInfo = serverList.get(0);

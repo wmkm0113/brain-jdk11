@@ -21,6 +21,7 @@ import jakarta.xml.bind.annotation.*;
 import org.nervousync.beans.core.BeanObject;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.IPUtils;
+import org.nervousync.utils.ObjectUtils;
 
 /**
  * <h2 class="en-US">Server configuration information</h2>
@@ -142,13 +143,29 @@ public final class ServerInfo extends BeanObject {
 	public String info() {
 		StringBuilder stringBuilder = new StringBuilder();
 		if (IPUtils.isIPv6Address(this.serverAddress)) {
-			stringBuilder.append("[").append(this.serverAddress).append("]");
+			stringBuilder.append("[").append(this.getServerAddress()).append("]");
 		} else {
-			stringBuilder.append(this.serverAddress);
+			stringBuilder.append(this.getServerAddress());
 		}
 		if (this.serverPort > Globals.INITIALIZE_INT_VALUE) {
-			stringBuilder.append(":").append(this.serverPort);
+			stringBuilder.append(":").append(this.getServerPort());
 		}
 		return stringBuilder.toString();
+	}
+
+	/**
+	 * <h3 class="en-US">Checks whether the given database server information is consistent with the current configuration</h3>
+	 * <h3 class="zh-CN">检查给定的数据库服务器信息是否与当前配置一致</h3>
+	 *
+	 * @param serverAddress <span class="en-US">Server address</span>
+	 *                      <span class="zh-CN">服务器地址</span>
+	 * @param serverPort    <span class="en-US">Server port number</span>
+	 *                      <span class="zh-CN">服务器端口号</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
+	 */
+	public boolean match(final String serverAddress, final int serverPort) {
+		return ObjectUtils.nullSafeEquals(this.serverAddress, serverAddress)
+				&& ObjectUtils.nullSafeEquals(this.serverPort, serverPort);
 	}
 }

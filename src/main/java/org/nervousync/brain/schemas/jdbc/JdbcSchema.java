@@ -33,6 +33,7 @@ import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.enumerations.query.LockOption;
 import org.nervousync.brain.enumerations.sharding.ShardingType;
+import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.schemas.BaseSchema;
@@ -185,7 +186,7 @@ public final class JdbcSchema extends BaseSchema implements JdbcSchemaMBean {
 			this.serverInfo = null;
 		}
 		if (this.sharding && !this.jdbcUrl.contains("{shardingKey}")) {
-			throw new SQLException("Sharding template not found {shardingKey}");
+			throw new MultilingualSQLException(0x00DB00000025L, this.jdbcUrl);
 		}
 	}
 
@@ -309,14 +310,17 @@ public final class JdbcSchema extends BaseSchema implements JdbcSchemaMBean {
 			}
 			this.initialized = Boolean.TRUE;
 		} catch (SQLException e) {
-			this.logger.error("", e);
+			this.logger.error("Initialize_Schema_Error");
+			if (this.logger.isDebugEnabled()) {
+				this.logger.debug("Stack_Message_Error", e);
+			}
 		}
 	}
 
 	int identifyCode(final ServerInfo serverInfo, final String shardingKey) throws SQLException {
 		String serverAddress = serverInfo.info();
 		if (StringUtils.isEmpty(serverAddress)) {
-			throw new SQLException("Server address not found! ");
+			throw new MultilingualSQLException(0x00DB00000026L);
 		}
 		return (serverAddress + "_" + shardingKey).hashCode();
 	}
@@ -375,7 +379,7 @@ public final class JdbcSchema extends BaseSchema implements JdbcSchemaMBean {
 		if (serverInfo != null) {
 			String serverAddress = serverInfo.info();
 			if (StringUtils.isEmpty(serverAddress)) {
-				throw new SQLException("Server address not found! ");
+				throw new MultilingualSQLException(0x00DB00000026L);
 			}
 			shardingUrl = StringUtils.replace(shardingUrl, "{serverAddress}", serverAddress);
 		}
@@ -408,7 +412,7 @@ public final class JdbcSchema extends BaseSchema implements JdbcSchemaMBean {
 			this.serverIndex.set(Globals.INITIALIZE_INT_VALUE);
 		}
 		if (serverInfo == null) {
-			throw new SQLException("Server not found! ");
+			throw new MultilingualSQLException(0x00DB00000026L);
 		}
 		return serverInfo;
 	}
@@ -423,7 +427,7 @@ public final class JdbcSchema extends BaseSchema implements JdbcSchemaMBean {
 				.stream()
 				.filter(connectionPool -> connectionPool.getIdentifyCode() == identifyCode)
 				.findFirst()
-				.orElseThrow(() -> new SQLException("Not found connection pool"));
+				.orElseThrow(() -> new MultilingualSQLException(0x00DB00000027L));
 	}
 
 	@Override
@@ -586,7 +590,7 @@ public final class JdbcSchema extends BaseSchema implements JdbcSchemaMBean {
 			Map<String, String> resultMap = new HashMap<>();
 			while (resultSet.next()) {
 				if (!resultMap.isEmpty()) {
-					throw new SQLException("Duplicate record found! ");
+					throw new MultilingualSQLException(0x00DB00000028L);
 				}
 				resultMap.putAll(this.parseResultSet(resultSet, this.dialect));
 			}
@@ -618,7 +622,7 @@ public final class JdbcSchema extends BaseSchema implements JdbcSchemaMBean {
 			stringBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnDefine.getColumnName());
 		}
 		if (stringBuilder.length() == 0) {
-			throw new SQLException("No columns found!");
+			throw new MultilingualSQLException(0x00DB00000011L);
 		}
 		String tableName = this.shardingTable(tableDefine.getTableName(), conditionList);
 		return this.executeQuery(
@@ -727,7 +731,7 @@ public final class JdbcSchema extends BaseSchema implements JdbcSchemaMBean {
 					|| DDLType.CREATE_TRUNCATE.equals(ddlType) || DDLType.SYNCHRONIZE.equals(ddlType)) {
 				String sqlCmd = this.dialect.createTableCommand(tableDefine, tableName);
 				if (StringUtils.isEmpty(sqlCmd)) {
-					throw new SQLException("Generate create table command error! ");
+					throw new MultilingualSQLException(0x00DB00000029L);
 				}
 				try (Statement statement = connection.createStatement()) {
 					statement.execute(sqlCmd);
@@ -815,7 +819,8 @@ public final class JdbcSchema extends BaseSchema implements JdbcSchemaMBean {
 	 */
 	private JdbcConnection obtainConnection(final boolean forUpdate, final String shardingDatabase)
 			throws SQLException {
-		int identifyCode = this.identifyCode(this.currentServer(forUpdate), shardingDatabase);
+		ServerInfo serverInfo = this.currentServer(forUpdate);
+		int identifyCode = this.identifyCode(serverInfo, shardingDatabase);
 		JdbcConnection connection = null;
 		int isolation = (this.txConfig.get() != null) ? this.txConfig.get().getIsolation() : Connection.TRANSACTION_NONE;
 		if (isolation != Connection.TRANSACTION_NONE) {
@@ -826,13 +831,7 @@ public final class JdbcSchema extends BaseSchema implements JdbcSchemaMBean {
 		}
 
 		if (connection == null) {
-			JdbcConnectionPool connectionPool =
-					this.registeredPools
-							.stream()
-							.filter(pool -> pool.getIdentifyCode() == identifyCode)
-							.findFirst()
-							.orElseThrow(() -> new SQLException("Not found connection pool"));
-			connection = connectionPool.obtainConnection(isolation);
+			connection = this.connectionPool(serverInfo, shardingDatabase).obtainConnection(isolation);
 			if (isolation != Connection.TRANSACTION_NONE) {
 				this.currentConnections.get().add(connection);
 			}

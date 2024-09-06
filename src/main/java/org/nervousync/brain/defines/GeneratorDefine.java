@@ -17,10 +17,6 @@
 
 package org.nervousync.brain.defines;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlRootElement;
-import jakarta.xml.bind.annotation.XmlType;
 import org.nervousync.brain.enumerations.ddl.GenerationType;
 
 /**
@@ -30,9 +26,6 @@ import org.nervousync.brain.enumerations.ddl.GenerationType;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 4, 2020 15:49:52 $
  */
-@XmlType(name = "generator_define")
-@XmlRootElement(name = "generator_define")
-@XmlAccessorType(XmlAccessType.NONE)
 public final class GeneratorDefine {
 
 	/**

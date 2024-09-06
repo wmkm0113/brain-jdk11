@@ -50,8 +50,8 @@ public final class TrustStore extends BeanObject {
 	 * <span class="en-US">Trust certificate store password</span>
 	 * <span class="zh-CN">信任证书库密码</span>
 	 */
-	@XmlElement(name = "store_password")
 	@Password
+	@XmlElement(name = "store_password")
 	private String trustStorePassword = Globals.DEFAULT_VALUE_STRING;
 
 	/**

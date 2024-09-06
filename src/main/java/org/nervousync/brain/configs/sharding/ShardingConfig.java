@@ -72,7 +72,7 @@ public final class ShardingConfig {
 		} else {
 			this.shardingDatabase = Optional.ofNullable(tableDefine.column(database.getColumnName()))
 					.map(columnDefine -> new ShardingDetails<>(database, columnDefine))
-					.orElseThrow(() -> new TableDefineException(0x00DB00010002L,
+					.orElseThrow(() -> new TableDefineException(0x00DB00000002L,
 							tableDefine.getTableName(), database.getColumnName()));
 		}
 		if (table == null) {
@@ -80,7 +80,7 @@ public final class ShardingConfig {
 		} else {
 			this.shardingTable = Optional.ofNullable(tableDefine.column(table.getColumnName()))
 					.map(columnDefine -> new ShardingDetails<>(table, columnDefine))
-					.orElseThrow(() -> new TableDefineException(0x00DB00010002L,
+					.orElseThrow(() -> new TableDefineException(0x00DB00000002L,
 							tableDefine.getTableName(), table.getColumnName()));
 		}
 	}

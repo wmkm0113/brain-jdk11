@@ -33,6 +33,7 @@ import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.enumerations.query.LockOption;
 import org.nervousync.brain.enumerations.remote.RemoteType;
+import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.schemas.BaseSchema;
@@ -284,7 +285,7 @@ public final class RemoteSchema extends BaseSchema implements RemoteSchemaMBean 
 									RemoteClient.class, this.configMap));
 					break;
 				default:
-					throw new SQLException("Unknown remote type: " + this.remoteType);
+					throw new MultilingualSQLException(0x00DB00000030L, this.remoteType);
 			}
 		}
 		this.activeConnections.incrementAndGet();
@@ -398,7 +399,7 @@ public final class RemoteSchema extends BaseSchema implements RemoteSchemaMBean 
 			stringBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnDefine.getColumnName());
 		}
 		if (stringBuilder.length() == 0) {
-			throw new SQLException("No columns found!");
+			throw new MultilingualSQLException(0x00DB00000011L);
 		}
 		return this.parseResponse(
 				this.operatorThreadLocal.get()

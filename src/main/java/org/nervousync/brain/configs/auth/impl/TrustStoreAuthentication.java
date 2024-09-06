@@ -66,7 +66,7 @@ public final class TrustStoreAuthentication extends Authentication {
 	 * <h3 class="zh-CN">X.509证书认证信息的构造方法</h3>
 	 */
 	public TrustStoreAuthentication() {
-		super(AuthType.CERTIFICATE);
+		super(AuthType.TRUST_STORE);
 	}
 
 	/**

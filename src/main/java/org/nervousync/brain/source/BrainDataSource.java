@@ -29,6 +29,7 @@ import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.enumerations.query.LockOption;
+import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.schemas.BaseSchema;
@@ -140,12 +141,12 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 		} else if (schemaConfig instanceof RemoteSchemaConfig) {
 			schema = new RemoteSchema((RemoteSchemaConfig) schemaConfig);
 		} else {
-			throw new Exception("Unknown schema configure: " + schemaConfig.toFormattedJson());
+			throw new MultilingualSQLException(0x00DB00000031L, schemaConfig.toFormattedJson());
 		}
 		this.registeredSchemas.put(schemaConfig.getSchemaName(), schema);
 		if (schemaConfig.isDefaultSchema()) {
 			if (StringUtils.notBlank(this.defaultName)) {
-				LOGGER.error("", this.defaultName, schemaConfig.getSchemaName());
+				LOGGER.error("Override_Default_Schema", this.defaultName, schemaConfig.getSchemaName());
 			}
 			this.defaultName = schemaConfig.getSchemaName();
 		}
@@ -176,7 +177,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	                      final ShardingDefine<?> table, @Nonnull final String... schemaNames) throws Exception {
 		for (String schemaName : schemaNames) {
 			if (!this.registeredSchemas.containsKey(schemaName)) {
-				throw new Exception("Not found schema name: " + schemaName);
+				throw new MultilingualSQLException(0x00DB00000032L, schemaName);
 			}
 			this.registeredSchemas.get(schemaName).initTable(this.ddlType, tableDefine, database, table);
 		}
@@ -302,7 +303,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	                      @Nonnull final String... schemaNames) throws Exception {
 		for (String schemaName : schemaNames) {
 			if (!this.registeredSchemas.containsKey(schemaName)) {
-				throw new Exception("Not found schema name: " + schemaName);
+				throw new MultilingualSQLException(0x00DB00000032L, schemaName);
 			}
 			this.registeredSchemas.get(schemaName).dropTable(tableDefine, dropOption);
 		}
@@ -326,7 +327,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	public Map<String, Serializable> insert(@Nonnull final String schemaName, @Nonnull final TableDefine tableDefine,
 	                                        @Nonnull final Map<String, Serializable> dataMap) throws Exception {
 		if (!this.registeredSchemas.containsKey(schemaName)) {
-			throw new Exception("Not found schema name: " + schemaName);
+			throw new MultilingualSQLException(0x00DB00000032L, schemaName);
 		}
 		return this.registeredSchemas.get(schemaName).insert(tableDefine, dataMap);
 	}
@@ -356,7 +357,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	                                    final String columns, @Nonnull final Map<String, Serializable> filterMap,
 	                                    final boolean forUpdate, final LockOption lockOption) throws Exception {
 		if (!this.registeredSchemas.containsKey(schemaName)) {
-			throw new Exception("Not found schema name: " + schemaName);
+			throw new MultilingualSQLException(0x00DB00000032L, schemaName);
 		}
 		return this.registeredSchemas.get(schemaName)
 				.retrieve(tableDefine, columns, filterMap, forUpdate, lockOption);
@@ -383,7 +384,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	                  @Nonnull final Map<String, Serializable> dataMap,
 	                  @Nonnull final Map<String, Serializable> filterMap) throws Exception {
 		if (!this.registeredSchemas.containsKey(schemaName)) {
-			throw new Exception("Not found schema name: " + schemaName);
+			throw new MultilingualSQLException(0x00DB00000032L, schemaName);
 		}
 		return this.registeredSchemas.get(schemaName).update(tableDefine, dataMap, filterMap);
 	}
@@ -406,7 +407,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	public int delete(@Nonnull final String schemaName, @Nonnull final TableDefine tableDefine,
 	                  @Nonnull final Map<String, Serializable> filterMap) throws Exception {
 		if (!this.registeredSchemas.containsKey(schemaName)) {
-			throw new Exception("Not found schema name: " + schemaName);
+			throw new MultilingualSQLException(0x00DB00000032L, schemaName);
 		}
 		return this.registeredSchemas.get(schemaName).delete(tableDefine, filterMap);
 	}
@@ -424,7 +425,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	public List<Map<String, String>> query(@Nonnull final QueryInfo queryInfo) throws Exception {
 		if (!this.registeredSchemas.containsKey(queryInfo.getSchemaName())) {
-			throw new Exception("Not found schema name: " + queryInfo.getSchemaName());
+			throw new MultilingualSQLException(0x00DB00000032L, queryInfo.getSchemaName());
 		}
 		return this.registeredSchemas.get(queryInfo.getSchemaName()).query(queryInfo);
 	}
@@ -450,7 +451,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 			@Nonnull final String schemaName, @Nonnull final TableDefine tableDefine,
 			final List<Condition> conditionList, final LockOption lockOption) throws Exception {
 		if (!this.registeredSchemas.containsKey(schemaName)) {
-			throw new Exception("Not found schema name: " + schemaName);
+			throw new MultilingualSQLException(0x00DB00000032L, schemaName);
 		}
 		return this.registeredSchemas.get(schemaName).queryForUpdate(tableDefine, conditionList, lockOption);
 	}
@@ -465,7 +466,10 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 				try {
 					schema.dropTables(DropOption.CASCADE);
 				} catch (Exception e) {
-					LOGGER.error("", e);
+					LOGGER.error("Drop_Table_Error");
+					if (LOGGER.isDebugEnabled()) {
+						LOGGER.debug("Stack_Message_Error", e);
+					}
 				}
 			}
 		}
@@ -474,7 +478,10 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 				try {
 					schema.truncateTables();
 				} catch (Exception e) {
-					LOGGER.error("", e);
+					LOGGER.error("Truncate_Table_Error");
+					if (LOGGER.isDebugEnabled()) {
+						LOGGER.debug("Stack_Message_Error", e);
+					}
 				}
 			}
 		}
@@ -487,7 +494,10 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 			try {
 				entry.getValue().close();
 			} catch (Exception e) {
-				LOGGER.error("", e);
+				LOGGER.error("Close_DataSource_Error");
+				if (LOGGER.isDebugEnabled()) {
+					LOGGER.debug("Stack_Message_Error", e);
+				}
 			}
 			iterator.remove();
 		}

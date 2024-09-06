@@ -19,6 +19,7 @@ package org.nervousync.brain.schemas.jdbc;
 
 import jakarta.annotation.Nonnull;
 import org.nervousync.brain.configs.server.ServerInfo;
+import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.DateTimeUtils;
 import org.nervousync.utils.LoggerUtils;
@@ -168,7 +169,7 @@ public final class JdbcConnectionPool {
 		}
 
 		if (connection == null) {
-			throw new SQLException("Create database connection error! ");
+			throw new MultilingualSQLException(0x00DB00000023L);
 		}
 		return new JdbcConnection(this, connection,
 				this.jdbcSchema.getLowQueryTimeout(), this.jdbcSchema.cachedLimitSize);
@@ -322,7 +323,7 @@ public final class JdbcConnectionPool {
 					connection = this.createConnection();
 				} catch (SQLException e) {
 					if (LOGGER.isDebugEnabled()) {
-						LOGGER.debug("", e);
+						LOGGER.debug("Create_Connection_Error", e);
 					}
 				}
 			}
@@ -349,7 +350,7 @@ public final class JdbcConnectionPool {
 		}
 
 		if (connection == null) {
-			throw new SQLException("Obtain database connection error! ");
+			throw new MultilingualSQLException(0x00DB00000024L);
 		}
 
 		if (isolation != Connection.TRANSACTION_NONE) {
@@ -488,7 +489,7 @@ public final class JdbcConnectionPool {
 
 		this.createRunning = Boolean.TRUE;
 		if (this.limitConnections()) {
-			LOGGER.debug("Pool_Full");
+			LOGGER.debug("Create_Connection_Full");
 			return;
 		}
 		if (LOGGER.isDebugEnabled()) {

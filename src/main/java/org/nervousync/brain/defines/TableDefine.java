@@ -169,7 +169,7 @@ public final class TableDefine {
 	 */
 	public void validate(@Nonnull final List<ColumnDefine> existColumns) throws TableDefineException {
 		if (existColumns.isEmpty()) {
-			throw new TableDefineException(0x00DB00010004L, this.tableName);
+			throw new TableDefineException(0x00DB00000003L, this.tableName);
 		}
 		List<ColumnDefine> checkedColumns = new ArrayList<>();
 		StringBuilder notFoundColumns = new StringBuilder();
@@ -192,7 +192,7 @@ public final class TableDefine {
 						newColumns.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnDefine.getColumnName()));
 		if (notFoundColumns.length() > 0 || modifiedColumns.length() > 0 || newColumns.length() > 0) {
 			int start = BrainCommons.DEFAULT_SPLIT_CHARACTER.length();
-			throw new TableDefineException(0x00DB00010005L,
+			throw new TableDefineException(0x00DB00000004L,
 					newColumns.length() > 0 ? newColumns.substring(start) : newColumns.toString(),
 					modifiedColumns.length() > 0 ? modifiedColumns.substring(start) : modifiedColumns.toString(),
 					notFoundColumns.length() > 0 ? notFoundColumns.substring(start) : notFoundColumns.toString());

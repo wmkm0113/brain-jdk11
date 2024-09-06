@@ -95,8 +95,7 @@ public final class DistributeSchemaConfig extends SchemaConfig {
 	 * <h3 class="en-US">Getter method for database name</h3>
 	 * <h3 class="zh-CN">数据库名称的Getter方法</h3>
 	 *
-	 * @return
-	 * <span class="en-US">Database name</span>
+	 * @return <span class="en-US">Database name</span>
 	 * <span class="zh-CN">数据库名称</span>
 	 */
 	public String getDatabaseName() {
@@ -107,9 +106,8 @@ public final class DistributeSchemaConfig extends SchemaConfig {
 	 * <h3 class="en-US">Setter method for database name</h3>
 	 * <h3 class="zh-CN">数据库名称的Setter方法</h3>
 	 *
-	 * @param databaseName
-	 * <span class="en-US">Database name</span>
-	 * <span class="zh-CN">数据库名称</span>
+	 * @param databaseName <span class="en-US">Database name</span>
+	 *                     <span class="zh-CN">数据库名称</span>
 	 */
 	public void setDatabaseName(final String databaseName) {
 		this.databaseName = databaseName;
@@ -119,8 +117,7 @@ public final class DistributeSchemaConfig extends SchemaConfig {
 	 * <h3 class="en-US">Getter method for using SSL when connect to server</h3>
 	 * <h3 class="zh-CN">使用SSL连接的Getter方法</h3>
 	 *
-	 * @return
-	 * <span class="en-US">Using SSL when connect to server</span>
+	 * @return <span class="en-US">Using SSL when connect to server</span>
 	 * <span class="zh-CN">使用SSL连接</span>
 	 */
 	public boolean isUseSsl() {
@@ -131,9 +128,8 @@ public final class DistributeSchemaConfig extends SchemaConfig {
 	 * <h3 class="en-US">Setter method for using SSL when connect to server</h3>
 	 * <h3 class="zh-CN">使用SSL连接的Setter方法</h3>
 	 *
-	 * @param useSsl
-	 * <span class="en-US">Using SSL when connect to server</span>
-	 * <span class="zh-CN">使用SSL连接</span>
+	 * @param useSsl <span class="en-US">Using SSL when connect to server</span>
+	 *               <span class="zh-CN">使用SSL连接</span>
 	 */
 	public void setUseSsl(final boolean useSsl) {
 		this.useSsl = useSsl;

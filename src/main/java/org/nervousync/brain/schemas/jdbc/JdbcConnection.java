@@ -17,6 +17,7 @@
 
 package org.nervousync.brain.schemas.jdbc;
 
+import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.*;
 
@@ -518,7 +519,7 @@ public class JdbcConnection implements Connection {
 							columnNames);
 					break;
 				default:
-					throw new SQLException("Unknown key type! ");
+					throw new MultilingualSQLException(0x00DB00000022L, keyType);
 			}
 			if (this.cachedLimitSize > 0) {
 				this.cachedStatements.add(statementWrapper);

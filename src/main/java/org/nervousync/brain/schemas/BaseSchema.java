@@ -30,6 +30,7 @@ import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.enumerations.query.ConditionType;
 import org.nervousync.brain.enumerations.query.LockOption;
 import org.nervousync.brain.enumerations.sharding.ShardingType;
+import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
@@ -131,7 +132,7 @@ public abstract class BaseSchema implements Wrapper, Closeable, BaseSchemaMBean 
 		this.connectTimeout = schemaConfig.getConnectTimeout();
 		if (this.sharding) {
 			if (StringUtils.isEmpty(schemaConfig.getShardingDefault())) {
-				throw new SQLException("Default sharding value is empty");
+				throw new MultilingualSQLException(0x00DB00000020L);
 			}
 			this.shardingDefault = schemaConfig.getShardingDefault();
 		} else {
@@ -201,7 +202,7 @@ public abstract class BaseSchema implements Wrapper, Closeable, BaseSchemaMBean 
 	 */
 	protected final String shardingDatabase(final String tableName, final Map<String, Serializable> parameterMap) {
 		if (!this.sharding) {
-			return this.shardingDefault;
+			return Globals.DEFAULT_VALUE_STRING;
 		}
 		return Optional.ofNullable(this.shardingConfigs.get(tableName))
 				.map(shardingConfig -> shardingConfig.shardingKey(ShardingType.DATABASE, parameterMap))
