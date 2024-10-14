@@ -302,14 +302,13 @@ Throws: Exception if an error occurred during execution
 
 參數資訊：
 
-|    參數名稱     |                        資料型別                        |     備註     |
-|:-----------:|:--------------------------------------------------:|:----------:|
-| schemaName  |                  java.lang.String                  |   資料來源名稱   |
-| tableDefine |      org.nervousync.brain.defines.TableDefine      |  資料表定義資訊   |
-|   columns   |                  java.lang.String                  |   查詢資料列名   |
-|  filterMap  |        java.util.Map<String, Serializable>         |  查詢條件映射表   |
-|  forUpdate  |                      boolean                       | 檢索結果用於更新記錄 |
-| lockOption  | org.nervousync.brain.enumerations.query.LockOption |  查詢記錄鎖定選項  |
+|    參數名稱     |                   資料型別                   |     備註     |
+|:-----------:|:----------------------------------------:|:----------:|
+| schemaName  |             java.lang.String             |   資料來源名稱   |
+| tableDefine | org.nervousync.brain.defines.TableDefine |  資料表定義資訊   |
+|  filterMap  |   java.util.Map<String, Serializable>    |  查詢條件映射表   |
+|  forUpdate  |                 boolean                  | 檢索結果用於更新記錄 |
+| lockOption  |     jakarta.persistence.LockModeType     |  查詢記錄鎖定選項  |
 
 傳回值：檢索到記錄的資料映射表
 
@@ -368,12 +367,12 @@ Throws: Exception if an error occurred during execution
 
 參數資訊：
 
-| 參數名稱 | 資料型別 | 備註 |
-|:-------------:|:-------------------------------- -----------------------------:|:----------|
-| schemaName | java.lang.String | 資料來源名稱 |
-| tableDefine | org.nervousync.brain.defines.TableDefine | 資料表定義資訊 |
+|     參數名稱      |                             資料型別                              |     備註     |
+|:-------------:|:-------------------------------------------------------------:|:----------:|
+|  schemaName   |                       java.lang.String                        |   資料來源名稱   |
+|  tableDefine  |           org.nervousync.brain.defines.TableDefine            |  資料表定義資訊   |
 | conditionList | jva.util.List<org.nervousync.brain.query.condition.Condition> | 查詢條件實例物件清單 |
-| lockOption | org.nervousync.brain.enumerations.query.LockOption | 查詢記錄鎖定選項 |
+|  lockOption   |               jakarta.persistence.LockModeType                |  查詢記錄鎖定選項  |
 
 傳回值：List of data mapping tables for queried records
 

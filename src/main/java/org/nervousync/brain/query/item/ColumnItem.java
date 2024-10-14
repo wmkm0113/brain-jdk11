@@ -31,11 +31,11 @@ import org.nervousync.brain.query.core.AbstractItem;
 @XmlRootElement(name = "column_item", namespace = "https://nervousync.org/schemas/database")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class ColumnItem extends AbstractItem {
-    /**
-     * <span class="en-US">Serial version UID</span>
-     * <span class="zh-CN">序列化UID</span>
-     */
-    private static final long serialVersionUID = -9033998209945104277L;
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = -9033998209945104277L;
 
 	/**
 	 * <span class="en-US">Data table name</span>
@@ -49,20 +49,20 @@ public final class ColumnItem extends AbstractItem {
 	 */
 	@XmlElement(name = "column_name")
 	private String columnName;
-    /**
-     * <span class="en-US">Column distinct</span>
-     * <span class="zh-CN">数据列去重</span>
-     */
-    @XmlElement
-    private boolean distinct;
+	/**
+	 * <span class="en-US">Column distinct</span>
+	 * <span class="zh-CN">数据列去重</span>
+	 */
+	@XmlElement
+	private boolean distinct;
 
-    /**
-     * <h3 class="en-US">Constructor method for query column information define</h3>
-     * <h3 class="zh-CN">查询数据列信息定义的构造方法</h3>
-     */
-    public ColumnItem() {
-        super(ItemType.COLUMN);
-    }
+	/**
+	 * <h3 class="en-US">Constructor method for query column information define</h3>
+	 * <h3 class="zh-CN">查询数据列信息定义的构造方法</h3>
+	 */
+	public ColumnItem() {
+		super(ItemType.COLUMN);
+	}
 
 	/**
 	 * <h3 class="en-US">Getter method for data table name</h3>
@@ -108,25 +108,25 @@ public final class ColumnItem extends AbstractItem {
 		this.columnName = columnName;
 	}
 
-    /**
-     * <h3 class="en-US">Getter method for column distinct</h3>
-     * <h3 class="zh-CN">数据列去重的Getter方法</h3>
-     *
-     * @return <span class="en-US">Column distinct</span>
-     * <span class="zh-CN">数据列去重</span>
-     */
-    public boolean isDistinct() {
-        return this.distinct;
-    }
+	/**
+	 * <h3 class="en-US">Getter method for column distinct</h3>
+	 * <h3 class="zh-CN">数据列去重的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Column distinct</span>
+	 * <span class="zh-CN">数据列去重</span>
+	 */
+	public boolean isDistinct() {
+		return this.distinct;
+	}
 
-    /**
-     * <h3 class="en-US">Setter method for column distinct</h3>
-     * <h3 class="zh-CN">数据列去重的Setter方法</h3>
-     *
-     * @param distinct <span class="en-US">Column distinct</span>
-     *                 <span class="zh-CN">数据列去重</span>
-     */
-    public void setDistinct(final boolean distinct) {
-        this.distinct = distinct;
-    }
+	/**
+	 * <h3 class="en-US">Setter method for column distinct</h3>
+	 * <h3 class="zh-CN">数据列去重的Setter方法</h3>
+	 *
+	 * @param distinct <span class="en-US">Column distinct</span>
+	 *                 <span class="zh-CN">数据列去重</span>
+	 */
+	public void setDistinct(final boolean distinct) {
+		this.distinct = distinct;
+	}
 }

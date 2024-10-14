@@ -31,8 +31,8 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 19:12:02 $
  */
-@XmlType(name = "group_condition", namespace = "https://nervousync.org/schemas/query")
-@XmlRootElement(name = "group_condition", namespace = "https://nervousync.org/schemas/query")
+@XmlType(name = "group_condition", namespace = "https://nervousync.org/schemas/database")
+@XmlRootElement(name = "group_condition", namespace = "https://nervousync.org/schemas/database")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class GroupCondition extends Condition {
 
@@ -47,8 +47,8 @@ public final class GroupCondition extends Condition {
      * <span class="zh-CN">匹配条件列表</span>
      */
     @XmlElements({
-            @XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/database"),
-            @XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/database")
+            @XmlElement(name = "column_condition", type = ColumnCondition.class),
+            @XmlElement(name = "group_condition", type = GroupCondition.class)
     })
     @XmlElementWrapper(name = "condition_list")
     private List<Condition> conditionList = new ArrayList<>();

@@ -30,8 +30,8 @@ import org.nervousync.brain.query.data.RangesData;
 import org.nervousync.brain.query.param.impl.*;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.ClassUtils;
+import org.nervousync.utils.StringUtils;
 
-import java.io.Serializable;
 import java.sql.SQLException;
 import java.sql.Wrapper;
 
@@ -177,13 +177,29 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 *                   <span class="zh-CN">数据表名</span>
 	 * @param columnName <span class="en-US">Data column name</span>
 	 *                   <span class="zh-CN">数据列名</span>
+	 * @return <span class="en-US">Generated object instance</span>
+	 * <span class="zh-CN">生成的对象实例</span>
+	 */
+	public static ColumnParameter column(final String tableName, final String columnName) {
+		return column(tableName, columnName, Globals.DEFAULT_VALUE_STRING);
+	}
+
+	/**
+	 * <h3 class="en-US">Static method for generate column parameter instance</h3>
+	 * <h3 class="zh-CN">静态方法用于生成数据列参数实例对象</h3>
+	 *
+	 * @param tableName  <span class="en-US">Data table name</span>
+	 *                   <span class="zh-CN">数据表名</span>
+	 * @param columnName <span class="en-US">Data column name</span>
+	 *                   <span class="zh-CN">数据列名</span>
 	 * @param aliasName   <span class="en-US">Item alias name</span>
 	 *                    <span class="zh-CN">查询项别名</span>
 	 * @return <span class="en-US">Generated object instance</span>
 	 * <span class="zh-CN">生成的对象实例</span>
 	 */
 	public static ColumnParameter column(final String tableName, final String columnName, final String aliasName) {
-		return column(tableName, columnName, aliasName, Globals.DEFAULT_VALUE_INT);
+		return column(tableName, columnName, StringUtils.isEmpty(aliasName) ? Globals.DEFAULT_VALUE_STRING : aliasName,
+				Globals.DEFAULT_VALUE_INT);
 	}
 
 	/**
@@ -218,7 +234,7 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 * @return <span class="en-US">Generated object instance</span>
 	 * <span class="zh-CN">生成的对象实例</span>
 	 */
-	public static ConstantParameter constant(@Nonnull final Serializable object) {
+	public static ConstantParameter constant(@Nonnull final Object object) {
 		return constant(object, Globals.DEFAULT_VALUE_INT);
 	}
 
@@ -233,7 +249,7 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 * @return <span class="en-US">Generated object instance</span>
 	 * <span class="zh-CN">生成的对象实例</span>
 	 */
-	public static ConstantParameter constant(@Nonnull final Serializable object, final int sortCode) {
+	public static ConstantParameter constant(@Nonnull final Object object, final int sortCode) {
 		ConstantParameter constantParameter = new ConstantParameter();
 		constantParameter.setItemValue(object);
 		constantParameter.setSortCode(sortCode);
@@ -284,7 +300,7 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	public static QueryParameter subQuery(final QueryData queryData, final String functionName, final int sortCode) {
 		QueryParameter queryParameter = new QueryParameter();
 		queryParameter.setItemValue(queryData);
-		queryParameter.setFunctionName(functionName);
+		queryParameter.setFunctionName(StringUtils.isEmpty(functionName) ? Globals.DEFAULT_VALUE_STRING : functionName.trim());
 		queryParameter.setSortCode(sortCode);
 		return queryParameter;
 	}
@@ -300,7 +316,7 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 * @return <span class="en-US">Generated object instance</span>
 	 * <span class="zh-CN">生成的对象实例</span>
 	 */
-	public static RangesParameter ranges(@Nonnull final Serializable beginValue, @Nonnull final Serializable endValue) {
+	public static RangesParameter ranges(@Nonnull final Object beginValue, @Nonnull final Object endValue) {
 		return ranges(beginValue, endValue, Globals.DEFAULT_VALUE_INT);
 	}
 
@@ -317,7 +333,7 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 * @return <span class="en-US">Generated object instance</span>
 	 * <span class="zh-CN">生成的对象实例</span>
 	 */
-	public static RangesParameter ranges(@Nonnull final Serializable beginValue, @Nonnull final Serializable endValue,
+	public static RangesParameter ranges(@Nonnull final Object beginValue, @Nonnull final Object endValue,
 	                                     final int sortCode) {
 		RangesParameter rangesParameter = new RangesParameter();
 		rangesParameter.setItemValue(new RangesData(beginValue, endValue));
@@ -334,7 +350,7 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 * @return <span class="en-US">Generated object instance</span>
 	 * <span class="zh-CN">生成的对象实例</span>
 	 */
-	public static ArraysParameter arrays(final Serializable... matchValues) {
+	public static ArraysParameter arrays(final Object... matchValues) {
 		ArraysParameter arraysParameter = new ArraysParameter();
 		arraysParameter.setItemValue(new ArrayData(matchValues));
 		return arraysParameter;

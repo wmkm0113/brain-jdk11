@@ -304,49 +304,63 @@ public final class JdbcConnectionPool {
 	 *                      <span class="zh-CN">获得连接过程中出错</span>
 	 */
 	JdbcConnection obtainConnection(final int isolation) throws SQLException {
-		if (!this.pooled) {
-			return this.createConnection();
-		}
-		long beginTime = DateTimeUtils.currentUTCTimeMillis();
-		long timeOutTime = this.jdbcSchema.getConnectTimeout() * 1000L;
 
-		boolean waitCount = Boolean.FALSE;
 		JdbcConnection connection = null;
+		if (!this.pooled) {
+			connection = this.createConnection();
+		} else {
+			long beginTime = DateTimeUtils.currentUTCTimeMillis();
+			long timeOutTime = this.jdbcSchema.getConnectTimeout() * 1000L;
 
-		if (LOGGER.isDebugEnabled()) {
-			LOGGER.debug("Connection_Wait_Count", this.waitCount.get());
-		}
-		while (connection == null) {
-			connection = this.connectionQueue.poll();
-			if (connection == null) {
-				try {
-					connection = this.createConnection();
-				} catch (SQLException e) {
-					if (LOGGER.isDebugEnabled()) {
-						LOGGER.debug("Create_Connection_Error", e);
+			boolean waitCount = Boolean.FALSE;
+
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("Connection_Wait_Count", this.waitCount.get());
+			}
+			while (connection == null) {
+				connection = this.connectionQueue.poll();
+				if (connection == null) {
+					try {
+						connection = this.createConnection();
+					} catch (SQLException e) {
+						if (LOGGER.isDebugEnabled()) {
+							LOGGER.debug("Create_Connection_Error", e);
+						}
+					}
+				}
+
+				if (connection != null && this.jdbcSchema.testOnBorrow && this.invalidConnection(connection)) {
+					this.destroyConnection(connection);
+					connection = null;
+				}
+
+				if (connection == null) {
+					if (!waitCount) {
+						this.waitCount.incrementAndGet();
+						waitCount = Boolean.TRUE;
+					}
+
+					if (timeOutTime < (DateTimeUtils.currentUTCTimeMillis() - beginTime)) {
+						break;
 					}
 				}
 			}
 
-			if (connection != null && this.jdbcSchema.testOnBorrow && this.invalidConnection(connection)) {
-				this.destroyConnection(connection);
-				connection = null;
+			if (waitCount) {
+				this.waitCount.decrementAndGet();
 			}
 
-			if (connection == null) {
-				if (!waitCount) {
-					this.waitCount.incrementAndGet();
-					waitCount = Boolean.TRUE;
+			if (LOGGER.isDebugEnabled()) {
+				if (waitCount) {
+					LOGGER.debug("Connection_From_Create");
+				} else {
+					LOGGER.debug("Connection_From_Pool");
 				}
-
-				if (timeOutTime < (DateTimeUtils.currentUTCTimeMillis() - beginTime)) {
-					break;
-				}
+				LOGGER.debug("Connection_Used_Time",
+						DateTimeUtils.currentUTCTimeMillis() - beginTime);
+				LOGGER.debug("Pool_Connection_Debug", this.activeConnections.size(),
+						this.connectionQueue.size());
 			}
-		}
-
-		if (waitCount) {
-			this.waitCount.decrementAndGet();
 		}
 
 		if (connection == null) {
@@ -359,18 +373,6 @@ public final class JdbcConnectionPool {
 		}
 
 		this.activeConnections.add(connection);
-
-		if (LOGGER.isDebugEnabled()) {
-			if (waitCount) {
-				LOGGER.debug("Connection_From_Create");
-			} else {
-				LOGGER.debug("Connection_From_Pool");
-			}
-			LOGGER.debug("Connection_Used_Time",
-					DateTimeUtils.currentUTCTimeMillis() - beginTime);
-			LOGGER.debug("Pool_Connection_Debug", this.activeConnections.size(),
-					this.connectionQueue.size());
-		}
 		connection.setCachedLimitSize(this.jdbcSchema.cachedLimitSize);
 		return connection;
 	}

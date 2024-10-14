@@ -18,16 +18,19 @@
 package org.nervousync.brain.dialects.jdbc;
 
 import jakarta.annotation.Nonnull;
+import jakarta.persistence.LockModeType;
 import org.jetbrains.annotations.NotNull;
+import org.nervousync.brain.command.GeneratedCommand;
 import org.nervousync.brain.commons.BrainCommons;
+import org.nervousync.brain.configs.auth.Authentication;
+import org.nervousync.brain.configs.auth.impl.UserAuthentication;
+import org.nervousync.brain.configs.secure.TrustStore;
 import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.GeneratorDefine;
 import org.nervousync.brain.defines.IndexDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.core.BaseDialect;
 import org.nervousync.brain.enumerations.ddl.DropOption;
-import org.nervousync.brain.enumerations.ddl.GenerationType;
-import org.nervousync.brain.enumerations.query.LockOption;
 import org.nervousync.brain.exceptions.dialects.DialectException;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
@@ -50,13 +53,15 @@ import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.brain.query.param.impl.*;
 import org.nervousync.commons.Globals;
 import org.nervousync.enumerations.core.ConnectionCode;
+import org.nervousync.utils.DateTimeUtils;
 import org.nervousync.utils.IDUtils;
 import org.nervousync.utils.ObjectUtils;
 import org.nervousync.utils.StringUtils;
 
-import java.io.Serializable;
 import java.sql.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.Date;
 
 /**
  * <h2 class="en-US">JDBC database dialect abstract class</h2>
@@ -135,6 +140,11 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * <span class="zh-CN">数据列默认值定义命令</span>
 	 */
 	private static final String COLUMN_DEFAULT_VALUE = " DEFAULT ";
+	/**
+	 * <span class="en-US">Column default value define command</span>
+	 * <span class="zh-CN">数据列默认值定义命令</span>
+	 */
+	private static final String COLUMN_DEFAULT_ON_UPDATE = " ON UPDATE ";
 	/**
 	 * <span class="en-US">Column not null command</span>
 	 * <span class="zh-CN">数据列不允许为空命令</span>
@@ -246,6 +256,13 @@ public abstract class JdbcDialect extends BaseDialect {
 	 */
 	private static final String COMMAND_JOIN_RIGHT = " RIGHT JOIN ";
 
+	/**
+	 * <h3 class="en-US">Constructor method for JDBC database dialect abstract class</h3>
+	 * <h3 class="zh-CN">JDBC数据库方言抽象类的构造方法</h3>
+	 *
+	 * @throws DialectException <span class="en-US">If the implementation class does not find the org. nervousync. brain. annotations. dialect.SchemaDialect annotation</span>
+	 *                          <span class="zh-CN">如果实现类未找到org. nervousync. brain. annotations. dialect.SchemaDialect注解</span>
+	 */
 	protected JdbcDialect() throws DialectException {
 		super();
 	}
@@ -408,6 +425,36 @@ public abstract class JdbcDialect extends BaseDialect {
 		return new char[0];
 	}
 
+	@Override
+	public String defaultValue(final int jdbcType, final int length, final int precision, final int scale,
+	                           final Object object) {
+		if (object == null) {
+			return Globals.DEFAULT_VALUE_STRING;
+		}
+		String columnType = this.columnType(jdbcType, length, precision, scale);
+		if (object instanceof String) {
+			return "'" + object + "'";
+		} else if (object instanceof Date && columnType.equalsIgnoreCase("TIMESTAMP")) {
+			return "'" + DateTimeUtils.formatDate((Date) object,
+					DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.000000")) + "'";
+		} else if ((object instanceof Boolean) && jdbcType == Types.BOOLEAN
+				&& ("BIT".equalsIgnoreCase(columnType) || "NUMBER(1)".equalsIgnoreCase(columnType))) {
+			return Boolean.TRUE.equals((object)) ? "1" : "0";
+		} else {
+			return object.toString();
+		}
+	}
+
+	@Override
+	public Properties properties(final TrustStore trustStore, final Authentication authentication) {
+		Properties properties = new Properties();
+		if (authentication instanceof UserAuthentication) {
+			properties.put("user", ((UserAuthentication) authentication).getUserName());
+			properties.put("password", ((UserAuthentication) authentication).getPassWord());
+		}
+		return properties;
+	}
+
 	/**
 	 * <h3 class="en-US">Create sharded database command</h3>
 	 * <h3 class="zh-CN">创建分片数据库命令</h3>
@@ -428,7 +475,9 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @return <span class="en-US">Generated SQL command</span>
 	 * <span class="zh-CN">生成的SQL命令</span>
 	 */
-	protected abstract String databaseCommand();
+	protected String databaseCommand() {
+		return Globals.DEFAULT_VALUE_STRING;
+	}
 
 	/**
 	 * <h3 class="en-US">Create views of sharded data tables for data query</h3>
@@ -614,38 +663,29 @@ public abstract class JdbcDialect extends BaseDialect {
 						.filter(StringUtils::notBlank)
 						.ifPresent(columnCmd -> sqlCmdList.add(ALTER_TABLE + tableName + this.addColumn() + columnCmd));
 			} else {
-				if (existColumn.modified(columnDefine)) {
-					if (existColumn.getJdbcType() != columnDefine.getJdbcType()
-							|| existColumn.getLength() != columnDefine.getLength()
-							|| existColumn.getPrecision() != columnDefine.getPrecision()
-							|| existColumn.getScale() != columnDefine.getScale()) {
-						String columnType = this.columnType(columnDefine);
-						if (StringUtils.isEmpty(columnType)) {
-							throw new MultilingualSQLException(0x00DB00000006L,
-									new Object[]{columnDefine.getColumnName(), columnDefine.getJdbcType()});
-						}
-						String sqlCmd = ALTER_TABLE + tableName + this.alterColumn()
-								+ this.nameCase(columnDefine.getColumnName()) + BrainCommons.WHITE_SPACE
-								+ this.alterType() + BrainCommons.WHITE_SPACE + columnType;
-						sqlCmdList.add(sqlCmd);
-					}
-
-					if ((StringUtils.isEmpty(existColumn.getDefaultValue()) && StringUtils.notBlank(columnDefine.getDefaultValue()))
-							|| !ObjectUtils.nullSafeEquals(existColumn.getDefaultValue(), columnDefine.getDefaultValue())) {
-						String sqlCmd = ALTER_TABLE + tableName + this.alterColumn()
-								+ this.nameCase(columnDefine.getColumnName()) + BrainCommons.WHITE_SPACE
-								+ this.columnSetDefault(columnDefine.getDefaultValue());
-						sqlCmdList.add(sqlCmd);
-					}
-
-					if (StringUtils.notBlank(existColumn.getDefaultValue())
-							&& StringUtils.isEmpty(columnDefine.getDefaultValue())) {
-						String sqlCmd = ALTER_TABLE + tableName + this.alterColumn()
-								+ this.nameCase(columnDefine.getColumnName()) + BrainCommons.WHITE_SPACE
-								+ this.columnRemoveDefault();
-						sqlCmdList.add(sqlCmd);
-					}
+				String existType = this.columnType(existColumn.getJdbcType(), existColumn.getLength(),
+						existColumn.getPrecision(), existColumn.getScale());
+				String defineType = this.columnType(columnDefine.getJdbcType(), columnDefine.getLength(),
+						columnDefine.getPrecision(), columnDefine.getScale());
+				if (this.modifiedType(existType, defineType)) {
+					String sqlCmd = ALTER_TABLE + tableName + this.alterColumn()
+							+ this.nameCase(columnDefine.getColumnName()) + BrainCommons.WHITE_SPACE
+							+ this.alterType() + BrainCommons.WHITE_SPACE + defineType;
+					sqlCmdList.add(sqlCmd);
 				}
+
+				if (!ObjectUtils.nullSafeEquals(existColumn.getDefaultValue(), columnDefine.getDefaultValue())) {
+					String sqlCmd = ALTER_TABLE + tableName + this.alterColumn()
+							+ this.nameCase(columnDefine.getColumnName()) + BrainCommons.WHITE_SPACE;
+					if (StringUtils.isEmpty(columnDefine.getDefaultValue())) {
+						sqlCmd += this.columnRemoveDefault();
+						sqlCmdList.add(sqlCmd);
+					} else {
+						sqlCmd += this.columnSetDefault(columnDefine.getDefaultValue());
+					}
+					sqlCmdList.add(sqlCmd);
+				}
+
 				matchedColumns.add(existColumn);
 			}
 		}
@@ -671,7 +711,7 @@ public abstract class JdbcDialect extends BaseDialect {
 		if (StringUtils.isEmpty(tableName)) {
 			return Globals.DEFAULT_VALUE_STRING;
 		}
-		return "TRUNCATE TABLE " + tableName;
+		return "TRUNCATE TABLE " + this.nameCase(tableName);
 	}
 
 	/**
@@ -743,22 +783,57 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @return <span class="en-US">Generated SQL command</span>
 	 * <span class="zh-CN">生成的SQL命令</span>
 	 */
-	protected String lockWhereClause(final String whereClause, final LockOption lockOption) {
+	protected String lockWhereClause(final String whereClause, final LockModeType lockOption) {
 		if (StringUtils.isEmpty(whereClause)) {
 			return Globals.DEFAULT_VALUE_STRING;
 		}
 		switch (lockOption) {
-			case PESSIMISTIC_UPGRADE:
-				return WHERE_COMMAND + whereClause + "FOR UPDATE ";
-			case PESSIMISTIC_UPGRADE_NOWAIT:
-				return WHERE_COMMAND + whereClause + "FOR UPDATE NOWAIT ";
+			case WRITE:
+			case PESSIMISTIC_WRITE:
+				return WHERE_COMMAND + BrainCommons.DEFAULT_WHERE_CLAUSE + whereClause + "FOR UPDATE NOWAIT ";
+			case READ:
+			case PESSIMISTIC_READ:
+				return WHERE_COMMAND + BrainCommons.DEFAULT_WHERE_CLAUSE + whereClause + "LOCK IN SHARE MODE ";
 			default:
-				return WHERE_COMMAND + whereClause;
+				return WHERE_COMMAND + BrainCommons.DEFAULT_WHERE_CLAUSE + whereClause;
 		}
 	}
 
+	/**
+	 * <h3 class="en-US">Check whether the data column definition has changed</h3>
+	 * <h3 class="zh-CN">检查数据列定义是否有变化</h3>
+	 *
+	 * @param existType  <span class="en-US">Data column type read from the database</span>
+	 *                   <span class="zh-CN">数据库读取的数据列类型</span>
+	 * @param defineType <span class="en-US">Data column define type</span>
+	 *                   <span class="zh-CN">数据列定义类型</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
+	 */
+	protected boolean modifiedType(final String existType, final String defineType) {
+		return !ObjectUtils.nullSafeEquals(existType, defineType);
+	}
+
+	/**
+	 * <h3 class="en-US">Define alias name command</h3>
+	 * <h3 class="zh-CN">定义别名命令</h3>
+	 *
+	 * @return <span class="en-US">Command string</span>
+	 * <span class="zh-CN">命令字符串</span>
+	 */
 	protected String aliasCommand() {
 		return " AS ";
+	}
+
+	/**
+	 * <h3 class="en-US">Data column self-growth definition</h3>
+	 * <h3 class="zh-CN">数据列自增长定义</h3>
+	 *
+	 * @return <span class="en-US">Command string</span>
+	 * <span class="zh-CN">命令字符串</span>
+	 */
+	protected String autoIncrement() {
+		return Globals.DEFAULT_VALUE_STRING;
 	}
 
 	/**
@@ -768,7 +843,9 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @return <span class="en-US">Command string</span>
 	 * <span class="zh-CN">命令字符串</span>
 	 */
-	public abstract String currentDate();
+	protected String currentDate() {
+		return " CURRENT_DATE() ";
+	}
 
 	/**
 	 * <h3 class="en-US">SQL command to get current time</h3>
@@ -777,7 +854,9 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @return <span class="en-US">Command string</span>
 	 * <span class="zh-CN">命令字符串</span>
 	 */
-	public abstract String currentTime();
+	protected String currentTime() {
+		return " CURRENT_TIME() ";
+	}
 
 	/**
 	 * <h3 class="en-US">SQL command to get current timestamp</h3>
@@ -786,7 +865,9 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @return <span class="en-US">Command string</span>
 	 * <span class="zh-CN">命令字符串</span>
 	 */
-	public abstract String currentTimestamp();
+	protected String currentTimestamp() {
+		return " CURRENT_TIMESTAMP() ";
+	}
 
 	/**
 	 * <h3 class="en-US">Generate SQL commands to insert record</h3>
@@ -803,50 +884,37 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @throws SQLException <span class="en-US">An error occurred while generating the SQL command</span>
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
-	public final SQLCommand insertCommand(@Nonnull final TableDefine tableDefine, final String tableName,
-	                                      @Nonnull final Map<String, Serializable> dataMap) throws SQLException {
+	public final GeneratedCommand insertCommand(@Nonnull final TableDefine tableDefine, final String tableName,
+	                                            @Nonnull final Map<String, Object> dataMap) throws SQLException {
 		if (dataMap.isEmpty()) {
 			throw new SQLException("Insert parameter map is empty!");
 		}
 		StringBuilder columnBuilder = new StringBuilder();
 		StringBuilder valueBuilder = new StringBuilder();
 		List<Object> values = new ArrayList<>();
-		for (Map.Entry<String, Serializable> entry : dataMap.entrySet()) {
+		for (Map.Entry<String, Object> entry : dataMap.entrySet()) {
 			String columnName = entry.getKey();
+			columnBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(this.nameCase(columnName));
 			GeneratorDefine generatorDefine = tableDefine.generatorDefine(columnName);
 			if (generatorDefine == null) {
-				columnBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(this.nameCase(columnName));
-				valueBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER)
-						.append(BrainCommons.DEFAULT_PLACE_HOLDER);
+				valueBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(BrainCommons.DEFAULT_PLACE_HOLDER);
 				values.add(entry.getValue());
 			} else {
 				switch (generatorDefine.getGenerationType()) {
-					case ASSIGNED:
+					case CURRENT_DATE:
+						valueBuilder.append(this.currentDate());
+						break;
+					case CURRENT_TIME:
+						valueBuilder.append(this.currentTime());
+						break;
+					case CURRENT_TIMESTAMP:
+						valueBuilder.append(this.currentTimestamp());
+						break;
+					default:
 						valueBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER)
 								.append(BrainCommons.DEFAULT_PLACE_HOLDER);
 						values.add(entry.getValue());
 						break;
-					case GENERATE:
-						valueBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER)
-								.append(BrainCommons.DEFAULT_PLACE_HOLDER);
-						values.add(IDUtils.generate(generatorDefine.getGeneratorName(), new byte[0]));
-						break;
-					case SEQUENCE:
-						valueBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER)
-								.append(this.nextVal(generatorDefine.getGeneratorName()));
-						break;
-					case CURRENT_DATE:
-						valueBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(this.currentDate());
-						break;
-					case CURRENT_TIME:
-						valueBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(this.currentTime());
-						break;
-					case CURRENT_TIMESTAMP:
-						valueBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(this.currentTimestamp());
-						break;
-				}
-				if (!GenerationType.AUTO_INCREMENT.equals(generatorDefine.getGenerationType())) {
-					columnBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(this.nameCase(columnName));
 				}
 			}
 		}
@@ -854,8 +922,14 @@ public abstract class JdbcDialect extends BaseDialect {
 		if (columnBuilder.length() == 0) {
 			throw new MultilingualSQLException(0x00DB00000007L);
 		}
-		sqlBuilder.append(columnBuilder).append(COMMAND_VALUES).append(valueBuilder);
-		return new SQLCommand(sqlBuilder.toString(), values);
+		sqlBuilder.append(BrainCommons.BRACKETS_BEGIN)
+				.append(columnBuilder.substring(BrainCommons.DEFAULT_SPLIT_CHARACTER.length()))
+				.append(BrainCommons.BRACKETS_END)
+				.append(COMMAND_VALUES)
+				.append(BrainCommons.BRACKETS_BEGIN)
+				.append(valueBuilder.substring(BrainCommons.DEFAULT_SPLIT_CHARACTER.length()))
+				.append(BrainCommons.BRACKETS_END);
+		return new GeneratedCommand(sqlBuilder.toString(), values);
 	}
 
 	/**
@@ -875,24 +949,27 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @throws SQLException <span class="en-US">An error occurred while generating the SQL command</span>
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
-	public final SQLCommand updateCommand(@Nonnull final TableDefine tableDefine, final String tableName,
-	                                      @Nonnull final Map<String, Serializable> dataMap,
-	                                      @Nonnull final Map<String, Serializable> filterMap) throws SQLException {
+	public final GeneratedCommand updateCommand(@Nonnull final TableDefine tableDefine, final String tableName,
+	                                            @Nonnull final Map<String, Object> dataMap,
+	                                            @Nonnull final Map<String, Object> filterMap) throws SQLException {
 		if (dataMap.isEmpty()) {
 			throw new MultilingualSQLException(0x00DB00000008L);
 		}
 		StringBuilder columnBuilder = new StringBuilder();
 		List<Object> values = new ArrayList<>();
-		for (Map.Entry<String, Serializable> entry : dataMap.entrySet()) {
-			String columnName = entry.getKey();
+		dataMap.forEach((columnName, columnValue) -> {
 			columnBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER)
 					.append(this.nameCase(columnName))
 					.append(BrainCommons.OPERATOR_EQUAL);
 
-			GeneratorDefine generatorDefine = tableDefine.generatorDefine(columnName);
+			ColumnDefine columnDefine = tableDefine.column(columnName);
+			if (!columnDefine.isUpdatable()) {
+				return;
+			}
+			GeneratorDefine generatorDefine = columnDefine.getGeneratorDefine();
 			if (generatorDefine == null) {
 				columnBuilder.append(BrainCommons.DEFAULT_PLACE_HOLDER);
-				values.add(entry.getValue());
+				values.add(columnValue);
 			} else {
 				switch (generatorDefine.getGenerationType()) {
 					case GENERATE:
@@ -910,20 +987,22 @@ public abstract class JdbcDialect extends BaseDialect {
 						break;
 					default:
 						columnBuilder.append(BrainCommons.DEFAULT_PLACE_HOLDER);
-						values.add(entry.getValue());
+						values.add(columnValue);
 						break;
 				}
 			}
-		}
+		});
 
 		StringBuilder sqlBuilder =
 				new StringBuilder(COMMAND_UPDATE).append(this.nameCase(tableName));
 		if (columnBuilder.length() == 0) {
 			throw new MultilingualSQLException(0x00DB00000008L);
 		}
-		sqlBuilder.append(COMMAND_SET).append(columnBuilder).append(WHERE_COMMAND)
+		sqlBuilder.append(COMMAND_SET)
+				.append(columnBuilder.substring(BrainCommons.DEFAULT_SPLIT_CHARACTER.length()))
+				.append(WHERE_COMMAND)
 				.append(BrainCommons.DEFAULT_WHERE_CLAUSE).append(this.whereClause(filterMap, values));
-		return new SQLCommand(sqlBuilder.toString(), values);
+		return new GeneratedCommand(sqlBuilder.toString(), values);
 	}
 
 	/**
@@ -939,8 +1018,8 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @throws SQLException <span class="en-US">An error occurred while generating the SQL command</span>
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
-	public final SQLCommand deleteCommand(final String tableName,
-	                                      @Nonnull final Map<String, Serializable> filterMap) throws SQLException {
+	public final GeneratedCommand deleteCommand(final String tableName, @Nonnull final Map<String, Object> filterMap)
+			throws SQLException {
 		StringBuilder sqlBuilder = new StringBuilder(COMMAND_DELETE).append(this.nameCase(tableName));
 		if (filterMap.isEmpty()) {
 			throw new MultilingualSQLException(0x00DB00000009L);
@@ -948,41 +1027,87 @@ public abstract class JdbcDialect extends BaseDialect {
 		List<Object> values = new ArrayList<>();
 		sqlBuilder.append(WHERE_COMMAND)
 				.append(BrainCommons.DEFAULT_WHERE_CLAUSE).append(this.whereClause(filterMap, values));
-		return new SQLCommand(sqlBuilder.toString(), values);
+		return new GeneratedCommand(sqlBuilder.toString(), values);
 	}
 
 	/**
 	 * <h3 class="en-US">Generate SQL commands to retrieve record</h3>
 	 * <h3 class="zh-CN">生成唯一检索记录的SQL命令</h3>
 	 *
-	 * @param tableName  <span class="en-US">Query table name</span>
-	 *                   <span class="zh-CN">查询数据表名</span>
-	 * @param columns    <span class="en-US">Query column names</span>
-	 *                   <span class="zh-CN">查询数据列名</span>
-	 * @param filterMap  <span class="en-US">Retrieve filter mapping</span>
-	 *                   <span class="zh-CN">查询条件映射表</span>
-	 * @param forUpdate  <span class="en-US">Retrieve result using for update record</span>
-	 *                   <span class="zh-CN">检索结果用于更新记录</span>
-	 * @param lockOption <span class="en-US">Query record lock option</span>
-	 *                   <span class="zh-CN">查询记录锁定选项</span>
+	 * @param shardingName <span class="en-US">Query table name</span>
+	 *                     <span class="zh-CN">查询数据表名</span>
+	 * @param columns      <span class="en-US">Query column names</span>
+	 *                     <span class="zh-CN">查询数据列名</span>
+	 * @param filterMap    <span class="en-US">Retrieve filter mapping</span>
+	 *                     <span class="zh-CN">查询条件映射表</span>
+	 * @param forUpdate    <span class="en-US">Retrieve result using for update record</span>
+	 *                     <span class="zh-CN">检索结果用于更新记录</span>
+	 * @param lockOption   <span class="en-US">Query record lock option</span>
+	 *                     <span class="zh-CN">查询记录锁定选项</span>
 	 * @return <span class="en-US">Generated SQL command</span>
 	 * <span class="zh-CN">生成的SQL命令</span>
 	 */
-	public final SQLCommand retrieveCommand(@Nonnull final String tableName, final String columns,
-	                                        @Nonnull final Map<String, Serializable> filterMap,
-	                                        final boolean forUpdate, final LockOption lockOption) {
+	public final GeneratedCommand retrieveCommand(@Nonnull final String shardingName, @Nonnull final String columns,
+	                                              @Nonnull final Map<String, Object> filterMap,
+	                                              final boolean forUpdate, final LockModeType lockOption) {
 		List<Object> values = new ArrayList<>();
 		StringBuilder sqlBuilder = new StringBuilder(SELECT_COMMAND)
 				.append(StringUtils.isEmpty(columns) ? " * " : columns)
 				.append(FROM_COMMAND)
-				.append(this.nameCase(tableName));
+				.append(this.nameCase(shardingName));
 		String whereClause = this.whereClause(filterMap, values);
 		if (forUpdate) {
 			sqlBuilder.append(this.lockWhereClause(whereClause, lockOption));
 		} else {
-			sqlBuilder.append(WHERE_COMMAND).append(whereClause);
+			sqlBuilder.append(WHERE_COMMAND).append(BrainCommons.DEFAULT_WHERE_CLAUSE).append(whereClause);
 		}
-		return new SQLCommand(sqlBuilder.toString(), values);
+		return new GeneratedCommand(sqlBuilder.toString(), values);
+	}
+
+	/**
+	 * <h3 class="en-US">Generate SQL commands to query record count</h3>
+	 * <h3 class="zh-CN">生成查询记录条数的SQL命令</h3>
+	 *
+	 * @param tableName     <span class="en-US">Query table name</span>
+	 *                      <span class="zh-CN">查询数据表名</span>
+	 * @param queryJoinList <span class="en-US">Related query information list</span>
+	 *                      <span class="zh-CN">关联查询信息列表</span>
+	 * @param conditionList <span class="en-US">Query condition instance list</span>
+	 *                      <span class="zh-CN">查询条件实例对象列表</span>
+	 * @return <span class="en-US">Generated SQL command</span>
+	 * <span class="zh-CN">生成的SQL命令</span>
+	 * @throws SQLException <span class="en-US">An error occurred while generating the SQL command</span>
+	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
+	 */
+	public final GeneratedCommand queryTotalCommand(@Nonnull final String tableName, final List<QueryJoin> queryJoinList,
+	                                                final List<Condition> conditionList) throws SQLException {
+		final Map<String, String> aliasMap = new HashMap<>();
+		if (!queryJoinList.isEmpty()) {
+			aliasMap.put(tableName, "t_0");
+			for (QueryJoin queryJoin : queryJoinList) {
+				if (!aliasMap.containsKey(queryJoin.getJoinTable())) {
+					aliasMap.put(queryJoin.getJoinTable(), "t_" + aliasMap.size());
+				}
+			}
+		}
+		StringBuilder sqlBuilder =
+				new StringBuilder(SELECT_COMMAND)
+						.append(" COUNT(*) ")
+						.append(FROM_COMMAND)
+						.append(this.nameCase(tableName));
+		if (!queryJoinList.isEmpty()) {
+			String aliasCommand = this.aliasCommand();
+			sqlBuilder.append(aliasCommand)
+					.append(BrainCommons.WHITE_SPACE)
+					.append(aliasMap.get(tableName));
+
+			for (QueryJoin queryJoin : queryJoinList) {
+				sqlBuilder.append(this.joinCommand(aliasMap, queryJoin, aliasCommand));
+			}
+		}
+		List<Object> values = new ArrayList<>();
+		sqlBuilder.append(this.lockWhereClause(this.whereClause(aliasMap, conditionList, values), LockModeType.NONE));
+		return new GeneratedCommand(sqlBuilder.toString(), values);
 	}
 
 	/**
@@ -1002,8 +1127,8 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @throws SQLException <span class="en-US">An error occurred while generating the SQL command</span>
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
-	public final SQLCommand queryCommand(@Nonnull final String tableName, final String columns,
-	                                     final List<Condition> conditionList, final LockOption lockOption)
+	public final GeneratedCommand queryCommand(@Nonnull final String tableName, final String columns,
+	                                           final List<Condition> conditionList, final LockModeType lockOption)
 			throws SQLException {
 		StringBuilder sqlBuilder =
 				new StringBuilder(SELECT_COMMAND)
@@ -1012,7 +1137,7 @@ public abstract class JdbcDialect extends BaseDialect {
 						.append(this.nameCase(tableName));
 		List<Object> values = new ArrayList<>();
 		sqlBuilder.append(this.lockWhereClause(this.whereClause(Map.of(), conditionList, values), lockOption));
-		return new SQLCommand(sqlBuilder.toString(), values);
+		return new GeneratedCommand(sqlBuilder.toString(), values);
 	}
 
 	/**
@@ -1026,7 +1151,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @throws SQLException <span class="en-US">An error occurred while generating the SQL command</span>
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
-	public final SQLCommand queryCommand(final QueryInfo queryInfo) throws SQLException {
+	public final GeneratedCommand queryCommand(final QueryInfo queryInfo) throws SQLException {
 		if (!queryInfo.getQueryJoins().isEmpty() && !this.isSupportJoin()) {
 			throw new MultilingualSQLException(0x00DB00000010L);
 		}
@@ -1074,7 +1199,7 @@ public abstract class JdbcDialect extends BaseDialect {
 				this.logger.warn("Query_Condition_Empty");
 			}
 		} else {
-			sqlBuilder.append(WHERE_COMMAND).append(whereClause);
+			sqlBuilder.append(WHERE_COMMAND).append(BrainCommons.DEFAULT_WHERE_CLAUSE).append(whereClause);
 		}
 
 		String orderBy = this.orderBy(aliasMap, queryInfo.getOrderByList());
@@ -1086,7 +1211,7 @@ public abstract class JdbcDialect extends BaseDialect {
 		if (StringUtils.notBlank(groupBy)) {
 			sqlBuilder.append(GROUP_BY_COMMAND).append(groupBy);
 		}
-		return new SQLCommand(sqlBuilder.toString(), values);
+		return new GeneratedCommand(sqlBuilder.toString(), values);
 	}
 
 	/**
@@ -1104,16 +1229,68 @@ public abstract class JdbcDialect extends BaseDialect {
 	 */
 	private String columnCommand(@Nonnull final ColumnDefine columnDefine, boolean alterTable) throws SQLException {
 		StringBuilder sqlBuilder = new StringBuilder();
-		String columnType = this.columnType(columnDefine);
+		String columnType = this.columnType(columnDefine.getJdbcType(), columnDefine.getLength(),
+				columnDefine.getPrecision(), columnDefine.getScale());
 		if (StringUtils.notBlank(columnType)) {
 			sqlBuilder.append(this.nameCase(columnDefine.getColumnName()))
 					.append(BrainCommons.WHITE_SPACE)
 					.append(columnType)
 					.append(BrainCommons.WHITE_SPACE);
 
-			if (StringUtils.notBlank(columnDefine.getDefaultValue())) {
-				sqlBuilder.append(COLUMN_DEFAULT_VALUE).append(BrainCommons.WHITE_SPACE).append(columnDefine.getDefaultValue());
+			GeneratorDefine generatorDefine = columnDefine.getGeneratorDefine();
+			if (generatorDefine == null) {
+				if (StringUtils.notBlank(columnDefine.getDefaultValue())) {
+					sqlBuilder.append(COLUMN_DEFAULT_VALUE).append(columnDefine.getDefaultValue());
+				}
+			} else {
+				switch (generatorDefine.getGenerationType()) {
+					case AUTO_INCREMENT:
+						sqlBuilder.append(this.autoIncrement());
+						break;
+					case SEQUENCE:
+						sqlBuilder.append(COLUMN_DEFAULT_VALUE)
+								.append(this.nextVal(generatorDefine.getGeneratorName()));
+						break;
+					case CURRENT_DATE:
+						Optional.ofNullable(this.currentDate())
+								.filter(StringUtils::notBlank)
+								.ifPresent(currentDate -> sqlBuilder.append(COLUMN_DEFAULT_VALUE).append(currentDate));
+						break;
+					case CURRENT_TIME:
+						Optional.ofNullable(this.currentTime())
+								.filter(StringUtils::notBlank)
+								.ifPresent(currentTime -> sqlBuilder.append(COLUMN_DEFAULT_VALUE).append(currentTime));
+						break;
+					case CURRENT_TIMESTAMP:
+						Optional.ofNullable(this.currentTimestamp())
+								.filter(StringUtils::notBlank)
+								.ifPresent(currentTimestamp ->
+										sqlBuilder.append(COLUMN_DEFAULT_VALUE).append(currentTimestamp));
+						break;
+					case UPDATE_DATE:
+						Optional.ofNullable(this.currentDate())
+								.filter(StringUtils::notBlank)
+								.ifPresent(currentDate ->
+										sqlBuilder.append(COLUMN_DEFAULT_VALUE).append(currentDate)
+												.append(COLUMN_DEFAULT_ON_UPDATE).append(this.currentDate()));
+						break;
+					case UPDATE_TIME:
+						Optional.ofNullable(this.currentTime())
+								.filter(StringUtils::notBlank)
+								.ifPresent(currentTime ->
+										sqlBuilder.append(COLUMN_DEFAULT_VALUE).append(currentTime)
+												.append(COLUMN_DEFAULT_ON_UPDATE).append(this.currentTime()));
+						break;
+					case UPDATE_TIMESTAMP:
+						Optional.ofNullable(this.currentTimestamp())
+								.filter(StringUtils::notBlank)
+								.ifPresent(currentTimestamp ->
+										sqlBuilder.append(COLUMN_DEFAULT_VALUE).append(currentTimestamp)
+												.append(COLUMN_DEFAULT_ON_UPDATE).append(this.currentTimestamp()));
+						break;
+				}
 			}
+
 			if (!columnDefine.isNullable()) {
 				sqlBuilder.append(COLUMN_NOT_NULL);
 				if (alterTable && StringUtils.isEmpty(columnDefine.getDefaultValue())) {
@@ -1121,6 +1298,7 @@ public abstract class JdbcDialect extends BaseDialect {
 					throw new MultilingualSQLException(0x00DB00000012L, columnDefine.getColumnName());
 				}
 			}
+
 			if (columnDefine.isUnique()) {
 				sqlBuilder.append(COLUMN_UNIQUE);
 			}
@@ -1165,10 +1343,14 @@ public abstract class JdbcDialect extends BaseDialect {
 			default:
 				throw new MultilingualSQLException(0x00DB00000013L, queryJoin.getJoinType());
 		}
-		sqlBuilder.append(this.nameCase(queryJoin.getJoinTable()))
-				.append(aliasCommand)
-				.append(BrainCommons.WHITE_SPACE)
-				.append(DEFAULT_COMMAND_ON);
+		sqlBuilder.append(this.nameCase(queryJoin.getJoinTable()));
+		String aliasName = aliasMap.get(queryJoin.getJoinTable());
+		if (StringUtils.notBlank(aliasName)) {
+			sqlBuilder.append(aliasCommand)
+					.append(BrainCommons.WHITE_SPACE)
+					.append(aliasName);
+		}
+		sqlBuilder.append(DEFAULT_COMMAND_ON);
 		StringBuilder columnBuilder = new StringBuilder();
 		for (JoinInfo joinInfo : queryJoin.getJoinInfos()) {
 			if (columnBuilder.length() > 0) {
@@ -1204,11 +1386,9 @@ public abstract class JdbcDialect extends BaseDialect {
 		StringBuilder sqlBuilder = new StringBuilder();
 		conditionList.sort(SortedItem.desc());
 		for (Condition condition : conditionList) {
-			if (sqlBuilder.length() > 0) {
-				sqlBuilder.append(BrainCommons.WHITE_SPACE)
-						.append(condition.getConnectionCode().toString())
-						.append(BrainCommons.WHITE_SPACE);
-			}
+			sqlBuilder.append(BrainCommons.WHITE_SPACE)
+					.append(condition.getConnectionCode().toString())
+					.append(BrainCommons.WHITE_SPACE);
 			switch (condition.getConditionType()) {
 				case COLUMN:
 					sqlBuilder.append(this.columnCondition(aliasMap, condition.unwrap(ColumnCondition.class), values));
@@ -1253,7 +1433,7 @@ public abstract class JdbcDialect extends BaseDialect {
 				.append(this.nameCase(queryData.getTableName()));
 		String whereClause = this.whereClause(subAliasMap, queryData.getConditions(), values);
 		if (StringUtils.notBlank(whereClause)) {
-			sqlBuilder.append(WHERE_COMMAND).append(whereClause);
+			sqlBuilder.append(WHERE_COMMAND).append(BrainCommons.DEFAULT_WHERE_CLAUSE).append(whereClause);
 		}
 		if (!queryData.getGroupBy().isEmpty()) {
 			StringBuilder groupByClause = new StringBuilder();
@@ -1378,7 +1558,7 @@ public abstract class JdbcDialect extends BaseDialect {
 				}
 				sqlBuilder.append(BrainCommons.BRACKETS_END);
 				sqlBuilder.insert(Globals.INITIALIZE_INT_VALUE, BrainCommons.BRACKETS_BEGIN);
-				sqlBuilder.insert(Globals.INITIALIZE_INT_VALUE, functionItem.getSqlFunction());
+				sqlBuilder.insert(Globals.INITIALIZE_INT_VALUE, functionItem.getFunctionName());
 				break;
 			case QUERY:
 				if (StringUtils.isEmpty(abstractItem.getAliasName())) {
@@ -1408,43 +1588,10 @@ public abstract class JdbcDialect extends BaseDialect {
 		return sqlBuilder.toString();
 	}
 
-	/**
-	 * <h3 class="en-US">Generate query column name commands</h3>
-	 * <h3 class="zh-CN">生成查询列名称命令</h3>
-	 *
-	 * @param aliasMap   <span class="en-US">Data table alias mapping table</span>
-	 *                   <span class="zh-CN">数据表别名映射表</span>
-	 * @param tableName  <span class="en-US">Database table name</span>
-	 *                   <span class="zh-CN">数据表名</span>
-	 * @param columnName <span class="en-US">Data column name</span>
-	 *                   <span class="zh-CN">数据列名</span>
-	 * @return <span class="en-US">Generated SQL command</span>
-	 * <span class="zh-CN">生成的SQL命令</span>
-	 */
-	private String columnName(final Map<String, String> aliasMap, final String tableName, final String columnName) {
-		if (aliasMap.containsKey(tableName)) {
-			return aliasMap.get(tableName) + BrainCommons.DEFAULT_NAME_SPLIT + this.nameCase(columnName);
-		}
-		return this.nameCase(columnName);
-	}
-
-	/**
-	 * <h3 class="en-US">Generate query parameter value commands</h3>
-	 * <h3 class="zh-CN">生成查询参数值命令</h3>
-	 *
-	 * @param aliasMap          <span class="en-US">Data table alias mapping table</span>
-	 *                          <span class="zh-CN">数据表别名映射表</span>
-	 * @param abstractParameter <span class="en-US">Query parameter value</span>
-	 *                          <span class="zh-CN">查询参数信息</span>
-	 * @param values            <span class="en-US">Parameter value list</span>
-	 *                          <span class="zh-CN">参数值列表</span>
-	 * @return <span class="en-US">Generated SQL command</span>
-	 * <span class="zh-CN">生成的SQL命令</span>
-	 * @throws SQLException <span class="en-US">An error occurred while generating the SQL command</span>
-	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
-	 */
-	private String parameterValue(final Map<String, String> aliasMap, final AbstractParameter<?> abstractParameter,
-	                              final List<Object> values) throws SQLException {
+	@Override
+	protected final String parameterValue(final Map<String, String> aliasMap,
+	                                      final AbstractParameter<?> abstractParameter,
+	                                      final List<Object> values) throws SQLException {
 		StringBuilder sqlBuilder = new StringBuilder();
 		switch (abstractParameter.getItemType()) {
 			case COLUMN:
@@ -1500,89 +1647,6 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Generate query parameter commands</h3>
-	 * <h3 class="zh-CN">生成查询参数命令</h3>
-	 *
-	 * @param aliasMap        <span class="en-US">Data table alias mapping table</span>
-	 *                        <span class="zh-CN">数据表别名映射表</span>
-	 * @param columnCondition <span class="en-US">Query condition</span>
-	 *                        <span class="zh-CN">查询信息</span>
-	 * @param values          <span class="en-US">Parameter value list</span>
-	 *                        <span class="zh-CN">参数值列表</span>
-	 * @return <span class="en-US">Generated SQL command</span>
-	 * <span class="zh-CN">生成的SQL命令</span>
-	 * @throws SQLException <span class="en-US">An error occurred while generating the SQL command</span>
-	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
-	 */
-	private String columnCondition(final Map<String, String> aliasMap, final ColumnCondition columnCondition,
-	                               final List<Object> values) throws SQLException {
-		StringBuilder sqlBuilder = new StringBuilder();
-		if (StringUtils.notBlank(columnCondition.getFunctionName())) {
-			sqlBuilder.append(columnCondition.getFunctionName()).append(BrainCommons.BRACKETS_BEGIN);
-		}
-		sqlBuilder.append(this.columnName(aliasMap, columnCondition.getTableName(), columnCondition.getColumnName()));
-		if (StringUtils.notBlank(columnCondition.getFunctionName())) {
-			sqlBuilder.append(BrainCommons.BRACKETS_BEGIN);
-		}
-		switch (columnCondition.getConditionCode()) {
-			case IN:
-				sqlBuilder.append(BrainCommons.OPERATOR_IN);
-				break;
-			case LESS:
-				sqlBuilder.append(BrainCommons.OPERATOR_LESS);
-				break;
-			case LIKE:
-				sqlBuilder.append(BrainCommons.OPERATOR_LIKE);
-				break;
-			case EQUAL:
-				sqlBuilder.append(BrainCommons.OPERATOR_EQUAL);
-				break;
-			case EXISTS:
-				sqlBuilder.append(BrainCommons.OPERATOR_EXISTS);
-				break;
-			case NOT_IN:
-				sqlBuilder.append(BrainCommons.OPERATOR_NOT_IN);
-				break;
-			case GREATER:
-				sqlBuilder.append(BrainCommons.OPERATOR_GREATER);
-				break;
-			case IS_NULL:
-				sqlBuilder.append(BrainCommons.OPERATOR_IS_NULL);
-				break;
-			case NOT_LIKE:
-				sqlBuilder.append(BrainCommons.OPERATOR_NOT_LIKE);
-				break;
-			case NOT_NULL:
-				sqlBuilder.append(BrainCommons.OPERATOR_NOT_NULL);
-				break;
-			case NOT_EQUAL:
-				sqlBuilder.append(BrainCommons.OPERATOR_NOT_EQUAL);
-				break;
-			case LESS_EQUAL:
-				sqlBuilder.append(BrainCommons.OPERATOR_LESS_EQUAL);
-				break;
-			case NOT_EXISTS:
-				sqlBuilder.append(BrainCommons.OPERATOR_NOT_EXISTS);
-				break;
-			case BETWEEN_AND:
-				sqlBuilder.append(BrainCommons.OPERATOR_BETWEEN_AND);
-				break;
-			case GREATER_EQUAL:
-				sqlBuilder.append(BrainCommons.OPERATOR_GREATER_EQUAL);
-				break;
-			case NOT_BETWEEN_AND:
-				sqlBuilder.append(BrainCommons.OPERATOR_NOT_BETWEEN_AND);
-				break;
-		}
-
-		if (columnCondition.getConditionParameter() != null) {
-			sqlBuilder.append(this.parameterValue(aliasMap, columnCondition.getConditionParameter(), values));
-		}
-
-		return sqlBuilder.toString();
-	}
-
-	/**
 	 * <h3 class="en-US">Generate Where sentences based on the given filtering information mapping table</h3>
 	 * <h3 class="zh-CN">根据给定的过滤信息映射表生成Where字句</h3>
 	 *
@@ -1593,10 +1657,10 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @return <span class="en-US">Generated where sentences</span>
 	 * <span class="zh-CN">生成的Where字句</span>
 	 */
-	private String whereClause(final Map<String, Serializable> filterMap, final List<Object> values) {
+	private String whereClause(final Map<String, Object> filterMap, final List<Object> values) {
 		StringBuilder whereClause = new StringBuilder();
 		if (!filterMap.isEmpty()) {
-			for (Map.Entry<String, Serializable> entry : filterMap.entrySet()) {
+			for (Map.Entry<String, Object> entry : filterMap.entrySet()) {
 				whereClause.append(BrainCommons.WHITE_SPACE)
 						.append(ConnectionCode.AND)
 						.append(BrainCommons.WHITE_SPACE)
@@ -1607,61 +1671,5 @@ public abstract class JdbcDialect extends BaseDialect {
 			}
 		}
 		return whereClause.toString();
-	}
-
-	/**
-	 * <h2 class="en-US">SQL command information</h2>
-	 * <h2 class="zh-CN">SQL命令信息</h2>
-	 *
-	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
-	 * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:38:52 $
-	 */
-	public static final class SQLCommand {
-		/**
-		 * <span class="en-US">Generated SQL command</span>
-		 * <span class="zh-CN">生成的SQL命令</span>
-		 */
-		private final String sql;
-		/**
-		 * <span class="en-US">Parameter value list</span>
-		 * <span class="zh-CN">参数值列表</span>
-		 */
-		private final List<Object> values;
-
-		/**
-		 * <h3 class="en-US">Private constructor method for SQL command information</h3>
-		 * <h3 class="zh-CN">SQL命令信息的私有构造方法</h3>
-		 *
-		 * @param sql    <span class="en-US">Generated SQL command</span>
-		 *               <span class="zh-CN">生成的SQL命令</span>
-		 * @param values <span class="en-US">Parameter value list</span>
-		 *               <span class="zh-CN">参数值列表</span>
-		 */
-		private SQLCommand(final String sql, final List<Object> values) {
-			this.sql = sql;
-			this.values = values;
-		}
-
-		/**
-		 * <h3 class="en-US">Getter method for generated SQL command</h3>
-		 * <h3 class="zh-CN">生成的SQL命令的Getter方法</h3>
-		 *
-		 * @return <span class="en-US">Generated SQL command</span>
-		 * <span class="zh-CN">生成的SQL命令</span>
-		 */
-		public String getSql() {
-			return this.sql;
-		}
-
-		/**
-		 * <h3 class="en-US">Getter method for parameter value list</h3>
-		 * <h3 class="zh-CN">参数值列表的Getter方法</h3>
-		 *
-		 * @return <span class="en-US">Parameter value list</span>
-		 * <span class="zh-CN">参数值列表</span>
-		 */
-		public List<Object> getValues() {
-			return this.values;
-		}
 	}
 }

@@ -21,8 +21,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.beans.core.BeanObject;
 
-import java.io.Serializable;
-
 /**
  * <h2 class="en-US">Match condition range define</h2>
  * <h2 class="zh-CN">匹配条件范围定义</h2>
@@ -45,13 +43,13 @@ public final class RangesData extends BeanObject {
      * <span class="zh-CN">起始值</span>
      */
     @XmlElement(name = "begin_value")
-    private Serializable beginValue;
+    private Object beginValue;
     /**
      * <span class="en-US">End value</span>
      * <span class="zh-CN">终止值</span>
      */
     @XmlElement(name = "end_value")
-    private Serializable endValue;
+    private Object endValue;
 
     /**
      * <h3 class="en-US">Constructor method for match condition range define</h3>
@@ -69,7 +67,7 @@ public final class RangesData extends BeanObject {
      * @param endValue   <span class="en-US">End value</span>
      *                   <span class="zh-CN">终止值</span>
      */
-    public RangesData(@Nonnull final Serializable beginValue, @Nonnull final Serializable endValue) {
+    public RangesData(@Nonnull final Object beginValue, @Nonnull final Object endValue) {
         this();
         this.beginValue = beginValue;
         this.endValue = endValue;
@@ -82,7 +80,7 @@ public final class RangesData extends BeanObject {
      * @return <span class="en-US">Begin value</span>
      * <span class="zh-CN">起始值</span>
      */
-    public Serializable getBeginValue() {
+    public Object getBeginValue() {
         return this.beginValue;
     }
 
@@ -93,7 +91,7 @@ public final class RangesData extends BeanObject {
      * @param beginValue <span class="en-US">Begin value</span>
      *                   <span class="zh-CN">起始值</span>
      */
-    public void setBeginValue(final Serializable beginValue) {
+    public void setBeginValue(final Object beginValue) {
         this.beginValue = beginValue;
     }
 
@@ -104,7 +102,7 @@ public final class RangesData extends BeanObject {
      * @return <span class="en-US">End value</span>
      * <span class="zh-CN">终止值</span>
      */
-    public Serializable getEndValue() {
+    public Object getEndValue() {
         return this.endValue;
     }
 
@@ -115,7 +113,7 @@ public final class RangesData extends BeanObject {
      * @param endValue <span class="en-US">End value</span>
      *                 <span class="zh-CN">终止值</span>
      */
-    public void setEndValue(final Serializable endValue) {
+    public void setEndValue(final Object endValue) {
         this.endValue = endValue;
     }
 }

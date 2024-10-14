@@ -48,8 +48,8 @@ public final class FunctionItem extends AbstractItem {
      * <span class="en-US">Function name</span>
      * <span class="zh-CN">函数名</span>
      */
-    @XmlElement(name = "sql_function")
-    private String sqlFunction = null;
+    @XmlElement(name = "function_name")
+    private String functionName = null;
     /**
      * <span class="en-US">Function arguments array</span>
      * <span class="zh-CN">函数参数数组</span>
@@ -78,19 +78,19 @@ public final class FunctionItem extends AbstractItem {
      * @return <span class="en-US">Function name</span>
      * <span class="zh-CN">函数名</span>
      */
-    public String getSqlFunction() {
-        return this.sqlFunction;
+    public String getFunctionName() {
+        return this.functionName;
     }
 
     /**
      * <h3 class="en-US">Setter method for function name</h3>
      * <h3 class="zh-CN">函数名的Setter方法</h3>
      *
-     * @param sqlFunction <span class="en-US">Function name</span>
+     * @param functionName <span class="en-US">Function name</span>
      *                    <span class="zh-CN">函数名</span>
      */
-    public void setSqlFunction(final String sqlFunction) {
-        this.sqlFunction = sqlFunction;
+    public void setFunctionName(final String functionName) {
+        this.functionName = functionName;
     }
 
     /**

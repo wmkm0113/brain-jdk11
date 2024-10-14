@@ -18,6 +18,7 @@
 package org.nervousync.brain.schemas.remote;
 
 import jakarta.annotation.Nonnull;
+import jakarta.persistence.LockModeType;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.xml.ws.BindingProvider;
 import org.glassfish.jersey.client.ClientProperties;
@@ -26,12 +27,15 @@ import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.auth.impl.TrustStoreAuthentication;
 import org.nervousync.brain.configs.auth.impl.UserAuthentication;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
+import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.IndexDefine;
 import org.nervousync.brain.defines.TableDefine;
+import org.nervousync.brain.dialects.DialectFactory;
+import org.nervousync.brain.dialects.remote.RemoteClient;
+import org.nervousync.brain.dialects.remote.RemoteDialect;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
-import org.nervousync.brain.enumerations.query.LockOption;
 import org.nervousync.brain.enumerations.remote.RemoteType;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
@@ -42,11 +46,11 @@ import org.nervousync.proxy.ProxyConfig;
 import org.nervousync.utils.*;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.net.*;
 import java.net.http.HttpClient;
 import java.nio.charset.Charset;
 import java.security.KeyStore;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -59,7 +63,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:38:52 $
  */
-public final class RemoteSchema extends BaseSchema implements RemoteSchemaMBean {
+public final class RemoteSchema extends BaseSchema<RemoteDialect> implements RemoteSchemaMBean {
 
 	/**
 	 * <span class="en-US">Remote type</span>
@@ -102,7 +106,7 @@ public final class RemoteSchema extends BaseSchema implements RemoteSchemaMBean 
 	 *                      <span class="zh-CN">数据库服务器信息未找到或分片配置出错</span>
 	 */
 	public RemoteSchema(@NotNull final RemoteSchemaConfig schemaConfig) throws SQLException {
-		super(schemaConfig);
+		super(schemaConfig, DialectFactory.retrieve(schemaConfig.getDialectName()).unwrap(RemoteDialect.class));
 		this.remoteType = schemaConfig.getRemoteType();
 		this.remoteAddress = schemaConfig.getRemoteAddress();
 		if (RemoteType.Restful.equals(this.remoteType)) {
@@ -127,49 +131,49 @@ public final class RemoteSchema extends BaseSchema implements RemoteSchemaMBean 
 				}
 			}
 
-			Optional.ofNullable(schemaConfig.getProxyConfig())
-					.filter(proxyConfig -> StringUtils.notBlank(proxyConfig.getProxyAddress()))
-					.ifPresent(proxyConfig -> {
-						String proxyURI = proxyConfig.getProxyAddress();
-						if (proxyConfig.getProxyPort() != Globals.DEFAULT_VALUE_INT) {
-							proxyURI += ":" + proxyConfig.getProxyPort();
-						}
-						this.clientBuilder.property(ClientProperties.PROXY_URI, proxyURI);
-						String authentication = Globals.DEFAULT_VALUE_STRING;
-						if (StringUtils.notBlank(proxyConfig.getUserName())) {
-							authentication += proxyConfig.getUserName() + ":";
-							this.clientBuilder.property(ClientProperties.PROXY_USERNAME, proxyConfig.getUserName());
-						}
-						if (StringUtils.notBlank(proxyConfig.getPassword())) {
-							authentication += proxyConfig.getPassword();
-							this.clientBuilder.property(ClientProperties.PROXY_PASSWORD, proxyConfig.getPassword());
-						}
-						this.configMap.put("Proxy-Authorization",
-								StringUtils.base64Encode(authentication.getBytes(Charset.forName(Globals.DEFAULT_ENCODING))));
-					});
+//			Optional.ofNullable(schemaConfig.getProxyConfig())
+//					.filter(proxyConfig -> StringUtils.notBlank(proxyConfig.getProxyAddress()))
+//					.ifPresent(proxyConfig -> {
+//						String proxyURI = proxyConfig.getProxyAddress();
+//						if (proxyConfig.getProxyPort() != Globals.DEFAULT_VALUE_INT) {
+//							proxyURI += ":" + proxyConfig.getProxyPort();
+//						}
+//						this.clientBuilder.property(ClientProperties.PROXY_URI, proxyURI);
+//						String authentication = Globals.DEFAULT_VALUE_STRING;
+//						if (StringUtils.notBlank(proxyConfig.getUserName())) {
+//							authentication += proxyConfig.getUserName() + ":";
+//							this.clientBuilder.property(ClientProperties.PROXY_USERNAME, proxyConfig.getUserName());
+//						}
+//						if (StringUtils.notBlank(proxyConfig.getPassword())) {
+//							authentication += proxyConfig.getPassword();
+//							this.clientBuilder.property(ClientProperties.PROXY_PASSWORD, proxyConfig.getPassword());
+//						}
+//						this.configMap.put("Proxy-Authorization",
+//								StringUtils.base64Encode(authentication.getBytes(Charset.forName(Globals.DEFAULT_ENCODING))));
+//					});
 		} else {
 			this.clientBuilder = null;
 			if (this.getConnectTimeout() > 0) {
 				this.configMap.put("sun.net.client.defaultConnectTimeout", Integer.toString(this.getConnectTimeout()));
-				if (this.authentication != null && this.authentication instanceof UserAuthentication) {
-					UserAuthentication userAuthentication = (UserAuthentication) this.authentication;
-					if (StringUtils.notBlank(userAuthentication.getUserName())) {
-						this.configMap.put(BindingProvider.USERNAME_PROPERTY, userAuthentication.getUserName());
-					}
-					if (StringUtils.notBlank(userAuthentication.getPassWord())) {
-						this.configMap.put(BindingProvider.PASSWORD_PROPERTY, userAuthentication.getPassWord());
-					}
+			}
+			if (this.authentication != null && this.authentication instanceof UserAuthentication) {
+				UserAuthentication userAuthentication = (UserAuthentication) this.authentication;
+				if (StringUtils.notBlank(userAuthentication.getUserName())) {
+					this.configMap.put(BindingProvider.USERNAME_PROPERTY, userAuthentication.getUserName());
+				}
+				if (StringUtils.notBlank(userAuthentication.getPassWord())) {
+					this.configMap.put(BindingProvider.PASSWORD_PROPERTY, userAuthentication.getPassWord());
 				}
 			}
-			Optional.ofNullable(schemaConfig.getProxyConfig())
-					.filter(proxyConfig -> StringUtils.notBlank(proxyConfig.getProxyAddress()))
-					.ifPresent(proxyConfig -> {
-						ProxySelector.setDefault(new ServiceProxySelector(this.remoteAddress, proxyConfig));
-						if (StringUtils.notBlank(proxyConfig.getUserName())) {
-							Authenticator.setDefault(
-									new ProxyAuthenticator(proxyConfig.getUserName(), proxyConfig.getPassword()));
-						}
-					});
+//			Optional.ofNullable(schemaConfig.getProxyConfig())
+//					.filter(proxyConfig -> StringUtils.notBlank(proxyConfig.getProxyAddress()))
+//					.ifPresent(proxyConfig -> {
+//						ProxySelector.setDefault(new ServiceProxySelector(this.remoteAddress, proxyConfig));
+//						if (StringUtils.notBlank(proxyConfig.getUserName())) {
+//							Authenticator.setDefault(
+//									new ProxyAuthenticator(proxyConfig.getUserName(), proxyConfig.getPassword()));
+//						}
+//					});
 		}
 		this.activeConnections = new AtomicInteger(Globals.INITIALIZE_INT_VALUE);
 	}
@@ -273,27 +277,33 @@ public final class RemoteSchema extends BaseSchema implements RemoteSchemaMBean 
 	}
 
 	@Override
-	public void beginTransactional() throws Exception {
+	public void beginTransactional() throws SQLException {
 		if (this.operatorThreadLocal.get() == null) {
-			switch (this.remoteType) {
-				case SOAP:
-					this.operatorThreadLocal.set(ServiceUtils.SOAPClient(this.remoteAddress, RemoteClient.class));
-					break;
-				case Restful:
-					this.operatorThreadLocal.set(
-							ServiceUtils.RestfulClient(this.remoteAddress, this.clientBuilder,
-									RemoteClient.class, this.configMap));
-					break;
-				default:
-					throw new MultilingualSQLException(0x00DB00000030L, this.remoteType);
+			try {
+				RemoteClient remoteClient;
+				switch (this.remoteType) {
+					case SOAP:
+						remoteClient = this.dialect.SOAPClient(this.remoteAddress, this.configMap);
+						break;
+					case Restful:
+						remoteClient = this.dialect.restfulClient(this.remoteAddress, this.clientBuilder, this.configMap);
+						break;
+					default:
+						throw new MultilingualSQLException(0x00DB00000030L, this.remoteType);
+				}
+				this.operatorThreadLocal.set(remoteClient);
+			} catch (MalformedURLException e) {
+				throw new MultilingualSQLException(0x00DB00000035L, e, this.remoteType.toString(), this.remoteAddress);
 			}
 		}
 		this.activeConnections.incrementAndGet();
 	}
 
 	@Override
-	public void rollback() throws Exception {
-		if (this.txConfig.get() != null) {
+	public void rollback(final Exception e) throws Exception {
+		TransactionalConfig transactionalConfig = this.txConfig.get();
+		if (transactionalConfig != null && transactionalConfig.getIsolation() != Connection.TRANSACTION_NONE
+				&& transactionalConfig.rollback(e)) {
 			this.operatorThreadLocal.get().rollback(this.txConfig.get().getTransactionalCode());
 		}
 	}
@@ -321,7 +331,8 @@ public final class RemoteSchema extends BaseSchema implements RemoteSchemaMBean 
 	}
 
 	@Override
-	public void dropTable(@NotNull final TableDefine tableDefine, @NotNull final DropOption dropOption) throws Exception {
+	public void dropTable(@NotNull final TableDefine tableDefine, @NotNull final DropOption dropOption)
+			throws Exception {
 		StringBuilder indexNames = new StringBuilder();
 		for (IndexDefine indexDefine : tableDefine.getIndexDefines()) {
 			indexNames.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(indexDefine.getIndexName());
@@ -334,42 +345,46 @@ public final class RemoteSchema extends BaseSchema implements RemoteSchemaMBean 
 	}
 
 	@Override
-	public Map<String, Serializable> insert(@NotNull final TableDefine tableDefine,
-	                                        @NotNull final Map<String, Serializable> dataMap) throws Exception {
+	public boolean lockRecord(@NotNull final TableDefine tableDefine,
+	                          @NotNull final Map<String, Object> filterMap) {
+		return this.operatorThreadLocal.get().lockRecord(this.shardingTable(tableDefine.getTableName(), filterMap),
+				StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE));
+	}
+
+	@Override
+	public Map<String, Object> insert(@NotNull final TableDefine tableDefine,
+	                                  @NotNull final Map<String, Object> dataMap) throws Exception {
 		String tableName = this.shardingTable(tableDefine.getTableName(), dataMap);
 		String responseData =
 				this.operatorThreadLocal.get()
 						.insert(tableName,
 								StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.FALSE));
-		Map<String, Serializable> resultMap = new HashMap<>();
 		if (StringUtils.notBlank(responseData)) {
-			StringUtils.dataToMap(responseData, StringUtils.StringType.JSON)
-					.forEach((key, value) -> resultMap.put(key, (Serializable) value));
+			return StringUtils.dataToMap(responseData, StringUtils.StringType.JSON);
 		}
-		return resultMap;
+		return Map.of();
 	}
 
 	@Override
-	public Map<String, String> retrieve(@NotNull final TableDefine tableDefine, final String columns,
-	                                    @NotNull final Map<String, Serializable> filterMap, final boolean forUpdate,
-	                                    final LockOption lockOption) throws Exception {
+	public Map<String, Object> retrieve(@NotNull final TableDefine tableDefine, final String columns,
+	                                    @NotNull final Map<String, Object> filterMap, final boolean forUpdate)
+			throws Exception {
 		String tableName = this.shardingTable(tableDefine.getTableName(), filterMap);
 		String responseData =
 				this.operatorThreadLocal.get()
-						.retrieve(tableName, columns,
+						.retrieve(tableName,
+								StringUtils.isEmpty(columns) ? super.queryColumns(tableDefine, forUpdate) : columns,
 								StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE),
-								forUpdate, lockOption);
-		Map<String, String> resultMap = new HashMap<>();
+								forUpdate, tableDefine.getLockOption());
 		if (StringUtils.notBlank(responseData)) {
-			StringUtils.dataToMap(responseData, StringUtils.StringType.JSON)
-					.forEach((key, value) -> resultMap.put(key, value.toString()));
+			return StringUtils.dataToMap(responseData, StringUtils.StringType.JSON);
 		}
-		return resultMap;
+		return Map.of();
 	}
 
 	@Override
-	public int update(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Serializable> dataMap,
-	                  @NotNull final Map<String, Serializable> filterMap) throws Exception {
+	public int update(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> dataMap,
+	                  @NotNull final Map<String, Object> filterMap) throws Exception {
 		String tableName = this.shardingTable(tableDefine.getTableName(), filterMap);
 		return this.operatorThreadLocal.get().update(tableName,
 				StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.FALSE),
@@ -377,7 +392,7 @@ public final class RemoteSchema extends BaseSchema implements RemoteSchemaMBean 
 	}
 
 	@Override
-	public int delete(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Serializable> filterMap)
+	public int delete(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> filterMap)
 			throws Exception {
 		String tableName = this.shardingTable(tableDefine.getTableName(), filterMap);
 		return this.operatorThreadLocal.get().delete(tableName,
@@ -385,13 +400,14 @@ public final class RemoteSchema extends BaseSchema implements RemoteSchemaMBean 
 	}
 
 	@Override
-	public List<Map<String, String>> query(@NotNull final QueryInfo queryInfo) throws Exception {
-		return List.of();
+	public List<Map<String, Object>> query(@NotNull final TableDefine tableDefine,
+	                                       @NotNull final QueryInfo queryInfo) throws Exception {
+		return this.parseResponse(this.operatorThreadLocal.get().query(queryInfo.toFormattedJson()));
 	}
 
 	@Override
-	public List<Map<String, String>> queryForUpdate(@NotNull final TableDefine tableDefine,
-	                                                final List<Condition> conditionList, final LockOption lockOption)
+	public List<Map<String, Object>> queryForUpdate(@NotNull final TableDefine tableDefine,
+	                                                final List<Condition> conditionList, final LockModeType lockOption)
 			throws Exception {
 		String tableName = this.shardingTable(tableDefine.getTableName(), conditionList);
 		StringBuilder stringBuilder = new StringBuilder();
@@ -405,14 +421,21 @@ public final class RemoteSchema extends BaseSchema implements RemoteSchemaMBean 
 				this.operatorThreadLocal.get()
 						.queryForUpdate(tableName, stringBuilder.toString(),
 								StringUtils.objectToString(conditionList, StringUtils.StringType.JSON, Boolean.FALSE),
-								lockOption));
+								LockModeType.NONE.equals(lockOption) ? tableDefine.getLockOption() : lockOption));
 	}
 
-	private List<Map<String, String>> parseResponse(final String responseData) {
-		List<Map<String, String>> resultList = new ArrayList<>();
+	@Override
+	public Long queryTotal(@NotNull final TableDefine tableDefine, final QueryInfo queryInfo) throws Exception {
+		List<Condition> conditionList = queryInfo.getConditionList();
+		return this.operatorThreadLocal.get().queryTotal(this.shardingTable(tableDefine.getTableName(), conditionList),
+				StringUtils.objectToString(conditionList, StringUtils.StringType.JSON, Boolean.FALSE));
+	}
+
+	private List<Map<String, Object>> parseResponse(final String responseData) {
+		List<Map<String, Object>> resultList = new ArrayList<>();
 		for (Map<?, ?> dataMap : StringUtils.stringToList(responseData, Globals.DEFAULT_ENCODING, Map.class)) {
-			Map<String, String> resultMap = new HashMap<>();
-			dataMap.forEach((key, value) -> resultMap.put(key.toString(), value.toString()));
+			Map<String, Object> resultMap = new HashMap<>();
+			dataMap.forEach((key, value) -> resultMap.put(key.toString(), value));
 			resultList.add(resultMap);
 		}
 		return resultList;

@@ -21,7 +21,9 @@ import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.JoinType;
 import org.nervousync.brain.query.core.SortedItem;
+import org.nervousync.commons.Globals;
 import org.nervousync.utils.ObjectUtils;
+import org.nervousync.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +35,8 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Jul 30, 2023 15:57:33 $
  */
-@XmlType(name = "query_join", namespace = "https://nervousync.org/schemas/query")
-@XmlRootElement(name = "query_join", namespace = "https://nervousync.org/schemas/query")
+@XmlType(name = "query_join", namespace = "https://nervousync.org/schemas/database")
+@XmlRootElement(name = "query_join", namespace = "https://nervousync.org/schemas/database")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class QueryJoin extends SortedItem {
 
@@ -53,6 +55,12 @@ public final class QueryJoin extends SortedItem {
 	@XmlElement(name = "join_table")
 	private String joinTable;
 	/**
+	 * <span class="en-US">Join table alias name</span>
+	 * <span class="zh-CN">关联表别名</span>
+	 */
+	@XmlElement(name = "alias_name")
+	private String aliasName;
+	/**
 	 * <span class="en-US">Table join type</span>
 	 * <span class="zh-CN">数据表关联类型</span>
 	 */
@@ -62,7 +70,7 @@ public final class QueryJoin extends SortedItem {
 	 * <span class="en-US">Join columns list</span>
 	 * <span class="zh-CN">关联列信息列表</span>
 	 */
-	@XmlElement(name = "join_info", namespace = "https://nervousync.org/schemas/database")
+	@XmlElement(name = "join_info")
 	@XmlElementWrapper(name = "join_info_list")
 	private List<JoinInfo> joinInfos;
 
@@ -82,16 +90,19 @@ public final class QueryJoin extends SortedItem {
 	 *                    <span class="zh-CN">驱动表名</span>
 	 * @param joinTable   <span class="en-US">Join table name</span>
 	 *                    <span class="zh-CN">关联表名</span>
+	 * @param aliasName   <span class="en-US">Join table alias name</span>
+	 *                    <span class="zh-CN">关联表别名</span>
 	 * @param joinType    <span class="en-US">Table join type</span>
 	 *                    <span class="zh-CN">数据表关联类型</span>
 	 * @param joinInfos   <span class="en-US">Join columns list</span>
 	 *                    <span class="zh-CN">关联列信息列表</span>
 	 */
-	public QueryJoin(@Nonnull final String driverTable, @Nonnull final String joinTable,
+	public QueryJoin(@Nonnull final String driverTable, @Nonnull final String joinTable, final String aliasName,
 	                 @Nonnull final JoinType joinType, @Nonnull final List<JoinInfo> joinInfos) {
 		this();
 		this.driverTable = driverTable;
 		this.joinTable = joinTable;
+		this.aliasName = StringUtils.isEmpty(aliasName) ? Globals.DEFAULT_VALUE_STRING : aliasName;
 		this.joinType = joinType;
 		this.joinInfos.addAll(joinInfos);
 	}
@@ -138,6 +149,28 @@ public final class QueryJoin extends SortedItem {
 	 */
 	public void setJoinTable(final String joinTable) {
 		this.joinTable = joinTable;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for join table alias name</h3>
+	 * <h3 class="zh-CN">关联表别名的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Join table alias name</span>
+	 * <span class="zh-CN">关联表别名</span>
+	 */
+	public String getAliasName() {
+		return this.aliasName;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for join table alias name</h3>
+	 * <h3 class="zh-CN">关联表别名的Setter方法</h3>
+	 *
+	 * @param aliasName <span class="en-US">Join table alias name</span>
+	 *                  <span class="zh-CN">关联表别名</span>
+	 */
+	public void setAliasName(final String aliasName) {
+		this.aliasName = aliasName;
 	}
 
 	/**

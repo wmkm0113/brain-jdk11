@@ -18,12 +18,22 @@
 package org.nervousync.brain.defines;
 
 import jakarta.annotation.Nonnull;
+import jakarta.persistence.LockModeType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
+import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.exceptions.defines.TableDefineException;
+import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
+import org.nervousync.commons.Globals;
 import org.nervousync.utils.StringUtils;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * <h2 class="en-US">Data table define</h2>
@@ -32,48 +42,69 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:15:08 $
  */
-public final class TableDefine {
+@XmlType(name = "table_define", namespace = "https://nervousync.org/schemas/database")
+@XmlRootElement(name = "table_define", namespace = "https://nervousync.org/schemas/database")
+public final class TableDefine extends BeanObject {
 
+	/**
+	 * <span class="en-US">Data source name</span>
+	 * <span class="zh-CN">数据源名称</span>
+	 */
+	private String schemaName;
 	/**
 	 * <span class="en-US">Data table name</span>
 	 * <span class="zh-CN">数据表名称</span>
 	 */
-	private final String tableName;
-	/**
-	 * <span class="en-US">Data table name sharding template</span>
-	 * <span class="zh-CN">数据表分片模板</span>
-	 */
-	private final String shardingTemplate;
+	@XmlElement(name = "table_name")
+	private String tableName = Globals.DEFAULT_VALUE_STRING;
 	/**
 	 * <span class="en-US">Data column define list</span>
 	 * <span class="zh-CN">数据列定义列表</span>
 	 */
-	private final List<ColumnDefine> columnDefines;
+	@XmlElement(name = "column_define", namespace = "https://nervousync.org/schemas/database")
+	@XmlElementWrapper(name = "column_list")
+	private List<ColumnDefine> columnDefines = new ArrayList<>();
 	/**
 	 * <span class="en-US">Index define list</span>
 	 * <span class="zh-CN">索引定义列表</span>
 	 */
-	private final List<IndexDefine> indexDefines;
+	@XmlElement(name = "index_define", namespace = "https://nervousync.org/schemas/database")
+	@XmlElementWrapper(name = "index_list")
+	private List<IndexDefine> indexDefines = new ArrayList<>();
+	/**
+	 * <span class="en-US">Lock option</span>
+	 * <span class="zh-CN">数据锁选项</span>
+	 */
+	@XmlElement(name = "lock_option")
+	private LockModeType lockOption = LockModeType.NONE;
 
 	/**
 	 * <h3 class="en-US">Constructor method for data table define</h3>
 	 * <h3 class="zh-CN">数据表定义的构造方法</h3>
-	 *
-	 * @param tableName        <span class="en-US">Data table name</span>
-	 *                         <span class="zh-CN">数据表名称</span>
-	 * @param shardingTemplate <span class="en-US">Data table name sharding template</span>
-	 *                         <span class="zh-CN">数据表分片模板</span>
-	 * @param columnDefines    <span class="en-US">Data column define list</span>
-	 *                         <span class="zh-CN">数据列定义列表</span>
-	 * @param indexDefines     <span class="en-US">Index define list</span>
-	 *                         <span class="zh-CN">索引定义列表</span>
 	 */
-	public TableDefine(final String tableName, final String shardingTemplate, final List<ColumnDefine> columnDefines,
-	                   final List<IndexDefine> indexDefines) {
-		this.tableName = tableName;
-		this.shardingTemplate = shardingTemplate;
-		this.columnDefines = columnDefines;
-		this.indexDefines = indexDefines;
+	public TableDefine() {
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for data source name</h3>
+	 * <h3 class="zh-CN">数据源名称的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Data source name</span>
+	 * <span class="zh-CN">数据源名称</span>
+	 */
+	public String getSchemaName() {
+		return this.schemaName;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for data source name</h3>
+	 * <h3 class="zh-CN">数据源名称的Setter方法</h3>
+	 *
+	 * @param schemaName <span class="en-US">Data source name</span>
+	 *                   <span class="zh-CN">数据源名称</span>
+	 */
+	public void setSchemaName(final String schemaName) {
+		this.schemaName = schemaName;
 	}
 
 	/**
@@ -88,14 +119,14 @@ public final class TableDefine {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for data table name sharding template</h3>
-	 * <h3 class="zh-CN">数据表分片模板的Getter方法</h3>
+	 * <h3 class="en-US">Setter method for data table name</h3>
+	 * <h3 class="zh-CN">数据表名称的Setter方法</h3>
 	 *
-	 * @return <span class="en-US">Data table name sharding template</span>
-	 * <span class="zh-CN">数据表分片模板</span>
+	 * @param tableName <span class="en-US">Data table name</span>
+	 *                  <span class="zh-CN">数据表名称</span>
 	 */
-	public String getShardingTemplate() {
-		return this.shardingTemplate;
+	public void setTableName(final String tableName) {
+		this.tableName = tableName;
 	}
 
 	/**
@@ -110,6 +141,17 @@ public final class TableDefine {
 	}
 
 	/**
+	 * <h3 class="en-US">Setter method for data column define list</h3>
+	 * <h3 class="zh-CN">数据列定义列表的Setter方法</h3>
+	 *
+	 * @param columnDefines <span class="en-US">Data column define list</span>
+	 *                      <span class="zh-CN">数据列定义列表</span>
+	 */
+	public void setColumnDefines(final List<ColumnDefine> columnDefines) {
+		this.columnDefines = columnDefines;
+	}
+
+	/**
 	 * <h3 class="en-US">Getter method for index define list</h3>
 	 * <h3 class="zh-CN">索引定义列表的Getter方法</h3>
 	 *
@@ -118,6 +160,39 @@ public final class TableDefine {
 	 */
 	public List<IndexDefine> getIndexDefines() {
 		return this.indexDefines;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for index define list</h3>
+	 * <h3 class="zh-CN">索引定义列表的Setter方法</h3>
+	 *
+	 * @param indexDefines <span class="en-US">Index define list</span>
+	 *                     <span class="zh-CN">索引定义列表</span>
+	 */
+	public void setIndexDefines(final List<IndexDefine> indexDefines) {
+		this.indexDefines = indexDefines;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for lock option</h3>
+	 * <h3 class="zh-CN">数据锁选项的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Lock option</span>
+	 * <span class="zh-CN">数据锁选项</span>
+	 */
+	public LockModeType getLockOption() {
+		return this.lockOption;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for lock option</h3>
+	 * <h3 class="zh-CN">数据锁选项的Setter方法</h3>
+	 *
+	 * @param lockOption <span class="en-US">Lock option</span>
+	 *                   <span class="zh-CN">数据锁选项</span>
+	 */
+	public void setLockOption(final LockModeType lockOption) {
+		this.lockOption = lockOption;
 	}
 
 	/**
@@ -133,10 +208,7 @@ public final class TableDefine {
 		if (StringUtils.isEmpty(columnName)) {
 			return null;
 		}
-		return this.columnDefines
-				.stream()
-				.filter(columnDefine -> columnDefine.getColumnName().equalsIgnoreCase(columnName))
-				.findFirst()
+		return Optional.ofNullable(this.column(columnName))
 				.map(ColumnDefine::getGeneratorDefine)
 				.orElse(null);
 	}
@@ -164,12 +236,12 @@ public final class TableDefine {
 	 *
 	 * @param existColumns <span class="en-US">Data column define information list</span>
 	 *                     <span class="zh-CN">数据列定义信息列表</span>
-	 * @throws TableDefineException <span class="en-US">Throws an exception if validation fails</span>
-	 *                              <span class="zh-CN">如果验证失败则抛出异常</span>
+	 * @throws SQLException <span class="en-US">Throws an exception if validation fails</span>
+	 *                      <span class="zh-CN">如果验证失败则抛出异常</span>
 	 */
-	public void validate(@Nonnull final List<ColumnDefine> existColumns) throws TableDefineException {
+	public void validate(@Nonnull final List<ColumnDefine> existColumns) throws SQLException {
 		if (existColumns.isEmpty()) {
-			throw new TableDefineException(0x00DB00000003L, this.tableName);
+			throw new MultilingualSQLException(0x00DB00000003L, this.tableName);
 		}
 		List<ColumnDefine> checkedColumns = new ArrayList<>();
 		StringBuilder notFoundColumns = new StringBuilder();
@@ -192,7 +264,7 @@ public final class TableDefine {
 						newColumns.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnDefine.getColumnName()));
 		if (notFoundColumns.length() > 0 || modifiedColumns.length() > 0 || newColumns.length() > 0) {
 			int start = BrainCommons.DEFAULT_SPLIT_CHARACTER.length();
-			throw new TableDefineException(0x00DB00000004L,
+			throw new MultilingualSQLException(0x00DB00000004L,
 					newColumns.length() > 0 ? newColumns.substring(start) : newColumns.toString(),
 					modifiedColumns.length() > 0 ? modifiedColumns.substring(start) : modifiedColumns.toString(),
 					notFoundColumns.length() > 0 ? notFoundColumns.substring(start) : notFoundColumns.toString());

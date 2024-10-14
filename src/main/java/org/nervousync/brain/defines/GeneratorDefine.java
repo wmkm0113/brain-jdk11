@@ -17,6 +17,10 @@
 
 package org.nervousync.brain.defines;
 
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
+import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.enumerations.ddl.GenerationType;
 
 /**
@@ -26,17 +30,21 @@ import org.nervousync.brain.enumerations.ddl.GenerationType;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 4, 2020 15:49:52 $
  */
-public final class GeneratorDefine {
+@XmlType(name = "generator_define", namespace = "https://nervousync.org/schemas/database")
+@XmlRootElement(name = "generator_define", namespace = "https://nervousync.org/schemas/database")
+public final class GeneratorDefine extends BeanObject {
 
 	/**
 	 * <span class="en-US">Generation type</span>
 	 * <span class="zh-CN">生成器类型</span>
 	 */
+	@XmlElement(name = "generation_type")
 	private GenerationType generationType;
 	/**
 	 * <span class="en-US">Generator name</span>
 	 * <span class="zh-CN">生成器名称</span>
 	 */
+	@XmlElement(name = "generator_name")
 	private String generatorName;
 
 	/**

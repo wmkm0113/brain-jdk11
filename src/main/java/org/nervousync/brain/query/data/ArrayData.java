@@ -20,8 +20,6 @@ package org.nervousync.brain.query.data;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.beans.core.BeanObject;
 
-import java.io.Serializable;
-
 /**
  * <h2 class="en-US">Array objects define</h2>
  * <h2 class="zh-CN">数组值定义</h2>
@@ -45,7 +43,7 @@ public final class ArrayData extends BeanObject {
      */
     @XmlElement(name = "data_value")
     @XmlElementWrapper(name = "array_objects")
-    private Serializable[] arrayObject;
+    private Object[] arrayObject;
 
     /**
      * <h3 class="en-US">Constructor method for array objects define</h3>
@@ -61,7 +59,7 @@ public final class ArrayData extends BeanObject {
      * @param arrayObject <span class="en-US">Array objects</span>
      *                    <span class="zh-CN">数组值</span>
      */
-    public ArrayData(final Serializable[] arrayObject) {
+    public ArrayData(final Object[] arrayObject) {
         this.arrayObject = arrayObject;
     }
 
@@ -72,7 +70,7 @@ public final class ArrayData extends BeanObject {
      * @return <span class="en-US">Array objects</span>
      * <span class="zh-CN">数组值</span>
      */
-    public Serializable[] getArrayObject() {
+    public Object[] getArrayObject() {
         return arrayObject;
     }
 
@@ -83,7 +81,7 @@ public final class ArrayData extends BeanObject {
      * @param arrayObject <span class="en-US">Array objects</span>
      *                    <span class="zh-CN">数组值</span>
      */
-    public void setArrayObject(Serializable[] arrayObject) {
+    public void setArrayObject(final Object[] arrayObject) {
         this.arrayObject = arrayObject;
     }
 }

@@ -18,7 +18,9 @@
 package org.nervousync.brain.source;
 
 import org.nervousync.brain.commons.BrainCommons;
-import org.nervousync.brain.enumerations.ddl.DDLType;
+import org.nervousync.brain.commons.DataUtils;
+import org.nervousync.brain.configs.Configure;
+import org.nervousync.brain.exceptions.data.DataParseException;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.StringUtils;
 
@@ -36,84 +38,102 @@ import java.util.Hashtable;
  */
 public final class DataSourceFactory implements ObjectFactory {
 
+	/**
+	 * <span class="en-US">Initialized data source instance object</span>
+	 * <span class="zh-CN">初始化的数据源实例对象</span>
+	 */
+	private static BrainDataSource DATA_SOURCE = null;
+
 	@Override
 	public Object getObjectInstance(final Object obj, final Name name, final Context nameCtx,
 	                                final Hashtable<?, ?> environment) throws Exception {
-		String jndiName = Globals.DEFAULT_VALUE_STRING;
-		boolean jmxEnabled = Boolean.FALSE, lazyInit = Boolean.FALSE;
-		DDLType ddlType = DDLType.NONE;
+		if (DATA_SOURCE == null) {
+			String jndiName = Globals.DEFAULT_VALUE_STRING, filePath = Globals.DEFAULT_VALUE_STRING;
 
-		Enumeration<RefAddr> enumeration = ((Reference) obj).getAll();
-		while (enumeration.hasMoreElements()) {
-			RefAddr refAddr = enumeration.nextElement();
-			switch (refAddr.getType().toLowerCase()) {
-				case BrainCommons.PROPERTY_JNDI_NAME_KEY:
-					jndiName = (String) refAddr.getContent();
-					break;
-				case BrainCommons.PROPERTY_LAZY_INIT_KEY:
-					lazyInit = Boolean.parseBoolean((String) refAddr.getContent());
-					break;
-				case BrainCommons.PROPERTY_JMX_MONITOR_KEY:
-					jmxEnabled = Boolean.parseBoolean((String) refAddr.getContent());
-					break;
-				case BrainCommons.PROPERTY_DDL_TYPE_KEY:
-					ddlType = DDLType.valueOf((String) refAddr.getContent());
-					break;
+			Enumeration<RefAddr> enumeration = ((Reference) obj).getAll();
+			while (enumeration.hasMoreElements()) {
+				RefAddr refAddr = enumeration.nextElement();
+				switch (refAddr.getType().toLowerCase()) {
+					case BrainCommons.PROPERTY_JNDI_NAME_KEY:
+						jndiName = (String) refAddr.getContent();
+						break;
+					case BrainCommons.PROPERTY_PATH_KEY:
+						filePath = (String) refAddr.getContent();
+						break;
+				}
+			}
+			String lookupName =
+					"java:comp/env/" + (StringUtils.isEmpty(jndiName) ? BrainCommons.DEFAULT_JNDI_NAME : jndiName);
+
+			Context context = new InitialContext(environment);
+			try {
+				DATA_SOURCE = (BrainDataSource) context.lookup(lookupName);
+			} catch (Exception e) {
+				Configure configure = null;
+
+				if (StringUtils.notBlank(filePath)) {
+					configure = StringUtils.fileToObject(filePath, Configure.class);
+				}
+				if (configure == null) {
+					throw new DataParseException(0x00DB00000036L);
+				}
+				DATA_SOURCE = new BrainDataSource(configure);
+				context.bind(lookupName, DATA_SOURCE);
+				if (configure.getStorageConfig() != null) {
+					DataUtils.initialize(DATA_SOURCE, configure.getStorageConfig());
+				}
+				Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+					try {
+						context.unbind(lookupName);
+					} catch (NamingException ignore) {
+					}
+					DATA_SOURCE.close();
+				}));
 			}
 		}
-		if (StringUtils.isEmpty(jndiName)) {
-			jndiName = BrainCommons.DEFAULT_JNDI_NAME;
-		}
-
-		initialize(jndiName, jmxEnabled, lazyInit, ddlType, environment);
-		return getInstance(jndiName, environment);
+		return DATA_SOURCE;
 	}
 
 	/**
 	 * <h3 class="en-US">Initialize data source</h3>
 	 * <h3 class="zh-CN">初始化数据源</h3>
 	 *
-	 * @param jndiName    <span class="en-US">JNDI name</span>
-	 *                    <span class="zh-CN">JNDI名称</span>
-	 * @param jmxEnabled  <span class="en-US">Data source initialize status</span>
-	 *                    <span class="zh-CN">数据源初始化状态</span>
-	 * @param lazyInit    <span class="en-US">Perform initialization operations when using</span>
-	 *                    <span class="zh-CN">使用时再执行初始化操作</span>
-	 * @param ddlType     <span class="en-US">Enumeration value of DDL operate</span>
-	 *                    <span class="zh-CN">操作类型枚举值</span>
-	 * @param environment <span class="en-US">Environment parameters</span>
-	 *                    <span class="zh-CN">环境变量</span>
-	 * @throws NamingException <span class="en-US">If an error occurs while reading or writing environment variables</span>
-	 *                         <span class="zh-CN">如果读取或写入环境变量时出错</span>
+	 * @param filePath <span class="en-US">Configure information file path</span>
+	 *                 <span class="zh-CN">配置信息地址</span>
+	 * @return <span class="en-US">Initialized data source instance object</span>
+	 * <span class="zh-CN">初始化的数据源实例对象</span>
+	 * @throws DataParseException <span class="en-US">If an error occurs while reading configure information</span>
+	 *                            <span class="zh-CN">如果读取配置文件时出错</span>
 	 */
-	public static void initialize(final String jndiName, final boolean jmxEnabled, final boolean lazyInit,
-	                              final DDLType ddlType, final Hashtable<?, ?> environment) throws NamingException {
-		if (StringUtils.isEmpty(jndiName)) {
-			return;
+	public static BrainDataSource initialize(final String filePath) throws DataParseException {
+		if (DATA_SOURCE == null) {
+			if (StringUtils.isEmpty(filePath)) {
+				return null;
+			}
+			Configure configure = StringUtils.fileToObject(filePath, Configure.class);
+			if (configure == null) {
+				throw new DataParseException(0x00DB00000036L);
+			}
+			initialize(configure);
 		}
-		Context context = new InitialContext(environment);
-		BrainDataSource dataSource = (BrainDataSource) context.lookup("java:comp/env/" + jndiName);
-		if (dataSource == null) {
-			dataSource = new BrainDataSource(jmxEnabled, lazyInit, ddlType);
-			context.bind("java:comp/env/" + jndiName, dataSource);
-		}
+		return DATA_SOURCE;
 	}
 
 	/**
-	 * <h3 class="en-US">Destroy data source</h3>
-	 * <h3 class="zh-CN">销毁数据源</h3>
+	 * <h3 class="en-US">Initialize data source</h3>
+	 * <h3 class="zh-CN">初始化数据源</h3>
 	 *
-	 * @param jndiName <span class="en-US">JNDI name</span>
-	 *                 <span class="zh-CN">JNDI名称</span>
-	 * @throws NamingException <span class="en-US">If an error occurs while reading or writing environment variables</span>
-	 *                         <span class="zh-CN">如果读取或写入环境变量时出错</span>
+	 * @param configure <span class="en-US">Data source configure information instance object</span>
+	 *                  <span class="zh-CN">数据源配置信息实例对象</span>
+	 * @throws DataParseException <span class="en-US">If configure information is <code>null</code></span>
+	 *                            <span class="zh-CN">如果配置信息为<code>null</code></span>
 	 */
-	public static void destroy(final String jndiName) throws NamingException {
-		Context context = new InitialContext();
-		BrainDataSource dataSource = (BrainDataSource) context.lookup("java:comp/env/" + jndiName);
-		if (dataSource != null) {
-			dataSource.close();
-			context.unbind("java:comp/env/" + jndiName);
+	public static void initialize(final Configure configure) throws DataParseException {
+		if (DATA_SOURCE == null) {
+			if (configure == null) {
+				throw new DataParseException(0x00DB00000036L);
+			}
+			DATA_SOURCE = new BrainDataSource(configure);
 		}
 	}
 
@@ -121,20 +141,10 @@ public final class DataSourceFactory implements ObjectFactory {
 	 * <h3 class="en-US">Get the data source in the environment variable</h3>
 	 * <h3 class="zh-CN">获取环境变量中的数据源</h3>
 	 *
-	 * @param jndiName    <span class="en-US">JNDI name</span>
-	 *                    <span class="zh-CN">JNDI名称</span>
-	 * @param environment <span class="en-US">Environment parameters</span>
-	 *                    <span class="zh-CN">环境变量</span>
 	 * @return <span class="en-US">Data source instance object</span>
 	 * <span class="zh-CN">数据源实例对象</span>
-	 * @throws NamingException <span class="en-US">If an error occurs while reading or writing environment variables</span>
-	 *                         <span class="zh-CN">如果读取或写入环境变量时出错</span>
 	 */
-	public static BrainDataSource getInstance(final String jndiName, final Hashtable<?, ?> environment)
-			throws NamingException {
-		if (StringUtils.isEmpty(jndiName)) {
-			return null;
-		}
-		return (BrainDataSource) new InitialContext(environment).lookup("java:comp/env/" + jndiName);
+	public static BrainDataSource getInstance() {
+		return DATA_SOURCE;
 	}
 }

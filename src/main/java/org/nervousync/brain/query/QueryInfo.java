@@ -42,8 +42,8 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 28, 2020 11:46:08 $
  */
-@XmlType(name = "query_info", namespace = "https://nervousync.org/schemas/query")
-@XmlRootElement(name = "query_info", namespace = "https://nervousync.org/schemas/query")
+@XmlType(name = "query_info", namespace = "https://nervousync.org/schemas/database")
+@XmlRootElement(name = "query_info", namespace = "https://nervousync.org/schemas/database")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class QueryInfo extends BeanObject {
 
@@ -54,27 +54,22 @@ public final class QueryInfo extends BeanObject {
 	private static final long serialVersionUID = 549973159743148887L;
 
 	/**
-	 * <span class="en-US">Query name</span>
-	 * <span class="zh-CN">查询名称</span>
-	 */
-	@XmlElement(name = "identify_name")
-	private String identifyName = Globals.DEFAULT_VALUE_STRING;
-	/**
-	 * <span class="en-US">Data source name</span>
-	 * <span class="zh-CN">数据源名称</span>
-	 */
-	private String schemaName;
-	/**
 	 * <span class="en-US">Data table name</span>
 	 * <span class="zh-CN">数据表名</span>
 	 */
 	@XmlElement(name = "table_name")
 	private String tableName;
 	/**
+	 * <span class="en-US">Data table alias name</span>
+	 * <span class="zh-CN">数据表别名</span>
+	 */
+	@XmlElement(name = "alias_name")
+	private String aliasName;
+	/**
 	 * <span class="en-US">Related query information list</span>
 	 * <span class="zh-CN">关联查询信息列表</span>
 	 */
-	@XmlElement(name = "query_join", namespace = "https://nervousync.org/schemas/query")
+	@XmlElement(name = "query_join")
 	@XmlElementWrapper(name = "join_list")
 	private List<QueryJoin> queryJoins;
 	/**
@@ -82,9 +77,9 @@ public final class QueryInfo extends BeanObject {
 	 * <span class="zh-CN">查询项目实例对象列表</span>
 	 */
 	@XmlElements({
-			@XmlElement(name = "column_item", type = ColumnItem.class, namespace = "https://nervousync.org/schemas/query"),
-			@XmlElement(name = "function_item", type = FunctionItem.class, namespace = "https://nervousync.org/schemas/query"),
-			@XmlElement(name = "query_item", type = QueryItem.class, namespace = "https://nervousync.org/schemas/query")
+			@XmlElement(name = "column_item", type = ColumnItem.class),
+			@XmlElement(name = "function_item", type = FunctionItem.class),
+			@XmlElement(name = "query_item", type = QueryItem.class)
 	})
 	@XmlElementWrapper(name = "item_list")
 	private List<AbstractItem> itemList;
@@ -93,8 +88,8 @@ public final class QueryInfo extends BeanObject {
 	 * <span class="zh-CN">查询条件实例对象列表</span>
 	 */
 	@XmlElements({
-			@XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/query"),
-			@XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/query")
+			@XmlElement(name = "column_condition", type = ColumnCondition.class),
+			@XmlElement(name = "group_condition", type = GroupCondition.class)
 	})
 	@XmlElementWrapper(name = "condition_list")
 	private List<Condition> conditionList;
@@ -117,8 +112,8 @@ public final class QueryInfo extends BeanObject {
 	 * <span class="zh-CN">分组筛选条件实例对象列表</span>
 	 */
 	@XmlElements({
-			@XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/query"),
-			@XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/query")
+			@XmlElement(name = "column_condition", type = ColumnCondition.class),
+			@XmlElement(name = "group_condition", type = GroupCondition.class)
 	})
 	@XmlElementWrapper(name = "having_list")
 	private List<Condition> havingList;
@@ -152,50 +147,6 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for query name</h3>
-	 * <h3 class="zh-CN">查询名称的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Query name</span>
-	 * <span class="zh-CN">查询名称</span>
-	 */
-	public String getIdentifyName() {
-		return this.identifyName;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for query name</h3>
-	 * <h3 class="zh-CN">查询名称的Setter方法</h3>
-	 *
-	 * @param identifyName <span class="en-US">Query name</span>
-	 *                     <span class="zh-CN">查询名称</span>
-	 */
-	public void setIdentifyName(final String identifyName) {
-		this.identifyName = identifyName;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for data source name</h3>
-	 * <h3 class="zh-CN">数据源名称的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Data source name</span>
-	 * <span class="zh-CN">数据源名称</span>
-	 */
-	public String getSchemaName() {
-		return this.schemaName;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for data source name</h3>
-	 * <h3 class="zh-CN">数据源名称的Setter方法</h3>
-	 *
-	 * @param schemaName <span class="en-US">Data source name</span>
-	 *                   <span class="zh-CN">数据源名称</span>
-	 */
-	public void setSchemaName(final String schemaName) {
-		this.schemaName = schemaName;
-	}
-
-	/**
 	 * <h3 class="en-US">Getter method for data table name</h3>
 	 * <h3 class="zh-CN">数据表名的Getter方法</h3>
 	 *
@@ -215,6 +166,28 @@ public final class QueryInfo extends BeanObject {
 	 */
 	public void setTableName(final String tableName) {
 		this.tableName = tableName;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for data table alias name</h3>
+	 * <h3 class="zh-CN">数据表别名的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Data table alias name</span>
+	 * <span class="zh-CN">数据表别名</span>
+	 */
+	public String getAliasName() {
+		return this.aliasName;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for data table alias name</h3>
+	 * <h3 class="zh-CN">数据表别名的Setter方法</h3>
+	 *
+	 * @param aliasName <span class="en-US">Data table alias name</span>
+	 *                  <span class="zh-CN">数据表别名</span>
+	 */
+	public void setAliasName(final String aliasName) {
+		this.aliasName = aliasName;
 	}
 
 	/**

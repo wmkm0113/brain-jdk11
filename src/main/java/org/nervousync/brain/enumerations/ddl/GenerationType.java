@@ -62,5 +62,20 @@ public enum GenerationType {
      * <span class="en-US">Current timestamp</span>
      * <span class="zh-CN">当前时间戳</span>
      */
-    CURRENT_TIMESTAMP
+    CURRENT_TIMESTAMP,
+    /**
+     * <span class="en-US">Write the current date every time it is updated</span>
+     * <span class="zh-CN">每次更新时写入当前日期</span>
+     */
+    UPDATE_DATE,
+    /**
+     * <span class="en-US">Write the current time every time it is updated</span>
+     * <span class="zh-CN">每次更新时写入当前时间</span>
+     */
+    UPDATE_TIME,
+    /**
+     * <span class="en-US">Write the current timestamp every time it is updated</span>
+     * <span class="zh-CN">每次更新时写入当前时间戳</span>
+     */
+    UPDATE_TIMESTAMP
 }

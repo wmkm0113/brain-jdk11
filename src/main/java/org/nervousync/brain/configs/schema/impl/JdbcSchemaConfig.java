@@ -27,8 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <h2 class="en-US">Relational data source configuration information</h2>
- * <h2 class="zh-CN">关系型数据源配置信息</h2>
+ * <h2 class="en-US">JDBC data source configuration information</h2>
+ * <h2 class="zh-CN">JDBC数据源配置信息</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision : 1.0.0 $ $Date: Jul 12, 2020 16:42:35 $
@@ -70,8 +70,8 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	@XmlElement(name = "retry_count")
 	private int retryCount = BrainCommons.DEFAULT_RETRY_COUNT;
 	/**
-	 * <span class="en-US">Retry count if obtains connection has error</span>
-	 * <span class="zh-CN">获取连接的重试次数</span>
+	 * <span class="en-US">Get the connection retry interval (unit: milliseconds)</span>
+	 * <span class="zh-CN">获取连接的重试间隔时间（单位：毫秒）</span>
 	 */
 	@XmlElement(name = "retry_period")
 	private long retryPeriod = BrainCommons.DEFAULT_RETRY_PERIOD;
@@ -79,16 +79,19 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	 * <span class="en-US">Maximum size of prepared statement</span>
 	 * <span class="zh-CN">查询分析器的最大缓存结果</span>
 	 */
+	@XmlElement(name = "cache_limit_size")
 	private int cachedLimitSize = Globals.DEFAULT_VALUE_INT;
 	/**
 	 * <span class="en-US">Check connection validate when obtains database connection</span>
 	 * <span class="zh-CN">在获取连接时检查连接是否有效</span>
 	 */
+	@XmlElement(name = "test_on_borrow")
 	private boolean testOnBorrow = Boolean.FALSE;
 	/**
 	 * <span class="en-US">Check connection validate when return database connection</span>
 	 * <span class="zh-CN">在归还连接时检查连接是否有效</span>
 	 */
+	@XmlElement(name = "test_on_return")
 	private boolean testOnReturn = Boolean.FALSE;
 
 	/**

@@ -17,13 +17,15 @@
 
 package org.nervousync.brain.dialects.distribute;
 
-import org.nervousync.brain.configs.auth.Authentication;
-import org.nervousync.brain.configs.secure.TrustStore;
-import org.nervousync.brain.configs.server.ServerInfo;
+import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.dialects.core.BaseDialect;
 import org.nervousync.brain.exceptions.dialects.DialectException;
+import org.nervousync.brain.query.param.AbstractParameter;
+import org.nervousync.commons.Globals;
 
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <h2 class="en-US">Distribute database dialect abstract class</h2>
@@ -45,31 +47,22 @@ public abstract class DistributeDialect extends BaseDialect {
 		super();
 	}
 
+	@Override
+	protected String parameterValue(final Map<String, String> aliasMap, final AbstractParameter<?> abstractParameter,
+	                                final List<Object> values) throws SQLException {
+		return Globals.DEFAULT_VALUE_STRING;
+	}
+
 	/**
 	 * <h3 class="en-US">Generate database operate client</h3>
 	 * <h3 class="zh-CN">生成数据库操作客户端</h3>
 	 *
-	 * @param serverList      <span class="en-US">Database server info list</span>
-	 *                        <span class="zh-CN">数据库从服务器列表</span>
-	 * @param authentication  <span class="en-US">Identity authentication configuration information</span>
-	 *                        <span class="zh-CN">身份认证配置信息</span>
-	 * @param trustStore      <span class="en-US">Trust certificate store configuration information</span>
-	 *                        <span class="zh-CN">信任证书库配置信息</span>
-	 * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
-	 *                        <span class="zh-CN">慢查询的临界时间（单位：毫秒）</span>
-	 * @param useSsl          <span class="en-US">Using SSL when connect to server</span>
-	 *                        <span class="zh-CN">使用SSL连接</span>
-	 * @param validateTimeout <span class="en-US">Timeout value of connection validate</span>
-	 *                        <span class="zh-CN">连接检查超时时间</span>
-	 * @param connectTimeout  <span class="en-US">Timeout value of create connection</span>
-	 *                        <span class="zh-CN">建立连接超时时间</span>
+	 * @param schemaConfig <span class="en-US">Distribute data source configure information</span>
+	 *                     <span class="zh-CN">分布式数据源配置信息</span>
 	 * @return <span class="en-US">Generated database operate client</span>
 	 * <span class="zh-CN">生成的数据库操作客户端</span>
 	 * @throws Exception <span class="en-US">An error occurred during initialization</span>
 	 *                   <span class="zh-CN">初始化过程中出错</span>
 	 */
-	public abstract DistributeClient newClient(final List<ServerInfo> serverList, final Authentication authentication,
-	                                           final TrustStore trustStore, final long lowQueryTimeout,
-	                                           final boolean useSsl, final int validateTimeout,
-	                                           final int connectTimeout) throws Exception;
+	public abstract DistributeClient newClient(final DistributeSchemaConfig schemaConfig) throws Exception;
 }

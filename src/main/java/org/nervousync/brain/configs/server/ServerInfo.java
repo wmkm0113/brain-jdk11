@@ -42,6 +42,12 @@ public final class ServerInfo extends BeanObject {
 	private static final long serialVersionUID = -5393915530015766873L;
 
 	/**
+	 * <span class="en-US">Server name</span>
+	 * <span class="zh-CN">服务器名称</span>
+	 */
+	@XmlElement(name = "server_name")
+	private String serverName = Globals.DEFAULT_VALUE_STRING;
+	/**
 	 * <span class="en-US">Server address</span>
 	 * <span class="zh-CN">服务器地址</span>
 	 */
@@ -65,6 +71,28 @@ public final class ServerInfo extends BeanObject {
 	 * <h3 class="zh-CN">服务器配置信息的构造方法</h3>
 	 */
 	public ServerInfo() {
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for server name</h3>
+	 * <h3 class="zh-CN">服务器名称的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Server name</span>
+	 * <span class="zh-CN">服务器名称</span>
+	 */
+	public String getServerName() {
+		return this.serverName;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for server name</h3>
+	 * <h3 class="zh-CN">服务器名称的Setter方法</h3>
+	 *
+	 * @param serverName <span class="en-US">Server name</span>
+	 *                   <span class="zh-CN">服务器名称</span>
+	 */
+	public void setServerName(final String serverName) {
+		this.serverName = serverName;
 	}
 
 	/**

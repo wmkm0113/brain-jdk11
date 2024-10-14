@@ -22,13 +22,13 @@ import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.ShardingDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.enumerations.sharding.ShardingType;
-import org.nervousync.brain.exceptions.defines.TableDefineException;
+import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.sharding.Calculator;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.ObjectUtils;
 import org.nervousync.utils.StringUtils;
 
-import java.io.Serializable;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
 
@@ -62,27 +62,40 @@ public final class ShardingConfig {
 	 *                    <span class="zh-CN">数据库分片配置信息</span>
 	 * @param table       <span class="en-US">Data table sharding configuration information</span>
 	 *                    <span class="zh-CN">数据表分片配置信息</span>
-	 * @throws TableDefineException <span class="en-US">If not found sharding column</span>
+	 * @throws SQLException <span class="en-US">If not found sharding column</span>
 	 *                              <span class="zh-CN">如果分片数据列未找到</span>
 	 */
 	public ShardingConfig(@Nonnull final TableDefine tableDefine, final ShardingDefine<?> database,
-	                      final ShardingDefine<?> table) throws TableDefineException {
+	                      final ShardingDefine<?> table) throws SQLException {
 		if (database == null) {
 			this.shardingDatabase = null;
 		} else {
 			this.shardingDatabase = Optional.ofNullable(tableDefine.column(database.getColumnName()))
 					.map(columnDefine -> new ShardingDetails<>(database, columnDefine))
-					.orElseThrow(() -> new TableDefineException(0x00DB00000002L,
-							tableDefine.getTableName(), database.getColumnName()));
+					.orElseThrow(() ->
+							new MultilingualSQLException(0x00DB00000002L,
+									tableDefine.getTableName(), database.getColumnName()));
 		}
 		if (table == null) {
 			this.shardingTable = null;
 		} else {
 			this.shardingTable = Optional.ofNullable(tableDefine.column(table.getColumnName()))
 					.map(columnDefine -> new ShardingDetails<>(table, columnDefine))
-					.orElseThrow(() -> new TableDefineException(0x00DB00000002L,
-							tableDefine.getTableName(), table.getColumnName()));
+					.orElseThrow(() ->
+							new MultilingualSQLException(0x00DB00000002L,
+									tableDefine.getTableName(), table.getColumnName()));
 		}
+	}
+
+	/**
+	 * <h3 class="en-US">Obtain sharding template</h3>
+	 * <h3 class="zh-CN">获取分片值模板</h3>
+	 *
+	 * @return <span class="en-US">Sharding template</span>
+	 * <span class="zh-CN">分片值模板</span>
+	 */
+	public String shardingTemplate() {
+		return (this.shardingTable == null) ? Globals.DEFAULT_VALUE_STRING : this.shardingTable.shardingTemplate;
 	}
 
 	/**
@@ -97,7 +110,7 @@ public final class ShardingConfig {
 	 * <span class="zh-CN">分片计算结果值</span>
 	 */
 	public String shardingKey(@Nonnull final ShardingType shardingType,
-	                          @Nonnull final Map<String, Serializable> parameterMap) {
+	                          @Nonnull final Map<String, Object> parameterMap) {
 		switch (shardingType) {
 			case DATABASE:
 				return (this.shardingDatabase == null)
@@ -198,7 +211,7 @@ public final class ShardingConfig {
 		 * @return <span class="en-US">Calculated sharding key result</span>
 		 * <span class="zh-CN">分片计算结果值</span>
 		 */
-		String shardingKey(@Nonnull final Map<String, Serializable> parameterMap) {
+		String shardingKey(@Nonnull final Map<String, Object> parameterMap) {
 			if (this.calculator == null) {
 				return this.defaultValue;
 			}

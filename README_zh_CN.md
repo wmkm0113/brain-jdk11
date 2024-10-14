@@ -302,14 +302,13 @@ Throws: Exception if an error occurred during execution
 
 参数信息：
 
-|     参数名     |                        数据类型                        |     备注     |
-|:-----------:|:--------------------------------------------------:|:----------:|
-| schemaName  |                  java.lang.String                  |   数据源名称    |
-| tableDefine |      org.nervousync.brain.defines.TableDefine      |  数据表定义信息   |
-|   columns   |                  java.lang.String                  |   查询数据列名   |
-|  filterMap  |        java.util.Map<String, Serializable>         |  查询条件映射表   |
-|  forUpdate  |                      boolean                       | 检索结果用于更新记录 |
-| lockOption  | org.nervousync.brain.enumerations.query.LockOption |  查询记录锁定选项  |
+|     参数名     |                   数据类型                   |     备注     |
+|:-----------:|:----------------------------------------:|:----------:|
+| schemaName  |             java.lang.String             |   数据源名称    |
+| tableDefine | org.nervousync.brain.defines.TableDefine |  数据表定义信息   |
+|  filterMap  |   java.util.Map<String, Serializable>    |  查询条件映射表   |
+|  forUpdate  |                 boolean                  | 检索结果用于更新记录 |
+| lockOption  |     jakarta.persistence.LockModeType     |  查询记录锁定选项  |
 
 返回值：检索到记录的数据映射表
 
@@ -373,7 +372,7 @@ Throws: Exception if an error occurred during execution
 |  schemaName   |                       java.lang.String                        |   数据源名称    |
 |  tableDefine  |           org.nervousync.brain.defines.TableDefine            |  数据表定义信息   |
 | conditionList | jva.util.List<org.nervousync.brain.query.condition.Condition> | 查询条件实例对象列表 |
-|  lockOption   |      org.nervousync.brain.enumerations.query.LockOption       |  查询记录锁定选项  |
+|  lockOption   |               jakarta.persistence.LockModeType                |  查询记录锁定选项  |
 
 返回值：List of data mapping tables for queried records
 

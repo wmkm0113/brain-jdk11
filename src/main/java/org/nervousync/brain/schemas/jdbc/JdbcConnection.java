@@ -165,7 +165,7 @@ public class JdbcConnection implements Connection {
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
 		return this.obtainStatement(KeyType.SQL_ONLY, sql, Globals.DEFAULT_VALUE_INT,
 				Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT,
-				new int[0], new String[0]).unwrap(CallableStatement.class);
+				new int[0], new String[0]).unwrap(PreparedStatement.class);
 	}
 
 	@Override

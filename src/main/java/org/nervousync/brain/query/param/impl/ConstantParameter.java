@@ -18,6 +18,7 @@
 package org.nervousync.brain.query.param.impl;
 
 import jakarta.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.nervousync.brain.enumerations.query.ItemType;
 import org.nervousync.brain.query.param.AbstractParameter;
 
@@ -32,7 +33,7 @@ import java.io.Serializable;
  */
 @XmlType(name = "constant_parameter", namespace = "https://nervousync.org/schemas/database")
 @XmlRootElement(name = "constant_parameter", namespace = "https://nervousync.org/schemas/database")
-public final class ConstantParameter extends AbstractParameter<Serializable> {
+public final class ConstantParameter extends AbstractParameter<Object> {
 
     /**
      * <span class="en-US">Serial version UID</span>
@@ -44,7 +45,7 @@ public final class ConstantParameter extends AbstractParameter<Serializable> {
      * <span class="zh-CN">参数值</span>
      */
     @XmlElement(name = "constant_data")
-    private Serializable itemValue;
+    private Object itemValue;
 
     /**
      * <h3 class="en-US">Constructor method for constant value parameter information define</h3>
@@ -55,12 +56,12 @@ public final class ConstantParameter extends AbstractParameter<Serializable> {
     }
 
     @Override
-    public Serializable getItemValue() {
+    public Object getItemValue() {
         return this.itemValue;
     }
 
     @Override
-    public void setItemValue(final Serializable itemValue) {
+    public void setItemValue(final Object itemValue) {
         this.itemValue = itemValue;
     }
 }

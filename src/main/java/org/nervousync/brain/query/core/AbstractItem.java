@@ -19,6 +19,7 @@ package org.nervousync.brain.query.core;
 
 import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlSeeAlso;
 import jakarta.xml.bind.annotation.XmlTransient;
 import org.nervousync.brain.enumerations.query.ItemType;
 import org.nervousync.brain.query.data.QueryData;
@@ -28,6 +29,7 @@ import org.nervousync.brain.query.item.QueryItem;
 import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.ClassUtils;
+import org.nervousync.utils.StringUtils;
 
 import java.sql.SQLException;
 import java.sql.Wrapper;
@@ -40,6 +42,7 @@ import java.util.Arrays;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:30:54 $
  */
+@XmlSeeAlso({ColumnItem.class, FunctionItem.class, QueryItem.class})
 @XmlTransient
 public abstract class AbstractItem extends SortedItem implements Wrapper {
 
@@ -71,6 +74,21 @@ public abstract class AbstractItem extends SortedItem implements Wrapper {
 	 */
 	protected AbstractItem(final ItemType itemType) {
 		this.itemType = itemType;
+	}
+
+	/**
+	 * <h3 class="en-US">Static method for generate query column information instance</h3>
+	 * <h3 class="zh-CN">静态方法用于生成数据列查询对象实例</h3>
+	 *
+	 * @param tableName  <span class="en-US">Data table name</span>
+	 *                   <span class="zh-CN">数据表名</span>
+	 * @param columnName <span class="en-US">Data column name</span>
+	 *                   <span class="zh-CN">数据列名</span>
+	 * @return <span class="en-US">Generated object instance</span>
+	 * <span class="zh-CN">生成的对象实例</span>
+	 */
+	public static ColumnItem column(@Nonnull final String tableName, final String columnName) {
+		return column(tableName, columnName, Globals.DEFAULT_VALUE_STRING);
 	}
 
 	/**
@@ -130,9 +148,9 @@ public abstract class AbstractItem extends SortedItem implements Wrapper {
 	public static ColumnItem column(@Nonnull final String tableName, final String columnName,
 	                                final boolean distinct, final String aliasName, final int sortCode) {
 		ColumnItem queryColumn = new ColumnItem();
-		queryColumn.setTableName(tableName);
-		queryColumn.setColumnName(columnName);
-		queryColumn.setAliasName(aliasName);
+		queryColumn.setTableName(tableName.trim());
+		queryColumn.setColumnName(columnName.trim());
+		queryColumn.setAliasName(StringUtils.isEmpty(aliasName) ? Globals.DEFAULT_VALUE_STRING : aliasName.trim());
 		queryColumn.setDistinct(distinct);
 		queryColumn.setSortCode(sortCode);
 		return queryColumn;
@@ -174,8 +192,8 @@ public abstract class AbstractItem extends SortedItem implements Wrapper {
 	public static FunctionItem function(final String aliasName, final int sortCode, final String sqlFunction,
 	                                    final AbstractParameter<?>... functionParams) {
 		FunctionItem queryFunction = new FunctionItem();
-		queryFunction.setAliasName(aliasName);
-		queryFunction.setSqlFunction(sqlFunction);
+		queryFunction.setAliasName(StringUtils.isEmpty(aliasName) ? Globals.DEFAULT_VALUE_STRING : aliasName.trim());
+		queryFunction.setFunctionName(sqlFunction.trim());
 		queryFunction.setSortCode(sortCode);
 		queryFunction.setFunctionParams(Arrays.asList(functionParams));
 		return queryFunction;
@@ -225,7 +243,7 @@ public abstract class AbstractItem extends SortedItem implements Wrapper {
 	public static QueryItem query(final String aliasName, final int sortCode, final QueryData queryData) {
 		QueryItem queryItem = new QueryItem();
 
-		queryItem.setAliasName(aliasName);
+		queryItem.setAliasName(StringUtils.isEmpty(aliasName) ? Globals.DEFAULT_VALUE_STRING : aliasName.trim());
 		queryItem.setQueryData(queryData);
 		queryItem.setSortCode(sortCode);
 

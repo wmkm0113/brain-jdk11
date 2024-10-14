@@ -17,25 +17,26 @@
 
 package org.nervousync.brain.schemas.distribute;
 
+import jakarta.persistence.LockModeType;
 import org.jetbrains.annotations.NotNull;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.server.ServerInfo;
+import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.DialectFactory;
 import org.nervousync.brain.dialects.distribute.DistributeClient;
 import org.nervousync.brain.dialects.distribute.DistributeDialect;
-import org.nervousync.brain.dialects.distribute.Operator;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
-import org.nervousync.brain.enumerations.query.LockOption;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.schemas.BaseSchema;
+import org.nervousync.utils.StringUtils;
 
 import java.io.IOException;
-import java.io.Serializable;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -46,7 +47,7 @@ import java.util.*;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:38:52 $
  */
-public final class DistributeSchema extends BaseSchema implements DistributeSchemaMBean {
+public final class DistributeSchema extends BaseSchema<DistributeDialect> implements DistributeSchemaMBean {
 
 	/**
 	 * <span class="en-US">Using SSL when connect to server</span>
@@ -68,11 +69,6 @@ public final class DistributeSchema extends BaseSchema implements DistributeSche
 	 * <span class="zh-CN">分布式数据库客户端实现类</span>
 	 */
 	private final DistributeClient distributeClient;
-	/**
-	 * <span class="en-US">The distributed database client operator instance object used by the current thread</span>
-	 * <span class="zh-CN">当前线程使用的分布式数据库客户端操作器实例对象</span>
-	 */
-	private final ThreadLocal<Operator> operatorThreadLocal = new ThreadLocal<>();
 
 	/**
 	 * <h3 class="en-US">Constructor method for distribute data source implementation class</h3>
@@ -84,7 +80,7 @@ public final class DistributeSchema extends BaseSchema implements DistributeSche
 	 *                      <span class="zh-CN">数据库服务器信息未找到或分片配置出错</span>
 	 */
 	public DistributeSchema(@NotNull final DistributeSchemaConfig schemaConfig) throws Exception {
-		super(schemaConfig);
+		super(schemaConfig, DialectFactory.retrieve(schemaConfig.getDialectName()).unwrap(DistributeDialect.class));
 		this.useSsl = schemaConfig.isUseSsl();
 		List<ServerInfo> serverList =
 				(schemaConfig.getServerList() == null) ? new ArrayList<>() : schemaConfig.getServerList();
@@ -94,10 +90,7 @@ public final class DistributeSchema extends BaseSchema implements DistributeSche
 		}
 		this.serverList = serverList;
 		this.serverInfo = serverList.get(0);
-		this.distributeClient = DialectFactory.retrieve(schemaConfig.getDialectName())
-				.unwrap(DistributeDialect.class)
-				.newClient(schemaConfig.getServerList(), this.authentication, this.trustStore,
-						this.getLowQueryTimeout(), this.useSsl, this.getValidateTimeout(), this.getConnectTimeout());
+		this.distributeClient = this.dialect.newClient(schemaConfig);
 		this.initSharding(this.shardingDefault);
 	}
 
@@ -107,100 +100,121 @@ public final class DistributeSchema extends BaseSchema implements DistributeSche
 
 	@Override
 	public void beginTransactional() throws Exception {
-		if (this.operatorThreadLocal.get() == null) {
-			Operator operator = this.distributeClient.newOperator();
-			if (this.txConfig.get() != null) {
-				operator.beginTransactional(this.txConfig.get());
-			}
-			this.operatorThreadLocal.set(operator);
+		if (this.txConfig.get() != null) {
+			this.distributeClient.beginTransactional(this.txConfig.get());
 		}
 	}
 
 	@Override
-	public void rollback() throws Exception {
-		if (this.txConfig.get() != null) {
-			this.operatorThreadLocal.get().rollback(this.txConfig.get());
+	public void rollback(final Exception e) throws Exception {
+		TransactionalConfig transactionalConfig = this.txConfig.get();
+		if (transactionalConfig != null && transactionalConfig.getIsolation() != Connection.TRANSACTION_NONE
+				&& transactionalConfig.rollback(e)) {
+			this.distributeClient.rollback();
 		}
 	}
 
 	@Override
 	public void commit() throws Exception {
 		if (this.txConfig.get() != null) {
-			this.operatorThreadLocal.get().commit(this.txConfig.get());
+			this.distributeClient.commit();
 		}
 	}
 
 	@Override
 	public void truncateTables() throws Exception {
-		this.operatorThreadLocal.get().truncateTables();
+		this.distributeClient.truncateTables();
 	}
 
 	@Override
 	public void truncateTable(@NotNull final TableDefine tableDefine) throws Exception {
-		this.operatorThreadLocal.get().truncateTable(tableDefine);
+		this.distributeClient.truncateTable(tableDefine);
 	}
 
 	@Override
 	public void dropTables(final DropOption dropOption) throws Exception {
-		this.operatorThreadLocal.get().dropTables(dropOption);
+		this.distributeClient.dropTables(dropOption);
 	}
 
 	@Override
 	public void dropTable(@NotNull final TableDefine tableDefine, @NotNull final DropOption dropOption)
 			throws Exception {
-		this.operatorThreadLocal.get().dropTable(tableDefine, dropOption);
+		this.distributeClient.dropTable(tableDefine, dropOption);
 	}
 
 	@Override
-	public Map<String, Serializable> insert(@NotNull final TableDefine tableDefine,
-	                                        @NotNull final Map<String, Serializable> dataMap) throws Exception {
-		return this.operatorThreadLocal.get().insert(tableDefine, dataMap);
-	}
-
-	@Override
-	public Map<String, String> retrieve(@NotNull final TableDefine tableDefine, final String columns,
-	                                    @NotNull final Map<String, Serializable> filterMap,
-	                                    final boolean forUpdate, final LockOption lockOption) throws Exception {
-		return this.operatorThreadLocal.get().retrieve(tableDefine, columns, filterMap, forUpdate, lockOption);
-	}
-
-	@Override
-	public int update(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Serializable> dataMap,
-	                  @NotNull final Map<String, Serializable> filterMap) throws Exception {
-		return this.operatorThreadLocal.get().update(tableDefine, dataMap, filterMap);
-	}
-
-	@Override
-	public int delete(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Serializable> filterMap)
+	public boolean lockRecord(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> filterMap)
 			throws Exception {
-		return this.operatorThreadLocal.get().delete(tableDefine, filterMap);
+		return this.distributeClient.lockRecord(this.shardingDatabase(tableDefine.getTableName(), filterMap),
+				tableDefine, filterMap);
 	}
 
 	@Override
-	public List<Map<String, String>> query(@NotNull final QueryInfo queryInfo) throws Exception {
-		return this.operatorThreadLocal.get().query(queryInfo);
-	}
-
-	@Override
-	public List<Map<String, String>> queryForUpdate(@NotNull final TableDefine tableDefine,
-	                                                final List<Condition> conditionList, final LockOption lockOption)
+	public Map<String, Object> insert(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> dataMap)
 			throws Exception {
-		return this.operatorThreadLocal.get().queryForUpdate(tableDefine, conditionList, lockOption);
+		return this.distributeClient.insert(this.shardingDatabase(tableDefine.getTableName(), dataMap),
+				tableDefine, dataMap);
 	}
 
 	@Override
-	protected void initSharding(final String shardingKey) throws SQLException {
+	public Map<String, Object> retrieve(@NotNull final TableDefine tableDefine, final String columns,
+	                                    @NotNull final Map<String, Object> filterMap,
+	                                    final boolean forUpdate) throws Exception {
+		return this.distributeClient.retrieve(this.shardingDatabase(tableDefine.getTableName(), filterMap), tableDefine,
+				StringUtils.isEmpty(columns) ? super.queryColumns(tableDefine, forUpdate) : columns,
+				filterMap, forUpdate);
+	}
+
+	@Override
+	public int update(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> dataMap,
+	                  @NotNull final Map<String, Object> filterMap) throws Exception {
+		return this.distributeClient.update(this.shardingDatabase(tableDefine.getTableName(), filterMap),
+				tableDefine, dataMap, filterMap);
+	}
+
+	@Override
+	public int delete(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> filterMap)
+			throws Exception {
+		return this.distributeClient.delete(this.shardingDatabase(tableDefine.getTableName(), filterMap),
+				tableDefine, filterMap);
+	}
+
+	@Override
+	public List<Map<String, Object>> query(@NotNull final TableDefine tableDefine,
+	                                       @NotNull final QueryInfo queryInfo) throws Exception {
+		return this.distributeClient.query(this.shardingDatabase(queryInfo.getTableName(), queryInfo.getConditionList()),
+				tableDefine, queryInfo);
+	}
+
+	@Override
+	public List<Map<String, Object>> queryForUpdate(@NotNull final TableDefine tableDefine,
+	                                                final List<Condition> conditionList, final LockModeType lockOption)
+			throws Exception {
+		return this.distributeClient.queryForUpdate(this.shardingDatabase(tableDefine.getTableName(), conditionList),
+				tableDefine, conditionList, lockOption);
+	}
+
+	@Override
+	public Long queryTotal(@NotNull final TableDefine tableDefine, final QueryInfo queryInfo) throws Exception {
+		return this.distributeClient.queryTotal(
+				this.shardingDatabase(tableDefine.getTableName(), queryInfo.getConditionList()),
+				tableDefine, queryInfo);
+	}
+
+	@Override
+	protected void initSharding(final String shardingKey) throws Exception {
 		this.distributeClient.initSharding(shardingKey);
 	}
 
 	@Override
-	protected void initTable(@NotNull final DDLType ddlType, @NotNull final TableDefine tableDefine, final String shardingDatabase) throws Exception {
-		this.operatorThreadLocal.get().initTable(ddlType, tableDefine, shardingDatabase);
+	protected void initTable(@NotNull final DDLType ddlType, @NotNull final TableDefine tableDefine,
+	                         final String shardingDatabase) throws Exception {
+		this.distributeClient.initTable(ddlType, tableDefine, shardingDatabase);
 	}
 
 	@Override
-	protected void clearTransactional() {
-		this.operatorThreadLocal.remove();
+	protected void clearTransactional() throws Exception {
+		this.distributeClient.clearTransactional();
 	}
 
 	@Override

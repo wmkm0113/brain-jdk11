@@ -20,6 +20,7 @@ package org.nervousync.brain.configs.schema.impl;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.server.ServerInfo;
+import org.nervousync.commons.Globals;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,13 +55,25 @@ public final class DistributeSchemaConfig extends SchemaConfig {
 	 * <span class="zh-CN">数据库名称</span>
 	 */
 	@XmlElement(name = "database_name")
-	private String databaseName;
+	private String databaseName = Globals.DEFAULT_VALUE_STRING;
 	/**
 	 * <span class="en-US">Using SSL when connect to server</span>
 	 * <span class="zh-CN">使用SSL连接</span>
 	 */
 	@XmlElement(name = "use_ssl")
-	private boolean useSsl;
+	private boolean useSsl = Boolean.FALSE;
+	/**
+	 * <span class="en-US">Request timeout value</span>
+	 * <span class="zh-CN">请求超时时间</span>
+	 */
+	@XmlElement(name = "request_timeout")
+	private int requestTimeout = Globals.DEFAULT_VALUE_INT;
+	/**
+	 * <span class="en-US">Maximum size of prepared statement</span>
+	 * <span class="zh-CN">查询分析器的最大缓存结果</span>
+	 */
+	@XmlElement(name = "cache_limit_size")
+	private int cachedLimitSize = Globals.DEFAULT_VALUE_INT;
 
 	/**
 	 * <h3 class="en-US">Constructor method for distribute data source configuration information</h3>
@@ -133,5 +146,49 @@ public final class DistributeSchemaConfig extends SchemaConfig {
 	 */
 	public void setUseSsl(final boolean useSsl) {
 		this.useSsl = useSsl;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for request timeout value</h3>
+	 * <h3 class="zh-CN">请求超时时间的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Request timeout value</span>
+	 * <span class="zh-CN">请求超时时间</span>
+	 */
+	public int getRequestTimeout() {
+		return this.requestTimeout;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for request timeout value</h3>
+	 * <h3 class="zh-CN">请求超时时间的Setter方法</h3>
+	 *
+	 * @param requestTimeout <span class="en-US">Request timeout value</span>
+	 *                       <span class="zh-CN">请求超时时间</span>
+	 */
+	public void setRequestTimeout(final int requestTimeout) {
+		this.requestTimeout = requestTimeout;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for maximum size of prepared statement</h3>
+	 * <h3 class="zh-CN">查询分析器的最大缓存结果的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Maximum size of prepared statement</span>
+	 * <span class="zh-CN">查询分析器的最大缓存结果</span>
+	 */
+	public int getCachedLimitSize() {
+		return this.cachedLimitSize;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for maximum size of prepared statement</h3>
+	 * <h3 class="zh-CN">查询分析器的最大缓存结果的Setter方法</h3>
+	 *
+	 * @param cachedLimitSize <span class="en-US">Maximum size of prepared statement</span>
+	 *                        <span class="zh-CN">查询分析器的最大缓存结果</span>
+	 */
+	public void setCachedLimitSize(final int cachedLimitSize) {
+		this.cachedLimitSize = cachedLimitSize;
 	}
 }

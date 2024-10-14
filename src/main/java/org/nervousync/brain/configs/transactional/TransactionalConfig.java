@@ -16,9 +16,13 @@
  */
 package org.nervousync.brain.configs.transactional;
 
+import jakarta.annotation.Nonnull;
+import org.nervousync.utils.ClassUtils;
 import org.nervousync.utils.IDUtils;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 /**
  * <h2 class="en-US">Transactional configure information</h2>
@@ -52,7 +56,7 @@ public final class TransactionalConfig implements Serializable {
      * <span class="en-US">The rollback exception class of transactional</span>
      * <span class="zh-CN">事务的回滚异常</span>
      */
-    private final Class<?>[] rollBackForClasses;
+    private final Stream<Class<?>> rollBackForClasses;
 
     /**
      * <h3 class="en-US">Private constructor method for transactional configure information</h3>
@@ -69,7 +73,7 @@ public final class TransactionalConfig implements Serializable {
         this.transactionalCode = IDUtils.snowflake();
         this.timeout = timeout;
         this.isolation = isolation;
-        this.rollBackForClasses = rollBackForClasses;
+        this.rollBackForClasses = Arrays.stream(rollBackForClasses);
     }
 
     /**
@@ -130,10 +134,12 @@ public final class TransactionalConfig implements Serializable {
      * <h3 class="en-US">Getter method for the rollback exception class of transactional</h3>
      * <h3 class="zh-CN">事务的回滚异常的Getter方法</h3>
      *
+	 * @param e <span class="en-US">Cached execution information</span>
+	 *          <span class="zh-CN">捕获的异常信息</span>
      * @return <span class="en-US">The rollback exception class of transactional</span>
      * <span class="zh-CN">事务的回滚异常</span>
      */
-    public Class<?>[] getRollBackForClasses() {
-        return this.rollBackForClasses;
+    public boolean rollback(@Nonnull final Exception e) {
+        return this.rollBackForClasses.anyMatch(rollbackClass -> ClassUtils.isAssignable(e.getClass(), rollbackClass));
     }
 }

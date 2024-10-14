@@ -1,6 +1,6 @@
 {
   "groupId": "org.nervousync",
-  "bundle": "brain",
+  "bundle": "database",
   "errors": [
     {
       "code": "0x00DB00000001",
@@ -133,6 +133,38 @@
     {
       "code": "0x00DB00000033",
       "key": "Server_Exists"
+    },
+    {
+      "code": "0x00DB00000034",
+      "key": "No_Table_Found"
+    },
+    {
+      "code": "0x00DB00000035",
+      "key": "Generate_Remote_Client_Error"
+    },
+    {
+      "code": "0x00DB00000036",
+      "key": "Read_Configure_Error"
+    },
+    {
+      "code": "0x00DB00000037",
+      "key": "Configure_Type_Mismatch"
+    },
+    {
+      "code": "0x00DB00000038",
+      "key": "Record_Insert_Failed"
+    },
+    {
+      "code": "0x00DB00000039",
+      "key": "Record_Insert_Error"
+    },
+    {
+      "code": "0x00DB00000040",
+      "key": "Record_Update_Error"
+    },
+    {
+      "code": "0x00DB00000041",
+      "key": "Record_Delete_Error"
     }
   ],
   "languages": [
@@ -143,6 +175,10 @@
         {
           "key": "Stack_Message_Error",
           "content": "Error stack info:"
+        },
+        {
+          "key": "Register_Schema_Config_Error",
+          "content": "Register schema configure error! Configure information: {0}"
         },
         {
           "key": "Dialect_Not_Registered",
@@ -334,7 +370,7 @@
         },
         {
           "key": "Duplicate_Record_Found",
-          "content": "Duplicate records found at retrieve mode! "
+          "content": "Duplicate records found at retrieve mode! Table name: {0}, filter map: {1}"
         },
         {
           "key": "Create_Table_Cmd_Error",
@@ -379,6 +415,34 @@
         {
           "key": "Server_Exists",
           "content": "Current server info was exists! Server address: {0}, server port: {1}"
+        },
+        {
+          "key": "Read_Configure_Error",
+          "content": "Read configure information error! Configure file path: {0}, configure name: {1}"
+        },
+        {
+          "key": "Configure_Type_Mismatch",
+          "content": "Schema configure type mismatch! Schema name: {0}, target type: {1}, current type: {2}"
+        },
+        {
+          "key": "Record_Insert_Failed",
+          "content": "Insert record to database failed! Table name: {0}, data map: {1}"
+        },
+        {
+          "key": "Record_Insert_Error",
+          "content": "Exception occurred while inserting data! Table name: {0}, data map: {1}"
+        },
+        {
+          "key": "Record_Update_Error",
+          "content": "Exception occurred while updating data! Table name: {0}, data map: {1}, filter map: {2}"
+        },
+        {
+          "key": "Record_Delete_Error",
+          "content": "Exception occurred while deleting data! Table name: {0}, filter map: {1}"
+        },
+        {
+          "key": "Query_Cache_Key_Data",
+          "content": "Query information cache key data map: {0}"
         }
       ]
     },
@@ -389,6 +453,10 @@
         {
           "key": "Stack_Message_Error",
           "content": "错误堆栈信息："
+        },
+        {
+          "key": "Register_Schema_Config_Error",
+          "content": "注册数据源出错！数据源配置信息：{0}"
         },
         {
           "key": "Dialect_Not_Registered",
@@ -580,7 +648,7 @@
         },
         {
           "key": "Duplicate_Record_Found",
-          "content": "在唯一检索模式找到多条记录！"
+          "content": "在唯一检索模式找到多条记录！数据表名：{0}，过滤条件映射表：{1}"
         },
         {
           "key": "Create_Table_Cmd_Error",
@@ -625,6 +693,34 @@
         {
           "key": "Server_Exists",
           "content": "当前数据库服务器信息已存在！服务器地址：{0}，端口号：{1}"
+        },
+        {
+          "key": "Read_Configure_Error",
+          "content": "读取配置信息出错！配置信息文件地址：{0}，配置文件名：{1}"
+        },
+        {
+          "key": "Configure_Type_Mismatch",
+          "content": "数据源配置信息类型出错！数据源名称：{0}，目标类型：{1}，当前类型：{2}"
+        },
+        {
+          "key": "Record_Insert_Failed",
+          "content": "写入记录到数据库失败！数据表名：{0}，数据映射表：{1}"
+        },
+        {
+          "key": "Record_Insert_Error",
+          "content": "插入记录到数据库出错！数据表名：{0}，数据映射表：{1}"
+        },
+        {
+          "key": "Record_Update_Error",
+          "content": "更新记录到数据库出错！数据表名：{0}，数据映射表：{1}，过滤条件映射表：{2}"
+        },
+        {
+          "key": "Record_Delete_Error",
+          "content": "从数据库删除记录出错！数据表名：{0}，过滤条件映射表：{1}"
+        },
+        {
+          "key": "Query_Cache_Key_Data",
+          "content": "查询信息缓存识别信息映射表：{0}"
         }
       ]
     }

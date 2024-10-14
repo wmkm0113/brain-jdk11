@@ -21,6 +21,7 @@ import jakarta.xml.bind.annotation.*;
 import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.auth.Authentication;
+import org.nervousync.brain.configs.auth.impl.TokenAuthentication;
 import org.nervousync.brain.configs.auth.impl.TrustStoreAuthentication;
 import org.nervousync.brain.configs.auth.impl.UserAuthentication;
 import org.nervousync.brain.configs.auth.impl.X509Authentication;
@@ -64,7 +65,7 @@ public abstract class SchemaConfig extends BeanObject {
 	 * <span class="en-US">Data source dialect name</span>
 	 * <span class="zh-CN">数据源方言名称</span>
 	 */
-	@XmlElement(name = "default_source")
+	@XmlElement(name = "dialect_name")
 	private String dialectName;
 	/**
 	 * <span class="en-US">Trust certificate store configuration information</span>
@@ -79,7 +80,8 @@ public abstract class SchemaConfig extends BeanObject {
 	@XmlElementRefs({
 			@XmlElementRef(name = "user_authentication", type = UserAuthentication.class),
 			@XmlElementRef(name = "x509_authentication", type = X509Authentication.class),
-			@XmlElementRef(name = "trust_store_authentication", type = TrustStoreAuthentication.class)
+			@XmlElementRef(name = "trust_store_authentication", type = TrustStoreAuthentication.class),
+			@XmlElementRef(name = "token_authentication", type = TokenAuthentication.class)
 	})
 	private Authentication authentication;
 	/**
@@ -93,13 +95,13 @@ public abstract class SchemaConfig extends BeanObject {
 	 * <span class="zh-CN">连接检查超时时间（单位：秒）</span>
 	 */
 	@XmlElement(name = "validate_timeout")
-	private int validateTimeout;
+	private int validateTimeout = Globals.DEFAULT_VALUE_INT;
 	/**
 	 * <span class="en-US">Timeout value of create connection (Unit: seconds)</span>
 	 * <span class="zh-CN">建立连接超时时间（单位：秒）</span>
 	 */
 	@XmlElement(name = "connect_timeout")
-	private int connectTimeout;
+	private int connectTimeout = Globals.DEFAULT_VALUE_INT;
 	/**
 	 * <span class="en-US">Data source support sharding</span>
 	 * <span class="zh-CN">数据源是否支持分片</span>

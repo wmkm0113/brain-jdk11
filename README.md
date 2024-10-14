@@ -311,14 +311,13 @@ Invoke method named "retrieve" at singleton instance of BrainDataSource will ret
 
 Parameters:
 
-|    Name     |                     Data type                      |                  Notes                  |
-|:-----------:|:--------------------------------------------------:|:---------------------------------------:|
-| schemaName  |                  java.lang.String                  |            Data schema name             |
-| tableDefine |      org.nervousync.brain.defines.TableDefine      |        Table define information         |
-|   columns   |                  java.lang.String                  |           Query column names            |
-|  filterMap  |        java.util.Map<String, Serializable>         |         Retrieve filter mapping         |
-|  forUpdate  |                      boolean                       | Retrieve result using for update record |
-| lockOption  | org.nervousync.brain.enumerations.query.LockOption |        Query record lock option         |
+|    Name     |                Data type                 |                  Notes                  |
+|:-----------:|:----------------------------------------:|:---------------------------------------:|
+| schemaName  |             java.lang.String             |            Data schema name             |
+| tableDefine | org.nervousync.brain.defines.TableDefine |        Table define information         |
+|  filterMap  |   java.util.Map<String, Serializable>    |         Retrieve filter mapping         |
+|  forUpdate  |                 boolean                  | Retrieve result using for update record |
+| lockOption  |     jakarta.persistence.LockModeType     |        Query record lock option         |
 
 Returns: Data mapping table of retrieved record
 
@@ -383,7 +382,7 @@ Parameters:
 |  schemaName   |                       java.lang.String                        |       Data schema name        |
 |  tableDefine  |           org.nervousync.brain.defines.TableDefine            |   Table define information    |
 | conditionList | jva.util.List<org.nervousync.brain.query.condition.Condition> | Query condition instance list |
-|  lockOption   |      org.nervousync.brain.enumerations.query.LockOption       |   Query record lock option    |
+|  lockOption   |               jakarta.persistence.LockModeType                |   Query record lock option    |
 
 Returns: List of data mapping tables for queried records
 

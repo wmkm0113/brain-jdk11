@@ -29,8 +29,8 @@ import org.nervousync.utils.ObjectUtils;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Sep 14， 2020 17:15:28 $
  */
-@XmlType(name = "order_by", namespace = "https://nervousync.org/schemas/query")
-@XmlRootElement(name = "order_by", namespace = "https://nervousync.org/schemas/query")
+@XmlType(name = "order_by", namespace = "https://nervousync.org/schemas/database")
+@XmlRootElement(name = "order_by", namespace = "https://nervousync.org/schemas/database")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class OrderBy extends SortedItem {
 	/**
