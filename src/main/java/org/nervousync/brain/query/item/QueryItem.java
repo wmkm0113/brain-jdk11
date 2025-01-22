@@ -29,8 +29,8 @@ import org.nervousync.brain.query.data.QueryData;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:42:19 $
  */
-@XmlType(name = "query_item", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "query_item", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "query_item", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "query_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class QueryItem extends AbstractItem {
 
@@ -44,7 +44,7 @@ public final class QueryItem extends AbstractItem {
 	 * <span class="en-US">Sub-query information</span>
 	 * <span class="zh-CN">子查询信息</span>
 	 */
-	@XmlElement(name = "query_data", namespace = "https://nervousync.org/schemas/database")
+	@XmlElement(name = "query_data", namespace = "https://nervousync.org/schemas/brain")
 	private QueryData queryData;
 
 	/**

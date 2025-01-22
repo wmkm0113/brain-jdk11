@@ -19,6 +19,8 @@ package org.nervousync.brain.configs.builder;
 
 import org.nervousync.brain.configs.storage.StorageConfig;
 import org.nervousync.builder.AbstractBuilder;
+import org.nervousync.utils.DateTimeUtils;
+import org.nervousync.utils.ObjectUtils;
 
 /**
  * <h2 class="en-US">Implementation class of data import and export tool configuration information builder</h2>
@@ -34,6 +36,11 @@ public final class StorageConfigBuilder extends AbstractBuilder<StorageConfig> {
 	 * <span class="zh-CN">配置信息实例对象</span>
 	 */
 	private final StorageConfig storageConfig;
+	/**
+	 * <h2 class="en-US">Configure information modified flag</h2>
+	 * <h2 class="zh-CN">配置信息修改标记</h2>
+	 */
+	private boolean modified = Boolean.FALSE;
 
 	/**
 	 * <h3 class="en-US">Constructor method for implementation class of data import and export tool configuration information builder</h3>
@@ -44,7 +51,7 @@ public final class StorageConfigBuilder extends AbstractBuilder<StorageConfig> {
 	 * @param storageConfig <span class="en-US">Configure information instance object</span>
 	 *                      <span class="zh-CN">配置信息实例对象</span>
 	 */
-	StorageConfigBuilder(final ConfigureBuilder parentBuilder, final StorageConfig storageConfig) {
+	StorageConfigBuilder(final BrainConfigureBuilder parentBuilder, final StorageConfig storageConfig) {
 		super(parentBuilder);
 		this.storageConfig = storageConfig;
 	}
@@ -73,7 +80,10 @@ public final class StorageConfigBuilder extends AbstractBuilder<StorageConfig> {
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
 	public StorageConfigBuilder provider(final String providerName) {
-		this.storageConfig.setStorageProvider(providerName);
+		if (!ObjectUtils.nullSafeEquals(this.storageConfig.getStorageProvider(), providerName)) {
+			this.storageConfig.setStorageProvider(providerName);
+			this.modified = Boolean.TRUE;
+		}
 		return this;
 	}
 
@@ -89,13 +99,22 @@ public final class StorageConfigBuilder extends AbstractBuilder<StorageConfig> {
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
 	public StorageConfigBuilder config(final int threadLimit, final long expireTime) {
-		this.storageConfig.setThreadLimit(threadLimit);
-		this.storageConfig.setExpireTime(expireTime);
+		if (threadLimit > 0 && this.storageConfig.getThreadLimit() != threadLimit) {
+			this.storageConfig.setThreadLimit(threadLimit);
+			this.modified = Boolean.TRUE;
+		}
+		if (expireTime > 0 && this.storageConfig.getExpireTime() != expireTime) {
+			this.storageConfig.setExpireTime(expireTime);
+			this.modified = Boolean.TRUE;
+		}
 		return this;
 	}
 
 	@Override
 	public StorageConfig confirm() {
+		if (this.modified) {
+			this.storageConfig.setLastModified(DateTimeUtils.currentUTCTimeMillis());
+		}
 		return this.storageConfig;
 	}
 }

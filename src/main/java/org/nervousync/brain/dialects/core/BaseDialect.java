@@ -21,6 +21,7 @@ import org.nervousync.brain.annotations.dialect.DataType;
 import org.nervousync.brain.annotations.dialect.SchemaDialect;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.dialects.Dialect;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.dialects.DialectException;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
 import org.nervousync.brain.query.param.AbstractParameter;
@@ -52,6 +53,11 @@ public abstract class BaseDialect implements Dialect {
 	protected final LoggerUtils.Logger logger = LoggerUtils.getLogger(this.getClass());
 
 	/**
+	 * <span class="en-US">Data source dialect type enumeration value</span>
+	 * <span class="zh-CN">数据源方言类型枚举值</span>
+	 */
+	private final DialectType dialectType;
+	/**
 	 * <span class="en-US">Support join query</span>
 	 * <span class="zh-CN">支持关联查询</span>
 	 */
@@ -76,25 +82,33 @@ public abstract class BaseDialect implements Dialect {
 	 * <h3 class="en-US">Constructor method for Database dialect abstract class</h3>
 	 * <h3 class="zh-CN">数据库方言抽象类的构造方法</h3>
 	 *
-	 * @throws DialectException <span class="en-US">If the implementation class does not find the org. nervousync. brain. annotations. dialect.SchemaDialect annotation</span>
-	 *                          <span class="zh-CN">如果实现类未找到org. nervousync. brain. annotations. dialect.SchemaDialect注解</span>
+	 * @param dialectType <span class="en-US">Data source dialect type enumeration value</span>
+	 *                    <span class="zh-CN">数据源方言类型枚举值</span>
+	 * @throws DialectException <span class="en-US">If the implementation class does not find the org.nervousync.brain.annotations.dialect.SchemaDialect annotation</span>
+	 *                          <span class="zh-CN">如果实现类未找到org.nervousync.brain.annotations.dialect.SchemaDialect注解</span>
 	 */
-	protected BaseDialect() throws DialectException {
+	protected BaseDialect(final DialectType dialectType) throws DialectException {
 		SchemaDialect schemaDialect = Optional.ofNullable(this.getClass().getAnnotation(SchemaDialect.class))
 				.orElseThrow(() -> new DialectException(0x00DB00000005L, this.getClass().getName()));
-		String dialectName = schemaDialect.name();
+		this.dialectType = dialectType;
+		String className = this.getClass().getName();
 		this.supportJoin = schemaDialect.supportJoin();
 		this.connectionPool = schemaDialect.connectionPool();
 		this.validationQuery = schemaDialect.validationQuery();
 		if (schemaDialect.types().length == 0) {
-			this.logger.warn("Dialect_Type_None", dialectName);
+			this.logger.warn("Dialect_Type_None", className);
 		}
 		for (DataType dataType : schemaDialect.types()) {
 			if (this.dataTypes.containsKey(dataType.code())) {
-				this.logger.warn("Dialect_Type_Override", dialectName, dataType.code());
+				this.logger.warn("Dialect_Type_Override", className, dataType.code());
 			}
 			this.dataTypes.put(dataType.code(), dataType.type());
 		}
+	}
+
+	@Override
+	public final DialectType type() {
+		return this.dialectType;
 	}
 
 	/**
@@ -143,6 +157,19 @@ public abstract class BaseDialect implements Dialect {
 	}
 
 	/**
+	 * <h3 class="en-US">Checks whether the given dialect type is consistent with the current dialect type</h3>
+	 * <h3 class="zh-CN">检查给定的方言类型与当前方言类型是否一致</h3>
+	 *
+	 * @param dialectType <span class="en-US">Data source dialect type enumeration value</span>
+	 *                    <span class="zh-CN">数据源方言类型枚举值</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
+	 */
+	public final boolean match(final DialectType dialectType) {
+		return DialectType.Default.equals(dialectType) || this.dialectType.equals(dialectType);
+	}
+
+	/**
 	 * <h3 class="en-US">Getter method for support join query</h3>
 	 * <h3 class="zh-CN">支持关联查询的Getter方法</h3>
 	 *
@@ -187,7 +214,10 @@ public abstract class BaseDialect implements Dialect {
 	 *                  <span class="zh-CN">小数（精确数字）列的精度</span>
 	 * @param scale     <span class="en-US">The scale for a decimal (exact numeric) column</span>
 	 *                  <span class="zh-CN">小数（精确数字）列的比例</span>
-	 * @return <span class="en-US">The type definition of the data column. If it is not defined, an empty string of zero length is returned.</span>
+	 * @return <span class="en-US">
+	 *     The type definition of the data column
+	 *     If it is not defined, an empty string of zero lengths is returned.
+	 *     </span>
 	 * <span class="zh-CN">数据列的类型定义，如果未定义则返回长度为零的空字符串</span>
 	 */
 	public final String columnType(final int jdbcType, final int length, final int precision, final int scale) {

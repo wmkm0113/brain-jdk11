@@ -19,6 +19,7 @@ package org.nervousync.brain.dialects;
 
 import org.nervousync.brain.configs.auth.Authentication;
 import org.nervousync.brain.configs.secure.TrustStore;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 
 import java.sql.Wrapper;
 import java.util.Properties;
@@ -33,10 +34,19 @@ import java.util.Properties;
 public interface Dialect extends Wrapper {
 
 	/**
-	 * <h3 class="en-US">Handle case of names</h3>
+	 * <h3 class="en-US">Dialect type</h3>
+	 * <h3 class="zh-CN">方言类型</h3>
+	 *
+	 * @return <span class="en-US">Dialect type</span>
+	 * <span class="zh-CN">方言类型</span>
+	 */
+	DialectType type();
+
+	/**
+	 * <h3 class="en-US">Handle the case of names</h3>
 	 * <h3 class="zh-CN">处理名称的大小写</h3>
 	 *
-	 * @param name <span class="en-US">The name string to be processed</span>
+	 * @param name <span class="en-US">The name strings to be processed</span>
 	 *             <span class="zh-CN">需要处理的名称字符串</span>
 	 * @return <span class="en-US">Processed name string</span>
 	 * <span class="zh-CN">处理后的名称字符串</span>

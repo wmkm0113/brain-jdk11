@@ -27,8 +27,8 @@ import org.nervousync.brain.query.core.AbstractItem;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:42:19 $
  */
-@XmlType(name = "column_item", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "column_item", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "column_item", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "column_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class ColumnItem extends AbstractItem {
 	/**

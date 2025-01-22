@@ -32,8 +32,8 @@ import org.nervousync.commons.Globals;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:44:57 $
  */
-@XmlType(name = "query_parameter", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "query_parameter", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "query_parameter", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "query_parameter", namespace = "https://nervousync.org/schemas/brain")
 public final class QueryParameter extends AbstractParameter<QueryData> {
 
 	/**
@@ -51,7 +51,7 @@ public final class QueryParameter extends AbstractParameter<QueryData> {
 	 * <span class="en-US">Parameter value</span>
 	 * <span class="zh-CN">参数值</span>
 	 */
-	@XmlElement(name = "query_info", namespace = "https://nervousync.org/schemas/database")
+	@XmlElement(name = "query_info", namespace = "https://nervousync.org/schemas/brain")
 	private QueryData itemValue;
 
 	/**

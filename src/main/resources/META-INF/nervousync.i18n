@@ -443,6 +443,14 @@
         {
           "key": "Query_Cache_Key_Data",
           "content": "Query information cache key data map: {0}"
+        },
+        {
+          "key": "Simple_Remote_Dialect_Title",
+          "content": "Simple remote dialect "
+        },
+        {
+          "key": "Simple_Remote_Dialect_Description",
+          "content": "Simple remote dialect, only support username/password authenticator and pass clear text password information"
         }
       ]
     },
@@ -721,6 +729,14 @@
         {
           "key": "Query_Cache_Key_Data",
           "content": "查询信息缓存识别信息映射表：{0}"
+        },
+        {
+          "key": "Simple_Remote_Dialect_Title",
+          "content": "简单远程调用方言"
+        },
+        {
+          "key": "Simple_Remote_Dialect_Description",
+          "content": "简单远程调用方言，仅支持用户名/密码的身份认证方式，且使用明文传递"
         }
       ]
     }

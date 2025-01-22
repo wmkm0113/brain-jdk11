@@ -25,6 +25,7 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
 import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.commons.BrainCommons;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.defines.TableDefineException;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.commons.Globals;
@@ -42,8 +43,8 @@ import java.util.Optional;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:15:08 $
  */
-@XmlType(name = "table_define", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "table_define", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "table_define", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "table_define", namespace = "https://nervousync.org/schemas/brain")
 public final class TableDefine extends BeanObject {
 
 	/**
@@ -51,6 +52,11 @@ public final class TableDefine extends BeanObject {
 	 * <span class="zh-CN">数据源名称</span>
 	 */
 	private String schemaName;
+	/**
+	 * <span class="en-US">Data source dialect type enumeration value</span>
+	 * <span class="zh-CN">数据源方言类型枚举值</span>
+	 */
+	private DialectType dialectType = DialectType.Default;
 	/**
 	 * <span class="en-US">Data table name</span>
 	 * <span class="zh-CN">数据表名称</span>
@@ -61,14 +67,14 @@ public final class TableDefine extends BeanObject {
 	 * <span class="en-US">Data column define list</span>
 	 * <span class="zh-CN">数据列定义列表</span>
 	 */
-	@XmlElement(name = "column_define", namespace = "https://nervousync.org/schemas/database")
+	@XmlElement(name = "column_define", namespace = "https://nervousync.org/schemas/brain")
 	@XmlElementWrapper(name = "column_list")
 	private List<ColumnDefine> columnDefines = new ArrayList<>();
 	/**
 	 * <span class="en-US">Index define list</span>
 	 * <span class="zh-CN">索引定义列表</span>
 	 */
-	@XmlElement(name = "index_define", namespace = "https://nervousync.org/schemas/database")
+	@XmlElement(name = "index_define", namespace = "https://nervousync.org/schemas/brain")
 	@XmlElementWrapper(name = "index_list")
 	private List<IndexDefine> indexDefines = new ArrayList<>();
 	/**
@@ -105,6 +111,28 @@ public final class TableDefine extends BeanObject {
 	 */
 	public void setSchemaName(final String schemaName) {
 		this.schemaName = schemaName;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for data source dialect type enumeration value</h3>
+	 * <h3 class="zh-CN">数据源方言类型枚举值的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Data source dialect type enumeration value</span>
+	 * <span class="zh-CN">数据源方言类型枚举值</span>
+	 */
+	public DialectType getDialectType() {
+		return this.dialectType;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for data source dialect type enumeration value</h3>
+	 * <h3 class="zh-CN">数据源方言类型枚举值的Setter方法</h3>
+	 *
+	 * @param dialectType <span class="en-US">Data source dialect type enumeration value</span>
+	 *                    <span class="zh-CN">数据源方言类型枚举值</span>
+	 */
+	public void setDialectType(final DialectType dialectType) {
+		this.dialectType = dialectType;
 	}
 
 	/**

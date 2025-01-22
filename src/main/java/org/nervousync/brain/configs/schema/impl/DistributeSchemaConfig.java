@@ -21,6 +21,7 @@ import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.server.ServerInfo;
 import org.nervousync.commons.Globals;
+import org.nervousync.utils.FileUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +33,8 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision : 1.0.0 $ $Date: Jul 12, 2020 16:55:07 $
  */
-@XmlType(name = "distribute_schema", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "distribute_schema", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "distribute_schema", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "distribute_schema", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class DistributeSchemaConfig extends SchemaConfig {
 
@@ -190,5 +191,26 @@ public final class DistributeSchemaConfig extends SchemaConfig {
 	 */
 	public void setCachedLimitSize(final int cachedLimitSize) {
 		this.cachedLimitSize = cachedLimitSize;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert the database server list to the configuration information text</h3>
+	 * <h3 class="zh-CN">转换数据库服务器列表为配置信息文本</h3>
+	 *
+	 * @return <span class="en-US">Configuration information text</span>
+	 * <span class="zh-CN">配置信息文本</span>
+	 */
+	public String serverInfo() {
+		StringBuilder stringBuilder = new StringBuilder();
+		this.serverList.forEach(serverInfo -> {
+			if (stringBuilder.length() > 0) {
+				stringBuilder.append(FileUtils.LF);
+			}
+			stringBuilder.append(serverInfo.getServerName())
+					.append("|").append(serverInfo.getServerAddress())
+					.append("|").append(serverInfo.getServerPort())
+					.append("|").append(serverInfo.getServerLevel());
+		});
+		return stringBuilder.toString();
 	}
 }

@@ -21,16 +21,19 @@ import jakarta.annotation.Nonnull;
 import jakarta.persistence.LockModeType;
 import org.nervousync.annotations.jmx.Monitor;
 import org.nervousync.brain.commons.BrainCommons;
-import org.nervousync.brain.configs.Configure;
+import org.nervousync.brain.commons.DataUtils;
+import org.nervousync.brain.configs.BrainConfigure;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
+import org.nervousync.brain.configs.storage.StorageConfig;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.ShardingDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.builder.QueryBuilder;
@@ -39,12 +42,13 @@ import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.brain.schemas.distribute.DistributeSchema;
 import org.nervousync.brain.schemas.jdbc.JdbcSchema;
 import org.nervousync.brain.schemas.remote.RemoteSchema;
+import org.nervousync.cache.CacheUtils;
+import org.nervousync.cache.config.CacheConfig;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.LoggerUtils;
 import org.nervousync.utils.ObjectUtils;
 import org.nervousync.utils.StringUtils;
 
-import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -69,11 +73,6 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	private static final String JMX_OBJECT_NAME_PREFIX = "org.nervousync:type=DataSource,name=";
 
-	/**
-	 * <span class="en-US">Perform initialization operations when using</span>
-	 * <span class="zh-CN">使用时再执行初始化操作</span>
-	 */
-	private final boolean lazyInit;
 	/**
 	 * <span class="en-US">Data source initialize status</span>
 	 * <span class="zh-CN">数据源初始化状态</span>
@@ -110,20 +109,53 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <span class="zh-CN">数据表识别代码与表名的映射表</span>
 	 */
 	private final Hashtable<String, String> identifyCodeMapping;
+	/**
+	 * <span class="en-US">Last modified timestamp</span>
+	 * <span class="zh-CN">最后修改时间戳</span>
+	 */
+	private long lastModified = Globals.DEFAULT_VALUE_LONG;
 
 	/**
 	 * <h3 class="en-US">Default constructor method for data source</h3>
 	 * <h3 class="zh-CN">数据源的默认构造方法</h3>
+	 */
+	BrainDataSource() {
+		this.registeredSchemas = new Hashtable<>();
+		this.registeredTables = new Hashtable<>();
+		this.identifyCodeMapping = new Hashtable<>();
+	}
+
+	/**
+	 * <h3 class="en-US">Static method is used to obtain the data source singleton instance object</h3>
+	 * <h3 class="zh-CN">静态方法用于获取数据源单例实例对象</h3>
+	 *
+	 * @return <span class="en-US">Data source singleton instance object</span>
+	 * <span class="zh-CN">数据源单例实例对象</span>
+	 */
+	public static BrainDataSource getInstance() {
+		return BrainDataSourceHolder.getInstance();
+	}
+
+	/**
+	 * <h3 class="en-US">Destroy current instance</h3>
+	 * <h3 class="zh-CN">销毁当前实例</h3>
+	 */
+	public static void destroy() {
+		BrainDataSourceHolder.destroy();
+	}
+
+	/**
+	 * <h3 class="en-US">Initialize data source</h3>
+	 * <h3 class="zh-CN">初始化数据源</h3>
 	 *
 	 * @param configure <span class="en-US">Data source configure information instance object</span>
 	 *                  <span class="zh-CN">数据源配置信息实例对象</span>
 	 */
-	BrainDataSource(final Configure configure) {
-		this.registeredSchemas = new Hashtable<>();
-		this.registeredTables = new Hashtable<>();
-		this.identifyCodeMapping = new Hashtable<>();
+	public void initialize(final BrainConfigure configure) {
+		if (this.lastModified != Globals.DEFAULT_VALUE_LONG && this.lastModified == configure.getLastModified()) {
+			return;
+		}
 		this.ddlType = (configure.getDdlType() == null) ? DDLType.NONE : configure.getDdlType();
-		this.lazyInit = configure.isLazyInitialize();
 		this.jmxEnabled(configure.isJmxMonitor());
 		for (SchemaConfig schemaConfig : configure.getSchemaConfigs()) {
 			try {
@@ -135,44 +167,44 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 				}
 			}
 		}
+
+		StorageConfig storageConfig = configure.getStorageConfig();
+		if (storageConfig == null) {
+			DataUtils.destroy();
+		} else {
+			DataUtils.initialize(storageConfig);
+		}
+
+		CacheConfig cacheConfig = configure.getCacheConfig();
+		if (cacheConfig == null) {
+			CacheUtils.deregister(BrainCommons.CACHE_NAME);
+		} else {
+			CacheUtils.register(BrainCommons.CACHE_NAME, cacheConfig);
+		}
+		this.lastModified = configure.getLastModified();
+		if (!configure.isLazyInitialize()) {
+			this.initialize();
+		}
 	}
 
 	/**
-	 * <h3 class="en-US">Register schema configure</h3>
-	 * <h3 class="zh-CN">注册配置信息</h3>
+	 * <h3 class="en-US">Check whether the given data source name is registered and whether the dialect type is consistent with the current dialect type</h3>
+	 * <h3 class="zh-CN">检查给定的数据源名称是否注册，方言类型与当前方言类型是否一致</h3>
 	 *
-	 * @param schemaConfig <span class="en-US">Data source configure information</span>
-	 *                     <span class="zh-CN">数据源配置信息</span>
-	 * @throws Exception <span class="en-US">Database server information not found or sharding configuration error</span>
-	 *                   <span class="zh-CN">数据库服务器信息未找到或分片配置出错</span>
+	 * @param schemaName  <span class="en-US">Data schema name</span>
+	 *                    <span class="zh-CN">数据源名称</span>
+	 * @param dialectType <span class="en-US">Data source dialect type enumeration value</span>
+	 *                    <span class="zh-CN">数据源方言类型枚举值</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
 	 */
-	public void register(@Nonnull final SchemaConfig schemaConfig) throws Exception {
-		if (this.registeredSchemas.containsKey(schemaConfig.getSchemaName())) {
-			LOGGER.error("Registered_Data_Source", schemaConfig.getSchemaName());
-			return;
-		}
-		BaseSchema<?> schema;
-		if (schemaConfig instanceof DistributeSchemaConfig) {
-			schema = new DistributeSchema((DistributeSchemaConfig) schemaConfig);
-		} else if (schemaConfig instanceof JdbcSchemaConfig) {
-			schema = new JdbcSchema((JdbcSchemaConfig) schemaConfig);
-		} else if (schemaConfig instanceof RemoteSchemaConfig) {
-			schema = new RemoteSchema((RemoteSchemaConfig) schemaConfig);
-		} else {
-			throw new MultilingualSQLException(0x00DB00000031L, schemaConfig.toFormattedJson());
-		}
-		this.registeredSchemas.put(schemaConfig.getSchemaName(), schema);
-		if (schemaConfig.isDefaultSchema()) {
-			if (StringUtils.notBlank(this.defaultName)) {
-				LOGGER.error("Override_Default_Schema", this.defaultName, schemaConfig.getSchemaName());
-			}
-			this.defaultName = schemaConfig.getSchemaName();
-		}
-		if (!this.lazyInit) {
-			this.initialize();
-		}
-		if (this.jmxEnabled) {
-			ObjectUtils.registerMBean(JMX_OBJECT_NAME_PREFIX + schemaConfig.getSchemaName(), schema);
+	public boolean registered(final String schemaName, final DialectType dialectType) {
+		try {
+			return Optional.of(this.retrieveSchema(schemaName))
+					.map(schema -> schema.match(dialectType))
+					.orElse(Boolean.FALSE);
+		} catch (SQLException e) {
+			return Boolean.FALSE;
 		}
 	}
 
@@ -210,7 +242,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <h3 class="en-US">Initialize data table</h3>
 	 * <h3 class="zh-CN">初始化数据表</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param database    <span class="en-US">Database sharding configuration information</span>
 	 *                    <span class="zh-CN">数据库分片配置信息</span>
@@ -283,7 +315,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	}
 
 	/**
-	 * <h3 class="en-US">Truncate all data table</h3>
+	 * <h3 class="en-US">Truncate all data tables</h3>
 	 * <h3 class="zh-CN">清空所有数据表</h3>
 	 *
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
@@ -311,7 +343,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	}
 
 	/**
-	 * <h3 class="en-US">Drop all data table</h3>
+	 * <h3 class="en-US">Drop all data tables</h3>
 	 * <h3 class="zh-CN">删除所有数据表</h3>
 	 *
 	 * @param dropOption <span class="en-US">Cascading delete options</span>
@@ -493,6 +525,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 			}
 		}
 		filterMap.forEach((columnName, matchValue) -> queryBuilder.equalTo(tableName, columnName, matchValue));
+		queryBuilder.itemList(this);
 		return this.query(queryBuilder.confirm());
 	}
 
@@ -573,9 +606,10 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public Long queryTotal(@Nonnull final String tableName, final Map<String, Serializable> filterMap) throws Exception {
+	public Long queryTotal(@Nonnull final String tableName, final Map<String, Object> filterMap) throws Exception {
 		QueryBuilder queryBuilder = QueryBuilder.newBuilder(tableName);
 		filterMap.forEach((columnName, matchValue) -> queryBuilder.equalTo(tableName, columnName, matchValue));
+		queryBuilder.itemList(this);
 		return this.queryTotal(queryBuilder.confirm());
 	}
 
@@ -604,7 +638,8 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <h3 class="en-US">Destroy current data source</h3>
 	 * <h3 class="zh-CN">销毁当前数据源</h3>
 	 */
-	void close() {
+	public synchronized void close() {
+		DataUtils.destroy();
 		if (DDLType.CREATE_DROP.equals(this.ddlType)) {
 			for (final BaseSchema<?> schema : this.registeredSchemas.values()) {
 				try {
@@ -629,27 +664,63 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 				}
 			}
 		}
-		Iterator<Map.Entry<String, BaseSchema<?>>> iterator = this.registeredSchemas.entrySet().iterator();
-		while (iterator.hasNext()) {
-			Map.Entry<String, BaseSchema<?>> entry = iterator.next();
+
+		this.registeredSchemas.forEach((name, schema) -> {
 			if (this.jmxEnabled) {
-				ObjectUtils.unregisterMBean(JMX_OBJECT_NAME_PREFIX + entry.getKey());
+				ObjectUtils.unregisterMBean(JMX_OBJECT_NAME_PREFIX + name);
 			}
-			try {
-				entry.getValue().close();
-			} catch (Exception e) {
-				LOGGER.error("Close_DataSource_Error");
-				if (LOGGER.isDebugEnabled()) {
-					LOGGER.debug("Stack_Message_Error", e);
-				}
-			}
-			iterator.remove();
-		}
+			schema.close();
+		});
+		this.registeredSchemas.clear();
 		if (this.jmxEnabled) {
 			ObjectUtils.unregisterMBean(this);
 		}
+		CacheUtils.deregister(BrainCommons.CACHE_NAME);
 		this.initialized = Boolean.FALSE;
 		this.defaultName = Globals.DEFAULT_VALUE_STRING;
+	}
+
+	/**
+	 * <h3 class="en-US">Register schema configure</h3>
+	 * <h3 class="zh-CN">注册配置信息</h3>
+	 *
+	 * @param schemaConfig <span class="en-US">Data source configure information</span>
+	 *                     <span class="zh-CN">数据源配置信息</span>
+	 * @throws Exception <span class="en-US">Database server information not found or sharding configuration error</span>
+	 *                   <span class="zh-CN">数据库服务器信息未找到或分片配置出错</span>
+	 */
+	private void register(@Nonnull final SchemaConfig schemaConfig) throws Exception {
+		if (this.registeredSchemas.containsKey(schemaConfig.getSchemaName())) {
+			BaseSchema<?> schema = this.registeredSchemas.get(schemaConfig.getSchemaName());
+			if (schema.match(schemaConfig.getLastModified())) {
+				if (LOGGER.isDebugEnabled()) {
+					LOGGER.debug("Registered_Data_Source", schemaConfig.getSchemaName());
+				}
+				return;
+			}
+			schema.close();
+			this.registeredSchemas.remove(schemaConfig.getSchemaName());
+		}
+		BaseSchema<?> schema;
+		if (schemaConfig instanceof DistributeSchemaConfig) {
+			schema = new DistributeSchema((DistributeSchemaConfig) schemaConfig);
+		} else if (schemaConfig instanceof JdbcSchemaConfig) {
+			schema = new JdbcSchema((JdbcSchemaConfig) schemaConfig);
+		} else if (schemaConfig instanceof RemoteSchemaConfig) {
+			schema = new RemoteSchema((RemoteSchemaConfig) schemaConfig);
+		} else {
+			throw new MultilingualSQLException(0x00DB00000031L, schemaConfig.toFormattedJson());
+		}
+		this.registeredSchemas.put(schemaConfig.getSchemaName(), schema);
+		if (schemaConfig.isDefaultSchema()) {
+			if (StringUtils.notBlank(this.defaultName)) {
+				LOGGER.error("Override_Default_Schema", this.defaultName, schemaConfig.getSchemaName());
+			}
+			this.defaultName = schemaConfig.getSchemaName();
+		}
+		if (this.jmxEnabled) {
+			ObjectUtils.registerMBean(JMX_OBJECT_NAME_PREFIX + schemaConfig.getSchemaName(), schema);
+		}
 	}
 
 	/**
@@ -758,5 +829,23 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	@Override
 	public boolean isInitialized() {
 		return this.initialized;
+	}
+
+	private static final class BrainDataSourceHolder {
+		private static BrainDataSource INSTANCE = null;
+
+		static synchronized BrainDataSource getInstance() {
+			if (INSTANCE == null) {
+				INSTANCE = new BrainDataSource();
+			}
+			return INSTANCE;
+		}
+
+		static synchronized void destroy() {
+			if (INSTANCE != null) {
+				INSTANCE.close();
+				INSTANCE = null;
+			}
+		}
 	}
 }

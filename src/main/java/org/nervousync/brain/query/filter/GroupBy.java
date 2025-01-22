@@ -27,8 +27,8 @@ import org.nervousync.utils.ObjectUtils;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 7， 2020 13:36：28 $
  */
-@XmlType(name = "group_by", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "group_by", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "group_by", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "group_by", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class GroupBy extends SortedItem {
 	/**

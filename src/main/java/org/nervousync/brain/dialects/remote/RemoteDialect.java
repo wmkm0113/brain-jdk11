@@ -18,11 +18,8 @@
 package org.nervousync.brain.dialects.remote;
 
 import jakarta.ws.rs.client.ClientBuilder;
-import org.nervousync.brain.annotations.dialect.SchemaDialect;
-import org.nervousync.brain.commons.BrainCommons;
-import org.nervousync.brain.configs.auth.Authentication;
-import org.nervousync.brain.configs.secure.TrustStore;
 import org.nervousync.brain.dialects.core.BaseDialect;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.dialects.DialectException;
 import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.commons.Globals;
@@ -31,17 +28,15 @@ import org.nervousync.utils.ServiceUtils;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 /**
- * <h2 class="en-US">Remote database dialect implementation class</h2>
- * <h2 class="zh-CN">远程数据库方言实现类</h2>
+ * <h2 class="en-US">Remote database dialect abstract class</h2>
+ * <h2 class="zh-CN">远程数据库方言抽象类</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:38:52 $
  */
-@SchemaDialect(name = BrainCommons.DEFAULT_REMOTE_DIALECT_NAME, supportJoin = true, types = {})
-public final class RemoteDialect extends BaseDialect {
+public abstract class RemoteDialect extends BaseDialect {
 
 	/**
 	 * <h3 class="en-US">Constructor method for remote database dialect implementation class</h3>
@@ -51,29 +46,24 @@ public final class RemoteDialect extends BaseDialect {
 	 *                          <span class="zh-CN">如果实现类未找到org. nervousync. brain. annotations. dialect.SchemaDialect注解</span>
 	 */
 	public RemoteDialect() throws DialectException {
-		super();
+		super(DialectType.Remote);
 	}
 
 	@Override
-	public String defaultValue(final int jdbcType, final int length, final int precision, final int scale,
-	                           final Object object) {
+	public final String defaultValue(final int jdbcType, final int length, final int precision, final int scale,
+	                                 final Object object) {
 		return Globals.DEFAULT_VALUE_STRING;
 	}
 
 	@Override
-	protected String parameterValue(final Map<String, String> aliasMap, final AbstractParameter<?> abstractParameter,
-	                                final List<Object> values) {
+	protected final String parameterValue(final Map<String, String> aliasMap, final AbstractParameter<?> abstractParameter,
+	                                      final List<Object> values) {
 		return Globals.DEFAULT_VALUE_STRING;
 	}
 
 	@Override
-	public String nameCase(final String name) {
+	public final String nameCase(final String name) {
 		return name;
-	}
-
-	@Override
-	public Properties properties(final TrustStore trustStore, final Authentication authentication) {
-		return null;
 	}
 
 	/**
@@ -89,7 +79,7 @@ public final class RemoteDialect extends BaseDialect {
 	 * @throws MalformedURLException <span class="en-US">if no protocol is specified, or an unknown protocol is found, or spec is null.</span>
 	 *                               <span class="zh-CN">如果没有指定协议，或者发现未知协议，或者spec为空。</span>
 	 */
-	public RemoteClient SOAPClient(final String targetAddress, final Map<String, String> configMap)
+	public final RemoteClient SOAPClient(final String targetAddress, final Map<String, String> configMap)
 			throws MalformedURLException {
 		return ServiceUtils.SOAPClient(targetAddress, RemoteClient.class, configMap);
 	}
@@ -109,8 +99,8 @@ public final class RemoteDialect extends BaseDialect {
 	 * @throws MalformedURLException <span class="en-US">if no protocol is specified, or an unknown protocol is found, or spec is null.</span>
 	 *                               <span class="zh-CN">如果没有指定协议，或者发现未知协议，或者spec为空。</span>
 	 */
-	public RemoteClient restfulClient(final String targetAddress, final ClientBuilder clientBuilder,
-	                                  final Map<String, String> headerMap) throws MalformedURLException {
+	public final RemoteClient restfulClient(final String targetAddress, final ClientBuilder clientBuilder,
+	                                        final Map<String, String> headerMap) throws MalformedURLException {
 		return ServiceUtils.RestfulClient(targetAddress, clientBuilder, RemoteClient.class, headerMap);
 	}
 }

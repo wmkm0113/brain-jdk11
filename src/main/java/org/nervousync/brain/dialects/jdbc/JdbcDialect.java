@@ -31,6 +31,7 @@ import org.nervousync.brain.defines.IndexDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.core.BaseDialect;
 import org.nervousync.brain.enumerations.ddl.DropOption;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.dialects.DialectException;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
@@ -260,11 +261,13 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * <h3 class="en-US">Constructor method for JDBC database dialect abstract class</h3>
 	 * <h3 class="zh-CN">JDBC数据库方言抽象类的构造方法</h3>
 	 *
+	 * @param dialectType <span class="en-US">Data source dialect type enumeration value</span>
+	 *                    <span class="zh-CN">数据源方言类型枚举值</span>
 	 * @throws DialectException <span class="en-US">If the implementation class does not find the org. nervousync. brain. annotations. dialect.SchemaDialect annotation</span>
 	 *                          <span class="zh-CN">如果实现类未找到org. nervousync. brain. annotations. dialect.SchemaDialect注解</span>
 	 */
-	protected JdbcDialect() throws DialectException {
-		super();
+	protected JdbcDialect(final DialectType dialectType) throws DialectException {
+		super(dialectType);
 	}
 
 	/**
@@ -483,7 +486,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * <h3 class="en-US">Create views of sharded data tables for data query</h3>
 	 * <h3 class="zh-CN">创建分片数据表的视图，用于数据查询</h3>
 	 *
-	 * @param tableDefine    <span class="en-US">Database table define information</span>
+	 * @param tableDefine    <span class="en-US">Database table defines information</span>
 	 *                       <span class="zh-CN">数据表配置信息</span>
 	 * @param shardingTables <span class="en-US">Sharding data table name list</span>
 	 *                       <span class="zh-CN">分片数据表名列表</span>
@@ -516,7 +519,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * <h3 class="en-US">Generate SQL commands to create data tables</h3>
 	 * <h3 class="zh-CN">生成创建数据表的SQL命令</h3>
 	 *
-	 * @param tableDefine   <span class="en-US">Database table define information</span>
+	 * @param tableDefine   <span class="en-US">Database table defines information</span>
 	 *                      <span class="zh-CN">数据表配置信息</span>
 	 * @param shardingTable <span class="en-US">Database table sharding value</span>
 	 *                      <span class="zh-CN">数据表分片值</span>
@@ -566,7 +569,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * <h3 class="en-US">Generate SQL commands to create index</h3>
 	 * <h3 class="zh-CN">生成创建索引的SQL命令</h3>
 	 *
-	 * @param tableDefine   <span class="en-US">Database table define information</span>
+	 * @param tableDefine   <span class="en-US">Database table defines information</span>
 	 *                      <span class="zh-CN">数据表配置信息</span>
 	 * @param shardingTable <span class="en-US">Database table sharding value</span>
 	 *                      <span class="zh-CN">数据表分片值</span>
@@ -608,7 +611,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * <h3 class="en-US">Generate SQL commands to alter data tables</h3>
 	 * <h3 class="zh-CN">生成修改数据表的SQL命令</h3>
 	 *
-	 * @param tableDefine  <span class="en-US">Database table define information</span>
+	 * @param tableDefine  <span class="en-US">Database table defines information</span>
 	 *                     <span class="zh-CN">数据表配置信息</span>
 	 * @param shardingName <span class="en-US">Sharding data table name</span>
 	 *                     <span class="zh-CN">分片数据表名</span>
@@ -873,7 +876,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * <h3 class="en-US">Generate SQL commands to insert record</h3>
 	 * <h3 class="zh-CN">生成插入记录的SQL命令</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param tableName   <span class="en-US">Query table name</span>
 	 *                    <span class="zh-CN">查询数据表名</span>
@@ -936,7 +939,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * <h3 class="en-US">Generate SQL commands to update record</h3>
 	 * <h3 class="zh-CN">生成更新记录的SQL命令</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param tableName   <span class="en-US">Query table name</span>
 	 *                    <span class="zh-CN">查询数据表名</span>
@@ -1487,7 +1490,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Generate group by commands</h3>
+	 * <h3 class="en-US">Generate the group by commands</h3>
 	 * <h3 class="zh-CN">生成分组查询命令</h3>
 	 *
 	 * @param aliasMap         <span class="en-US">Data table alias mapping table</span>

@@ -29,8 +29,8 @@ import org.nervousync.proxy.ProxyConfig;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision : 1.0.0 $ $Date: Jul 12, 2020 16:42:35 $
  */
-@XmlType(name = "remote_schema", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "remote_schema", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "remote_schema", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "remote_schema", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class RemoteSchemaConfig extends SchemaConfig {
 

@@ -31,8 +31,8 @@ import java.io.Serializable;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:46:31 $
  */
-@XmlType(name = "constant_parameter", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "constant_parameter", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "constant_parameter", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "constant_parameter", namespace = "https://nervousync.org/schemas/brain")
 public final class ConstantParameter extends AbstractParameter<Object> {
 
     /**

@@ -30,7 +30,7 @@ import org.nervousync.brain.data.task.AbstractTask;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Mar 23, 2021 05:12:18 $
  */
-@XmlRootElement(name = "import_task", namespace = "https://nervousync.org/schemas/database")
+@XmlRootElement(name = "import_task", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class ImportTask extends AbstractTask {
 

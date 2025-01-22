@@ -239,6 +239,11 @@ public final class BrainCommons {
 	 */
 	public static final String DEFAULT_JNDI_NAME = "jndi/brain";
 	/**
+	 * <span class="en-US">Cache name</span>
+	 * <span class="zh-CN">缓存名称</span>
+	 */
+	public static final String CACHE_NAME = "Brain_Cache";
+	/**
 	 * <span class="en-US">Default data import/export work path</span>
 	 * <span class="zh-CN">默认的导入导出工作目录</span>
 	 */

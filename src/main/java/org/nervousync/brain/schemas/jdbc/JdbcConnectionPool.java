@@ -18,6 +18,7 @@
 package org.nervousync.brain.schemas.jdbc;
 
 import jakarta.annotation.Nonnull;
+import org.intellij.lang.annotations.MagicConstant;
 import org.nervousync.brain.configs.server.ServerInfo;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.commons.Globals;
@@ -284,7 +285,7 @@ public final class JdbcConnectionPool {
 	}
 
 	/**
-	 * <h3 class="en-US">Obtain a connection without transactional configure</h3>
+	 * <h3 class="en-US">Get a connection without transactional configured</h3>
 	 * <h3 class="zh-CN">获得无事务连接</h3>
 	 *
 	 * @throws SQLException <span class="en-US">An error occurred while obtaining the connection</span>
@@ -295,7 +296,7 @@ public final class JdbcConnectionPool {
 	}
 
 	/**
-	 * <h3 class="en-US">Obtain a connection</h3>
+	 * <h3 class="en-US">Get a connection</h3>
 	 * <h3 class="zh-CN">获得连接</h3>
 	 *
 	 * @return <span class="en-US">Obtained connection</span>
@@ -303,7 +304,11 @@ public final class JdbcConnectionPool {
 	 * @throws SQLException <span class="en-US">An error occurred while obtaining the connection</span>
 	 *                      <span class="zh-CN">获得连接过程中出错</span>
 	 */
-	JdbcConnection obtainConnection(final int isolation) throws SQLException {
+	JdbcConnection obtainConnection(
+			@MagicConstant(intValues = {Connection.TRANSACTION_NONE, Connection.TRANSACTION_READ_COMMITTED,
+					Connection.TRANSACTION_READ_UNCOMMITTED, Connection.TRANSACTION_REPEATABLE_READ,
+					Connection.TRANSACTION_SERIALIZABLE})
+			final int isolation) throws SQLException {
 
 		JdbcConnection connection = null;
 		if (!this.pooled) {

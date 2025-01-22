@@ -31,6 +31,7 @@ import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.core.BaseDialect;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.enumerations.query.ConditionType;
 import org.nervousync.brain.enumerations.sharding.ShardingType;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
@@ -45,7 +46,6 @@ import org.nervousync.utils.ClassUtils;
 import org.nervousync.utils.LoggerUtils;
 import org.nervousync.utils.StringUtils;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Wrapper;
 import java.util.*;
@@ -65,6 +65,11 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 */
 	protected transient final LoggerUtils.Logger logger = LoggerUtils.getLogger(this.getClass());
 
+	/**
+	 * <span class="en-US">Last modified timestamp</span>
+	 * <span class="zh-CN">最后修改时间戳</span>
+	 */
+	private final long lastModified;
 	/**
 	 * <span class="en-US">Identity authentication configuration information</span>
 	 * <span class="zh-CN">身份认证配置信息</span>
@@ -86,7 +91,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 */
 	private long lowQueryTimeout;
 	/**
-	 * <span class="en-US">Timeout value of connection validate</span>
+	 * <span class="en-US">Timeout value of connection validates</span>
 	 * <span class="zh-CN">连接检查超时时间</span>
 	 */
 	private int validateTimeout;
@@ -133,6 +138,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 *                      <span class="zh-CN">数据库服务器信息未找到或分片配置出错</span>
 	 */
 	protected BaseSchema(@Nonnull final SchemaConfig schemaConfig, @Nonnull final D dialect) throws SQLException {
+		this.lastModified = schemaConfig.getLastModified();
 		this.sharding = schemaConfig.isSharding();
 		this.authentication = schemaConfig.getAuthentication();
 		this.trustStore = schemaConfig.getTrustStore();
@@ -148,6 +154,32 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 		} else {
 			this.shardingDefault = Globals.DEFAULT_VALUE_STRING;
 		}
+	}
+
+	/**
+	 * <h3 class="en-US">Check whether the modification time of the current configuration information is consistent with the given modification time</h3>
+	 * <h3 class="zh-CN">检查当前配置信息的修改时间是否与给定的修改时间一致</h3>
+	 *
+	 * @param lastModified <span class="en-US">Last modified timestamp</span>
+	 *                     <span class="zh-CN">最后修改时间戳</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
+	 */
+	public final boolean match(final long lastModified) {
+		return lastModified != Globals.DEFAULT_VALUE_LONG && this.lastModified == lastModified;
+	}
+
+	/**
+	 * <h3 class="en-US">Checks whether the given dialect type is consistent with the current dialect type</h3>
+	 * <h3 class="zh-CN">检查给定的方言类型与当前方言类型是否一致</h3>
+	 *
+	 * @param dialectType <span class="en-US">Data source dialect type enumeration value</span>
+	 *                    <span class="zh-CN">数据源方言类型枚举值</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
+	 */
+	public final boolean match(final DialectType dialectType) {
+		return this.dialect.match(dialectType);
 	}
 
 	@Override
@@ -341,11 +373,8 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	/**
 	 * <h3 class="en-US">Close the current data source</h3>
 	 * <h3 class="zh-CN">关闭当前数据源</h3>
-	 *
-	 * @throws IOException <span class="en-US">If an error occurs during executing</span>
-	 *                     <span class="zh-CN">如果执行过程出错</span>
 	 */
-	public abstract void close() throws IOException;
+	public abstract void close();
 
 	/**
 	 * <h3 class="en-US">Initialize the current thread used operator based on the given transaction configuration information</h3>

@@ -42,8 +42,8 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 28, 2020 11:46:08 $
  */
-@XmlType(name = "query_info", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "query_info", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "query_info", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "query_info", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class QueryInfo extends BeanObject {
 

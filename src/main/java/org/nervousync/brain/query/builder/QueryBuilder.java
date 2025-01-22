@@ -33,11 +33,10 @@ import org.nervousync.brain.query.item.ColumnItem;
 import org.nervousync.brain.query.join.JoinInfo;
 import org.nervousync.brain.query.join.QueryJoin;
 import org.nervousync.brain.query.param.AbstractParameter;
-import org.nervousync.brain.source.DataSourceFactory;
+import org.nervousync.brain.source.BrainDataSource;
 import org.nervousync.builder.Builder;
 import org.nervousync.commons.Globals;
 import org.nervousync.enumerations.core.ConnectionCode;
-import org.nervousync.exceptions.builder.BuilderException;
 import org.nervousync.utils.ObjectUtils;
 
 import java.sql.SQLException;
@@ -79,7 +78,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 */
 	private final List<Condition> conditionList;
 	/**
-	 * <span class="en-US">Query order by columns list</span>
+	 * <span class="en-US">Query order by column list</span>
 	 * <span class="zh-CN">查询排序数据列列表</span>
 	 */
 	private final List<OrderBy> orderByList;
@@ -5362,6 +5361,23 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	}
 
 	/**
+	 * <h3 class="en-US">Fill query data column information</h3>
+	 * <h3 class="zh-CN">填充查询数据列信息</h3>
+	 *
+	 * @param dataSource <span class="en-US">Data source instance object</span>
+	 *                   <span class="zh-CN">数据源实例对象</span>
+	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
+	 *                      <span class="zh-CN">如果查询数据列已存在</span>
+	 */
+	public void itemList(@Nonnull final BrainDataSource dataSource) throws SQLException {
+		if (this.itemList.isEmpty()) {
+			for (String columnName : dataSource.queryColumns(this.tableName)) {
+				this.queryColumn(this.tableName, columnName);
+			}
+		}
+	}
+
+	/**
 	 * <h3 class="en-US">Add data filters condition</h3>
 	 * <h3 class="zh-CN">添加数据筛选条件</h3>
 	 *
@@ -5382,16 +5398,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	}
 
 	@Override
-	public QueryInfo confirm() throws BuilderException {
-		if (this.itemList.isEmpty()) {
-			try {
-				for (String columnName : DataSourceFactory.getInstance().queryColumns(this.tableName)) {
-					this.queryColumn(this.tableName, columnName);
-				}
-			} catch (SQLException e) {
-				throw new BuilderException(0L, e);
-			}
-		}
+	public QueryInfo confirm() {
 		QueryInfo queryInfo = new QueryInfo();
 		queryInfo.setTableName(this.tableName);
 		queryInfo.setAliasName(this.aliasName);

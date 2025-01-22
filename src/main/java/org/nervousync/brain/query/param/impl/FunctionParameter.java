@@ -29,8 +29,8 @@ import org.nervousync.brain.query.param.AbstractParameter;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:44:57 $
  */
-@XmlType(name = "function_parameter", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "function_parameter", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "function_parameter", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "function_parameter", namespace = "https://nervousync.org/schemas/brain")
 public final class FunctionParameter extends AbstractParameter<FunctionItem> {
 
     /**
@@ -42,7 +42,7 @@ public final class FunctionParameter extends AbstractParameter<FunctionItem> {
      * <span class="en-US">Parameter value</span>
      * <span class="zh-CN">参数值</span>
      */
-    @XmlElement(name = "function_item", namespace = "https://nervousync.org/schemas/database")
+    @XmlElement(name = "function_item", namespace = "https://nervousync.org/schemas/brain")
     private FunctionItem itemValue;
 
     /**

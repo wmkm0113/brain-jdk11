@@ -34,10 +34,11 @@ import org.nervousync.builder.ParentBuilder;
 import org.nervousync.commons.Globals;
 import org.nervousync.proxy.ProxyConfig;
 import org.nervousync.proxy.ProxyConfigBuilder;
+import org.nervousync.utils.DateTimeUtils;
+import org.nervousync.utils.FileUtils;
+import org.nervousync.utils.ObjectUtils;
 import org.nervousync.utils.StringUtils;
 
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,6 +58,11 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 	 * <span class="zh-CN">配置信息实例对象</span>
 	 */
 	protected final T schemaConfig;
+	/**
+	 * <h2 class="en-US">Configure information modified flag</h2>
+	 * <h2 class="zh-CN">配置信息修改标记</h2>
+	 */
+	protected boolean modified = Boolean.FALSE;
 
 	/**
 	 * <h3 class="en-US">Constructor method for abstract class of data schema configure information builder</h3>
@@ -67,7 +73,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 	 * @param schemaConfig  <span class="en-US">Configure information instance object</span>
 	 *                      <span class="zh-CN">配置信息实例对象</span>
 	 */
-	protected SchemaConfigBuilder(final ConfigureBuilder parentBuilder, final T schemaConfig) {
+	protected SchemaConfigBuilder(final BrainConfigureBuilder parentBuilder, final T schemaConfig) {
 		super(parentBuilder);
 		this.schemaConfig = schemaConfig;
 	}
@@ -79,7 +85,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 	 * @return <span class="en-US">Builder implementation class of basic authentication information instance object</span>
 	 * <span class="zh-CN">基本身份认证信息构建器实例对象</span>
 	 */
-	public final AuthenticationBuilder.UserAuthenticationBuilder userAuthentication() {
+	public final AuthenticationBuilder.UserAuthenticationBuilder userAuthenticationBuilder() {
 		return new AuthenticationBuilder.UserAuthenticationBuilder(this,
 				Optional.ofNullable(this.schemaConfig.getAuthentication())
 						.filter(authentication -> authentication instanceof UserAuthentication)
@@ -88,13 +94,14 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 	}
 
 	/**
-	 * <h3 class="en-US">Generate a builder instance object that uses the X.509 certificate authentication information in the certificate store based on the existing authentication information.</h3>
+	 * <h3 class="en-US">Generate a builder instance object that uses the trust store authentication information
+	 * in the certificate store based on the existing authentication information.</h3>
 	 * <h3 class="zh-CN">根据现有的身份认证信息生成使用证书库中X.509证书认证信息的构建器实例对象</h3>
 	 *
 	 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate in the certificate store</span>
 	 * <span class="zh-CN">使用证书库中X.509证书的认证信息的构建器</span>
 	 */
-	public final AuthenticationBuilder.TrustStoreAuthenticationBuilder trustStoreAuthentication() {
+	public final AuthenticationBuilder.TrustStoreAuthenticationBuilder trustStoreAuthenticationBuilder() {
 		return new AuthenticationBuilder.TrustStoreAuthenticationBuilder(this,
 				Optional.ofNullable(this.schemaConfig.getAuthentication())
 						.filter(authentication -> authentication instanceof TrustStoreAuthentication)
@@ -102,15 +109,39 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 						.orElse(new TrustStoreAuthentication()));
 	}
 
+	/**
+	 * <h3 class="en-US">Generate a builder instance object that uses the X.509 certificate authentication information.</h3>
+	 * <h3 class="zh-CN">根据现有的身份认证信息生成X.509证书认证信息的构建器实例对象</h3>
+	 *
+	 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate</span>
+	 * <span class="zh-CN">使用X.509证书的认证信息的构建器</span>
+	 */
+	public final AuthenticationBuilder.X509AuthenticationBuilder x509AuthenticationBuilder() {
+		return new AuthenticationBuilder.X509AuthenticationBuilder(this,
+				Optional.ofNullable(this.schemaConfig.getAuthentication())
+						.filter(authentication -> authentication instanceof X509Authentication)
+						.map(authentication -> (X509Authentication) authentication)
+						.orElse(new X509Authentication()));
+	}
+
 	@Override
 	public void confirm(final Object object) {
 		if (object instanceof Authentication) {
-			this.schemaConfig.setAuthentication((Authentication) object);
+			Authentication authentication = this.schemaConfig.getAuthentication();
+			if (authentication == null
+					|| !ObjectUtils.nullSafeEquals(authentication.getAuthType(), ((Authentication) object).getAuthType())
+					|| authentication.getLastModified() != ((Authentication) object).getLastModified()) {
+				this.schemaConfig.setAuthentication((Authentication) object);
+				this.modified = Boolean.TRUE;
+			}
 		}
 	}
 
 	@Override
 	public final T confirm() {
+		if (this.modified) {
+			this.schemaConfig.setLastModified(DateTimeUtils.currentUTCTimeMillis());
+		}
 		return this.schemaConfig;
 	}
 
@@ -128,7 +159,12 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 	 * <span class="zh-CN">指定返回类型的实例对象</span>
 	 */
 	protected final <B> B dialect(final String dialectName, final Class<B> builderClass) {
+		if (StringUtils.isEmpty(dialectName)
+				|| ObjectUtils.nullSafeEquals(this.schemaConfig.getDialectName(), dialectName)) {
+			return builderClass.cast(this);
+		}
 		this.schemaConfig.setDialectName(dialectName);
+		this.modified = Boolean.TRUE;
 		return builderClass.cast(this);
 	}
 
@@ -149,39 +185,30 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 	 */
 	protected final <B> B trustStore(final String storePath, final String storePassword, final Class<B> builderClass) {
 		if (StringUtils.notBlank(storePath)) {
-			TrustStore trustStore = Optional.ofNullable(this.schemaConfig.getTrustStore()).orElse(new TrustStore());
-			trustStore.setTrustStorePath(storePath);
-			trustStore.setTrustStorePassword(storePassword);
+			TrustStore trustStore = this.schemaConfig.getTrustStore();
+			if (trustStore == null) {
+				trustStore = new TrustStore();
+				this.modified = Boolean.TRUE;
+			}
+
+			if (!ObjectUtils.nullSafeEquals(trustStore.getTrustStorePath(), storePath)) {
+				trustStore.setTrustStorePath(storePath);
+				this.modified = Boolean.TRUE;
+			}
+
+			if (StringUtils.notBlank(storePassword)
+					&& !ObjectUtils.nullSafeEquals(trustStore.getTrustStorePassword(), storePassword)) {
+				trustStore.setTrustStorePassword(storePassword);
+				this.modified = Boolean.TRUE;
+			}
+
 			this.schemaConfig.setTrustStore(trustStore);
 		}
 		return builderClass.cast(this);
 	}
 
 	/**
-	 * <h3 class="en-US">Set X.509 certificate authentication information</h3>
-	 * <h3 class="zh-CN">设置X.509证书身份认证信息</h3>
-	 *
-	 * @param x509Certificate <span class="en-US">X.509 certificate</span>
-	 *                        <span class="zh-CN">X.509证书</span>
-	 * @param builderClass    <span class="en-US">Returned object type</span>
-	 *                        <span class="zh-CN">返回的对象类型</span>
-	 * @param <B>             <span class="en-US">Generic class that returns the object type</span>
-	 *                        <span class="zh-CN">返回对象类型的泛型类</span>
-	 * @return <span class="en-US">Instance object of specified return type</span>
-	 * <span class="zh-CN">指定返回类型的实例对象</span>
-	 * @throws CertificateEncodingException <span class="en-US">Error while reading certificate</span>
-	 *                                      <span class="zh-CN">读取证书时出错</span>
-	 */
-	protected final <B> B x509Authenticator(@Nonnull final X509Certificate x509Certificate,
-	                                        final Class<B> builderClass) throws CertificateEncodingException {
-		X509Authentication x509Authentication = new X509Authentication();
-		x509Authentication.setCertData(StringUtils.base64Encode(x509Certificate.getEncoded()));
-		this.schemaConfig.setAuthentication(x509Authentication);
-		return builderClass.cast(this);
-	}
-
-	/**
-	 * <h3 class="en-US">Set slow query critical time</h3>
+	 * <h3 class="en-US">Set slow query-critical time</h3>
 	 * <h3 class="zh-CN">设置慢查询临界时间</h3>
 	 *
 	 * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
@@ -193,8 +220,11 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 	 * @return <span class="en-US">Instance object of specified return type</span>
 	 * <span class="zh-CN">指定返回类型的实例对象</span>
 	 */
-	protected final <B> B lowQuery(final int lowQueryTimeout, final Class<B> builderClass) {
-		this.schemaConfig.setLowQueryTimeout(lowQueryTimeout);
+	protected final <B> B lowQuery(final long lowQueryTimeout, final Class<B> builderClass) {
+		if (lowQueryTimeout > 0 && this.schemaConfig.getLowQueryTimeout() != lowQueryTimeout) {
+			this.schemaConfig.setLowQueryTimeout(lowQueryTimeout);
+			this.modified = Boolean.TRUE;
+		}
 		return builderClass.cast(this);
 	}
 
@@ -214,8 +244,14 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 	 * <span class="zh-CN">指定返回类型的实例对象</span>
 	 */
 	protected final <B> B timeout(final int validateTimeout, final int connectTimeout, final Class<B> builderClass) {
-		this.schemaConfig.setValidateTimeout(validateTimeout);
-		this.schemaConfig.setConnectTimeout(connectTimeout);
+		if (validateTimeout > 0 && this.schemaConfig.getValidateTimeout() != validateTimeout) {
+			this.schemaConfig.setValidateTimeout(validateTimeout);
+			this.modified = Boolean.TRUE;
+		}
+		if (connectTimeout > 0 && this.schemaConfig.getConnectTimeout() != connectTimeout) {
+			this.schemaConfig.setConnectTimeout(connectTimeout);
+			this.modified = Boolean.TRUE;
+		}
 		return builderClass.cast(this);
 	}
 
@@ -250,8 +286,8 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 	}
 
 	/**
-	 * <h3 class="en-US">Add new server information</h3>
-	 * <h3 class="zh-CN">添加新的服务器信息</h3>
+	 * <h3 class="en-US">Update or insert server information</h3>
+	 * <h3 class="zh-CN">修改或新增服务器等级信息</h3>
 	 *
 	 * @param serverList    <span class="en-US">Exists server information list</span>
 	 *                      <span class="zh-CN">现有服务器列表</span>
@@ -264,7 +300,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 	 * @param serverLevel   <span class="en-US">Server level</span>
 	 *                      <span class="zh-CN">服务器等级</span>
 	 */
-	protected final void insertServer(final List<ServerInfo> serverList, final String serverName,
+	protected final void upsertServer(@Nonnull final List<ServerInfo> serverList, final String serverName,
 	                                  final String serverAddress, final int serverPort, final int serverLevel) {
 		if (serverList.stream().noneMatch(serverInfo -> serverInfo.match(serverAddress, serverPort))) {
 			ServerInfo serverInfo = new ServerInfo();
@@ -273,30 +309,23 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 			serverInfo.setServerPort(serverPort);
 			serverInfo.setServerLevel(serverLevel);
 			serverList.add(serverInfo);
+			this.modified = Boolean.TRUE;
+		} else {
+			serverList.replaceAll(serverInfo -> {
+				if (serverInfo.match(serverAddress, serverPort)) {
+					if (serverInfo.getServerLevel() != serverLevel) {
+						serverInfo.setServerLevel(serverLevel);
+						this.modified = Boolean.TRUE;
+					}
+					if (StringUtils.notBlank(serverName)
+							&& ObjectUtils.nullSafeEquals(serverInfo.getServerName(), serverName)) {
+						serverInfo.setServerName(serverName);
+						this.modified = Boolean.TRUE;
+					}
+				}
+				return serverInfo;
+			});
 		}
-	}
-
-	/**
-	 * <h3 class="en-US">Update server level information</h3>
-	 * <h3 class="zh-CN">修改服务器等级信息</h3>
-	 *
-	 * @param serverList    <span class="en-US">Exists server information list</span>
-	 *                      <span class="zh-CN">现有服务器列表</span>
-	 * @param serverAddress <span class="en-US">Server address</span>
-	 *                      <span class="zh-CN">服务器地址</span>
-	 * @param serverPort    <span class="en-US">Server port number</span>
-	 *                      <span class="zh-CN">服务器端口号</span>
-	 * @param serverLevel   <span class="en-US">Server level</span>
-	 *                      <span class="zh-CN">服务器等级</span>
-	 */
-	protected final void updateServer(final List<ServerInfo> serverList, final String serverAddress,
-	                                  final int serverPort, final int serverLevel) {
-		serverList.replaceAll(serverInfo -> {
-			if (serverInfo.match(serverAddress, serverPort)) {
-				serverInfo.setServerLevel(serverLevel);
-			}
-			return serverInfo;
-		});
 	}
 
 	/**
@@ -317,7 +346,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @param schemaConfig  <span class="en-US">Configure information instance object</span>
 		 *                      <span class="zh-CN">配置信息实例对象</span>
 		 */
-		DistributeConfigBuilder(final ConfigureBuilder parentBuilder,
+		DistributeConfigBuilder(final BrainConfigureBuilder parentBuilder,
 		                        final DistributeSchemaConfig schemaConfig) {
 			super(parentBuilder, schemaConfig);
 		}
@@ -351,23 +380,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		}
 
 		/**
-		 * <h3 class="en-US">Set X.509 certificate authentication information</h3>
-		 * <h3 class="zh-CN">设置X.509证书身份认证信息</h3>
-		 *
-		 * @param x509Certificate <span class="en-US">X.509 certificate</span>
-		 *                        <span class="zh-CN">X.509证书</span>
-		 * @return <span class="en-US">Current builder instance object</span>
-		 * <span class="zh-CN">当前构建器实例对象</span>
-		 * @throws CertificateEncodingException <span class="en-US">Error while reading certificate</span>
-		 *                                      <span class="zh-CN">读取证书时出错</span>
-		 */
-		public DistributeConfigBuilder x509Authenticator(@Nonnull final X509Certificate x509Certificate)
-				throws CertificateEncodingException {
-			return super.x509Authenticator(x509Certificate, DistributeConfigBuilder.class);
-		}
-
-		/**
-		 * <h3 class="en-US">Set slow query critical time</h3>
+		 * <h3 class="en-US">Set slow query-critical time</h3>
 		 * <h3 class="zh-CN">设置慢查询临界时间</h3>
 		 *
 		 * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
@@ -375,7 +388,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public DistributeConfigBuilder lowQuery(final int lowQueryTimeout) {
+		public DistributeConfigBuilder lowQuery(final long lowQueryTimeout) {
 			return super.lowQuery(lowQueryTimeout, DistributeConfigBuilder.class);
 		}
 
@@ -389,8 +402,9 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public DistributeConfigBuilder request(final int requestTimeout) {
-			if (requestTimeout > 0) {
+			if (requestTimeout > 0 && this.schemaConfig.getRequestTimeout() != requestTimeout) {
 				this.schemaConfig.setRequestTimeout(requestTimeout);
+				this.modified = Boolean.TRUE;
 			}
 			return this;
 		}
@@ -429,6 +443,29 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		}
 
 		/**
+		 * <h3 class="en-US">Configure server information</h3>
+		 * <h3 class="zh-CN">设置服务器相关信息</h3>
+		 *
+		 * @param serverInfo <span class="en-US">Database server information</span>
+		 *                   <span class="zh-CN">数据库服务器信息</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public DistributeConfigBuilder servers(final String serverInfo) {
+			List<ServerInfo> serverList = this.schemaConfig.getServerList();
+			for (String serverData : StringUtils.tokenizeToStringArray(serverInfo, Character.toString(FileUtils.LF))) {
+				String[] dataInfo = StringUtils.tokenizeToStringArray(serverData, "|");
+				if (dataInfo.length >= 3) {
+					String serverName = dataInfo[0], serverAddress = dataInfo[1];
+					int serverPort = Integer.parseInt(dataInfo[2]);
+					int serverLevel = dataInfo.length == 4 ? Integer.parseInt(dataInfo[3]) : Globals.DEFAULT_VALUE_INT;
+					super.upsertServer(serverList, serverName, serverAddress, serverPort, serverLevel);
+				}
+			}
+			return this;
+		}
+
+		/**
 		 * <h3 class="en-US">Add new server information</h3>
 		 * <h3 class="zh-CN">添加新的服务器信息</h3>
 		 *
@@ -443,10 +480,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 */
 		public DistributeConfigBuilder addServer(final String serverAddress,
 		                                         final int serverPort, final int serverLevel) {
-			List<ServerInfo> serverList = this.schemaConfig.getServerList();
-			super.insertServer(serverList, Globals.DEFAULT_VALUE_STRING, serverAddress, serverPort, serverLevel);
-			this.schemaConfig.setServerList(serverList);
-			return this;
+			return this.addServer(Globals.DEFAULT_VALUE_STRING, serverAddress, serverPort, serverLevel);
 		}
 
 		/**
@@ -467,7 +501,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		public DistributeConfigBuilder addServer(final String serverName, final String serverAddress,
 		                                         final int serverPort, final int serverLevel) {
 			List<ServerInfo> serverList = this.schemaConfig.getServerList();
-			super.insertServer(serverList, serverName, serverAddress, serverPort, serverLevel);
+			super.upsertServer(serverList, serverName, serverAddress, serverPort, serverLevel);
 			this.schemaConfig.setServerList(serverList);
 			return this;
 		}
@@ -488,7 +522,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		public DistributeConfigBuilder serverLevel(final String serverAddress, final int serverPort,
 		                                           final int serverLevel) {
 			List<ServerInfo> serverList = this.schemaConfig.getServerList();
-			super.updateServer(serverList, serverAddress, serverPort, serverLevel);
+			super.upsertServer(serverList, Globals.DEFAULT_VALUE_STRING, serverAddress, serverPort, serverLevel);
 			this.schemaConfig.setServerList(serverList);
 			return this;
 		}
@@ -506,8 +540,10 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 */
 		public DistributeConfigBuilder removeServer(final String serverAddress, final int serverPort) {
 			List<ServerInfo> serverList = this.schemaConfig.getServerList();
-			serverList.removeIf(serverInfo -> serverInfo.match(serverAddress, serverPort));
-			this.schemaConfig.setServerList(serverList);
+			if (serverList.removeIf(serverInfo -> serverInfo.match(serverAddress, serverPort))) {
+				this.schemaConfig.setServerList(serverList);
+				this.modified = Boolean.TRUE;
+			}
 			return this;
 		}
 
@@ -521,8 +557,10 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public DistributeConfigBuilder databaseName(final String databaseName) {
-			if (StringUtils.notBlank(databaseName)) {
+			if (StringUtils.notBlank(databaseName)
+					&& !ObjectUtils.nullSafeEquals(this.schemaConfig.getDatabaseName(), databaseName)) {
 				this.schemaConfig.setDatabaseName(databaseName);
+				this.modified = Boolean.TRUE;
 			}
 			return this;
 		}
@@ -537,12 +575,15 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public DistributeConfigBuilder useSsl(final boolean useSsl) {
-			this.schemaConfig.setUseSsl(useSsl);
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.isUseSsl(), useSsl)) {
+				this.schemaConfig.setUseSsl(useSsl);
+				this.modified = Boolean.TRUE;
+			}
 			return this;
 		}
 
 		/**
-		 * <h3 class="en-US">Set maximum size of prepared statement</h3>
+		 * <h3 class="en-US">Set the maximum size of the prepared statement</h3>
 		 * <h3 class="zh-CN">设置查询分析器的最大缓存结果</h3>
 		 *
 		 * @param cachedLimitSize <span class="en-US">Maximum size of prepared statement</span>
@@ -551,7 +592,10 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public DistributeConfigBuilder cacheSize(final int cachedLimitSize) {
-			this.schemaConfig.setCachedLimitSize(cachedLimitSize);
+			if (cachedLimitSize > 0 && this.schemaConfig.getCachedLimitSize() != cachedLimitSize) {
+				this.schemaConfig.setCachedLimitSize(cachedLimitSize);
+				this.modified = Boolean.TRUE;
+			}
 			return this;
 		}
 	}
@@ -574,7 +618,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @param schemaConfig  <span class="en-US">Configure information instance object</span>
 		 *                      <span class="zh-CN">配置信息实例对象</span>
 		 */
-		JdbcConfigBuilder(final ConfigureBuilder parentBuilder, final JdbcSchemaConfig schemaConfig) {
+		JdbcConfigBuilder(final BrainConfigureBuilder parentBuilder, final JdbcSchemaConfig schemaConfig) {
 			super(parentBuilder, schemaConfig);
 		}
 
@@ -607,23 +651,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		}
 
 		/**
-		 * <h3 class="en-US">Set X.509 certificate authentication information</h3>
-		 * <h3 class="zh-CN">设置X.509证书身份认证信息</h3>
-		 *
-		 * @param x509Certificate <span class="en-US">X.509 certificate</span>
-		 *                        <span class="zh-CN">X.509证书</span>
-		 * @return <span class="en-US">Current builder instance object</span>
-		 * <span class="zh-CN">当前构建器实例对象</span>
-		 * @throws CertificateEncodingException <span class="en-US">Error while reading certificate</span>
-		 *                                      <span class="zh-CN">读取证书时出错</span>
-		 */
-		public JdbcConfigBuilder x509Authenticator(@Nonnull final X509Certificate x509Certificate)
-				throws CertificateEncodingException {
-			return super.x509Authenticator(x509Certificate, JdbcConfigBuilder.class);
-		}
-
-		/**
-		 * <h3 class="en-US">Set slow query critical time</h3>
+		 * <h3 class="en-US">Set slow query-critical time</h3>
 		 * <h3 class="zh-CN">设置慢查询临界时间</h3>
 		 *
 		 * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
@@ -631,7 +659,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public JdbcConfigBuilder lowQuery(final int lowQueryTimeout) {
+		public JdbcConfigBuilder lowQuery(final long lowQueryTimeout) {
 			return super.lowQuery(lowQueryTimeout, JdbcConfigBuilder.class);
 		}
 
@@ -669,16 +697,34 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		}
 
 		/**
-		 * <h3 class="en-US">Set using server array</h3>
-		 * <h3 class="zh-CN">设置使用服务器组</h3>
+		 * <h3 class="en-US">Configure server information</h3>
+		 * <h3 class="zh-CN">设置服务器相关信息</h3>
 		 *
 		 * @param serverArray <span class="en-US">Using server array</span>
 		 *                    <span class="zh-CN">使用服务器组</span>
+		 * @param serverInfo <span class="en-US">Database server information</span>
+		 *                   <span class="zh-CN">数据库服务器信息</span>
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public JdbcConfigBuilder serverArray(final boolean serverArray) {
-			this.schemaConfig.setServerArray(serverArray);
+		public JdbcConfigBuilder servers(final boolean serverArray, final String serverInfo) {
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.isServerArray(), serverArray)) {
+				this.schemaConfig.setServerArray(serverArray);
+				this.modified = Boolean.TRUE;
+			}
+			List<ServerInfo> serverList = this.schemaConfig.getServerList();
+			for (String serverData : StringUtils.tokenizeToStringArray(serverInfo, Character.toString(FileUtils.LF))) {
+				String[] dataInfo = StringUtils.tokenizeToStringArray(serverData, "|");
+				if (dataInfo.length >= 2) {
+					if (!this.schemaConfig.isServerArray()) {
+						serverList.clear();
+					}
+					String serverAddress = dataInfo[0];
+					int serverPort = Integer.parseInt(dataInfo[1]);
+					int serverLevel = dataInfo.length == 3 ? Integer.parseInt(dataInfo[2]) : Globals.DEFAULT_VALUE_INT;
+					super.upsertServer(serverList, Globals.DEFAULT_VALUE_STRING, serverAddress, serverPort, serverLevel);
+				}
+			}
 			return this;
 		}
 
@@ -700,8 +746,9 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 			List<ServerInfo> serverList = this.schemaConfig.getServerList();
 			if (!this.schemaConfig.isServerArray() && !serverList.isEmpty()) {
 				serverList.clear();
+				this.modified = Boolean.TRUE;
 			}
-			super.insertServer(serverList, Globals.DEFAULT_VALUE_STRING, serverAddress, serverPort, serverLevel);
+			super.upsertServer(serverList, Globals.DEFAULT_VALUE_STRING, serverAddress, serverPort, serverLevel);
 			this.schemaConfig.setServerList(serverList);
 			return this;
 		}
@@ -722,7 +769,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		public JdbcConfigBuilder serverLevel(final String serverAddress, final int serverPort,
 		                                     final int serverLevel) {
 			List<ServerInfo> serverList = this.schemaConfig.getServerList();
-			super.updateServer(serverList, serverAddress, serverPort, serverLevel);
+			super.upsertServer(serverList, Globals.DEFAULT_VALUE_STRING, serverAddress, serverPort, serverLevel);
 			this.schemaConfig.setServerList(serverList);
 			return this;
 		}
@@ -740,8 +787,10 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 */
 		public JdbcConfigBuilder removeServer(final String serverAddress, final int serverPort) {
 			List<ServerInfo> serverList = this.schemaConfig.getServerList();
-			serverList.removeIf(serverInfo -> serverInfo.match(serverAddress, serverPort));
-			this.schemaConfig.setServerList(serverList);
+			if (serverList.removeIf(serverInfo -> serverInfo.match(serverAddress, serverPort))) {
+				this.schemaConfig.setServerList(serverList);
+				this.modified = Boolean.TRUE;
+			}
 			return this;
 		}
 
@@ -757,11 +806,15 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public JdbcConfigBuilder sharding(final boolean sharding, final String shardingDefault) {
-			this.schemaConfig.setSharding(sharding);
-			if (sharding) {
-				this.schemaConfig.setShardingDefault(shardingDefault);
-			} else {
-				this.schemaConfig.setShardingDefault(Globals.DEFAULT_VALUE_STRING);
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.isSharding(), sharding)
+					|| !ObjectUtils.nullSafeEquals(this.schemaConfig.getShardingDefault(), shardingDefault)) {
+				this.schemaConfig.setSharding(sharding);
+				if (sharding) {
+					this.schemaConfig.setShardingDefault(shardingDefault);
+				} else {
+					this.schemaConfig.setShardingDefault(Globals.DEFAULT_VALUE_STRING);
+				}
+				this.modified = Boolean.TRUE;
 			}
 			return this;
 		}
@@ -776,7 +829,10 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public JdbcConfigBuilder jdbcUrl(final String jdbcUrl) {
-			this.schemaConfig.setJdbcUrl(jdbcUrl);
+			if (StringUtils.notBlank(jdbcUrl) && !ObjectUtils.nullSafeEquals(this.schemaConfig.getJdbcUrl(), jdbcUrl)) {
+				this.schemaConfig.setJdbcUrl(jdbcUrl);
+				this.modified = Boolean.TRUE;
+			}
 			return this;
 		}
 
@@ -792,13 +848,19 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public JdbcConfigBuilder retry(final int retryCount, final long retryPeriod) {
-			this.schemaConfig.setRetryCount(retryCount);
-			this.schemaConfig.setRetryPeriod(retryPeriod);
+			if (retryCount > 0 && this.schemaConfig.getRetryCount() != retryCount) {
+				this.schemaConfig.setRetryCount(retryCount);
+				this.modified = Boolean.TRUE;
+			}
+			if (retryPeriod > 0 && this.schemaConfig.getRetryPeriod() != retryPeriod) {
+				this.schemaConfig.setRetryPeriod(retryPeriod);
+				this.modified = Boolean.TRUE;
+			}
 			return this;
 		}
 
 		/**
-		 * <h3 class="en-US">Set maximum size of prepared statement</h3>
+		 * <h3 class="en-US">Set the maximum size of the prepared statement</h3>
 		 * <h3 class="zh-CN">设置查询分析器的最大缓存结果</h3>
 		 *
 		 * @param cachedLimitSize <span class="en-US">Maximum size of prepared statement</span>
@@ -807,7 +869,10 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public JdbcConfigBuilder cacheSize(final int cachedLimitSize) {
-			this.schemaConfig.setCachedLimitSize(cachedLimitSize);
+			if (cachedLimitSize > 0 && this.schemaConfig.getCachedLimitSize() != cachedLimitSize) {
+				this.schemaConfig.setCachedLimitSize(cachedLimitSize);
+				this.modified = Boolean.TRUE;
+			}
 			return this;
 		}
 
@@ -823,8 +888,14 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public JdbcConfigBuilder testConnection(final boolean testOnBorrow, final boolean testOnReturn) {
-			this.schemaConfig.setTestOnBorrow(testOnBorrow);
-			this.schemaConfig.setTestOnReturn(testOnReturn);
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.isTestOnBorrow(), testOnBorrow)) {
+				this.schemaConfig.setTestOnBorrow(testOnBorrow);
+				this.modified = Boolean.TRUE;
+			}
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.isTestOnReturn(), testOnReturn)) {
+				this.schemaConfig.setTestOnReturn(testOnReturn);
+				this.modified = Boolean.TRUE;
+			}
 			return this;
 		}
 	}
@@ -847,7 +918,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @param schemaConfig  <span class="en-US">Configure information instance object</span>
 		 *                      <span class="zh-CN">配置信息实例对象</span>
 		 */
-		RemoteConfigBuilder(final ConfigureBuilder parentBuilder, final RemoteSchemaConfig schemaConfig) {
+		RemoteConfigBuilder(final BrainConfigureBuilder parentBuilder, final RemoteSchemaConfig schemaConfig) {
 			super(parentBuilder, schemaConfig);
 		}
 
@@ -867,23 +938,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		}
 
 		/**
-		 * <h3 class="en-US">Set X.509 certificate authentication information</h3>
-		 * <h3 class="zh-CN">设置X.509证书身份认证信息</h3>
-		 *
-		 * @param x509Certificate <span class="en-US">X.509 certificate</span>
-		 *                        <span class="zh-CN">X.509证书</span>
-		 * @return <span class="en-US">Current builder instance object</span>
-		 * <span class="zh-CN">当前构建器实例对象</span>
-		 * @throws CertificateEncodingException <span class="en-US">Error while reading certificate</span>
-		 *                                      <span class="zh-CN">读取证书时出错</span>
-		 */
-		public RemoteConfigBuilder x509Authenticator(@Nonnull final X509Certificate x509Certificate)
-				throws CertificateEncodingException {
-			return super.x509Authenticator(x509Certificate, RemoteConfigBuilder.class);
-		}
-
-		/**
-		 * <h3 class="en-US">Set slow query critical time</h3>
+		 * <h3 class="en-US">Set slow query-critical time</h3>
 		 * <h3 class="zh-CN">设置慢查询临界时间</h3>
 		 *
 		 * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
@@ -891,7 +946,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public RemoteConfigBuilder lowQuery(final int lowQueryTimeout) {
+		public RemoteConfigBuilder lowQuery(final long lowQueryTimeout) {
 			return super.lowQuery(lowQueryTimeout, RemoteConfigBuilder.class);
 		}
 
@@ -920,7 +975,10 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public RemoteConfigBuilder type(final RemoteType remoteType) {
-			this.schemaConfig.setRemoteType(remoteType);
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getRemoteType(), remoteType)) {
+				this.schemaConfig.setRemoteType(remoteType);
+				this.modified = Boolean.TRUE;
+			}
 			return this;
 		}
 
@@ -934,7 +992,10 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public RemoteConfigBuilder address(final String remoteAddress) {
-			this.schemaConfig.setRemoteAddress(remoteAddress);
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getRemoteAddress(), remoteAddress)) {
+				this.schemaConfig.setRemoteAddress(remoteAddress);
+				this.modified = Boolean.TRUE;
+			}
 			return this;
 		}
 
@@ -948,7 +1009,10 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public RemoteConfigBuilder keepAlive(final int keepAlive) {
-			this.schemaConfig.setKeepAlive(keepAlive);
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getKeepAlive(), keepAlive)) {
+				this.schemaConfig.setKeepAlive(keepAlive);
+				this.modified = Boolean.TRUE;
+			}
 			return this;
 		}
 
@@ -964,10 +1028,29 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 					Optional.ofNullable(this.schemaConfig.getProxyConfig()).orElse(new ProxyConfig()));
 		}
 
+		/**
+		 * <h3 class="en-US">Delete current proxy configure information</h3>
+		 * <h3 class="zh-CN">删除代理服务器配置信息</h3>
+		 *
+		 * @return <span class="en-US">Current builder instance</span>
+		 * <span class="zh-CN">当前构造器实例对象</span>
+		 */
+		public RemoteConfigBuilder removeProxyConfig() {
+			if (this.schemaConfig.getProxyConfig() != null) {
+				this.schemaConfig.setProxyConfig(null);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
 		@Override
 		public void confirm(final Object object) {
 			if (object instanceof ProxyConfig) {
-				this.schemaConfig.setProxyConfig((ProxyConfig) object);
+				if (this.schemaConfig.getProxyConfig() == null
+						|| this.schemaConfig.getProxyConfig().getLastModified() != ((ProxyConfig) object).getLastModified()) {
+					this.schemaConfig.setProxyConfig((ProxyConfig) object);
+					this.modified = Boolean.TRUE;
+				}
 			} else {
 				super.confirm(object);
 			}

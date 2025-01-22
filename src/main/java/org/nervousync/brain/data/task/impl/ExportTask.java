@@ -31,7 +31,7 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Mar 23, 2021 05:20:21 $
  */
-@XmlRootElement(name = "export_task", namespace = "https://nervousync.org/schemas/database")
+@XmlRootElement(name = "export_task", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class ExportTask extends AbstractTask {
 

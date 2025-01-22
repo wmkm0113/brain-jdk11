@@ -30,8 +30,8 @@ import org.nervousync.utils.ObjectUtils;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision : 1.0.0 $ $Date: Dec 12, 2020 09:27:39 $
  */
-@XmlType(name = "server_info", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "server_info", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "server_info", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "server_info", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class ServerInfo extends BeanObject {
 

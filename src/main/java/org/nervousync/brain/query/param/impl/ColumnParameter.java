@@ -29,8 +29,8 @@ import org.nervousync.brain.query.param.AbstractParameter;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:45:29 $
  */
-@XmlType(name = "column_parameter", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "column_parameter", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "column_parameter", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "column_parameter", namespace = "https://nervousync.org/schemas/brain")
 public final class ColumnParameter extends AbstractParameter<ColumnItem> {
 
     /**
@@ -42,7 +42,7 @@ public final class ColumnParameter extends AbstractParameter<ColumnItem> {
      * <span class="en-US">Parameter value</span>
      * <span class="zh-CN">参数值</span>
      */
-    @XmlElement(name = "column_item", namespace = "https://nervousync.org/schemas/database")
+    @XmlElement(name = "column_item", namespace = "https://nervousync.org/schemas/brain")
     private ColumnItem itemValue;
 
     /**

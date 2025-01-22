@@ -35,7 +35,6 @@ import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.utils.StringUtils;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -218,8 +217,15 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 	}
 
 	@Override
-	public void close() throws IOException {
-		this.distributeClient.close();
+	public void close() {
+		try {
+			this.distributeClient.close();
+		} catch (Exception e) {
+			this.logger.error("Close_DataSource_Error");
+			if (this.logger.isDebugEnabled()) {
+				this.logger.debug("Stack_Message_Error", e);
+			}
+		}
 	}
 
 	@Override

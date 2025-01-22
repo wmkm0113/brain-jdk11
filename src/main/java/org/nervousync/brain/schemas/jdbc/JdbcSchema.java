@@ -188,10 +188,24 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		}
 	}
 
+	/**
+	 * <h3 class="en-US">Generate parameter information required for connection</h3>
+	 * <h3 class="zh-CN">生成连接需要使用的参数信息</h3>
+	 *
+	 * @return <span class="en-US">Connect properties instance object</span>
+	 * <span class="zh-CN">连接属性值</span>
+	 */
 	Properties properties() {
 		return this.dialect.properties(this.trustStore, this.authentication);
 	}
 
+	/**
+	 * <h3 class="en-US">Connection verification query command</h3>
+	 * <h3 class="zh-CN">连接验证查询命令</h3>
+	 *
+	 * @return <span class="en-US">Connection verification query command</span>
+	 * <span class="zh-CN">连接验证查询命令</span>
+	 */
 	String validationQuery() {
 		return this.dialect.getValidationQuery();
 	}

@@ -17,12 +17,14 @@
 
 package org.nervousync.brain.configs.auth;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.configs.auth.impl.TrustStoreAuthentication;
 import org.nervousync.brain.configs.auth.impl.UserAuthentication;
 import org.nervousync.brain.configs.auth.impl.X509Authentication;
 import org.nervousync.brain.enumerations.auth.AuthType;
+import org.nervousync.commons.Globals;
 
 /**
  * <h2 class="en-US">Authentication information abstract class</h2>
@@ -31,7 +33,7 @@ import org.nervousync.brain.enumerations.auth.AuthType;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision : 1.0.0 $ $Date: Apr 10, 2018 15:44:07 $
  */
-@XmlType(namespace = "https://nervousync.org/schemas/database")
+@XmlType(namespace = "https://nervousync.org/schemas/brain")
 @XmlSeeAlso({TrustStoreAuthentication.class, UserAuthentication.class, X509Authentication.class})
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class Authentication extends BeanObject {
@@ -48,6 +50,12 @@ public abstract class Authentication extends BeanObject {
 	 */
 	@XmlElement(name = "auth_type")
 	private final AuthType authType;
+	/**
+	 * <span class="en-US">Last modified timestamp</span>
+	 * <span class="zh-CN">最后修改时间戳</span>
+	 */
+	@JsonIgnore
+	private long lastModified = Globals.DEFAULT_VALUE_LONG;
 
 	/**
 	 * <h3 class="en-US">Constructor method for authentication information abstract class</h3>
@@ -69,5 +77,27 @@ public abstract class Authentication extends BeanObject {
 	 */
 	public AuthType getAuthType() {
 		return this.authType;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the last modified timestamp</h3>
+	 * <h3 class="zh-CN">最后修改时间戳的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Last modified timestamp</span>
+	 * <span class="zh-CN">最后修改时间戳</span>
+	 */
+	public long getLastModified() {
+		return this.lastModified;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the last modified timestamp</h3>
+	 * <h3 class="zh-CN">最后修改时间戳的Setter方法</h3>
+	 *
+	 * @param lastModified <span class="en-US">Last modified timestamp</span>
+	 *                     <span class="zh-CN">最后修改时间戳</span>
+	 */
+	public void setLastModified(final long lastModified) {
+		this.lastModified = lastModified;
 	}
 }

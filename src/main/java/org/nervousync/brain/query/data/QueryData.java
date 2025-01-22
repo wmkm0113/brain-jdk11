@@ -37,8 +37,8 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 18:19:42 $
  */
-@XmlType(name = "query_data", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "query_data", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "query_data", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "query_data", namespace = "https://nervousync.org/schemas/brain")
 public final class QueryData extends BeanObject {
 
 	/**
@@ -58,9 +58,9 @@ public final class QueryData extends BeanObject {
 	 * <span class="zh-CN">查询项目实例对象</span>
 	 */
 	@XmlElementRefs({
-			@XmlElementRef(name = "column_item", type = ColumnItem.class, namespace = "https://nervousync.org/schemas/database"),
-			@XmlElementRef(name = "function_item", type = FunctionItem.class, namespace = "https://nervousync.org/schemas/database"),
-			@XmlElementRef(name = "query_item", type = QueryItem.class, namespace = "https://nervousync.org/schemas/database"),
+			@XmlElementRef(name = "column_item", type = ColumnItem.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElementRef(name = "function_item", type = FunctionItem.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElementRef(name = "query_item", type = QueryItem.class, namespace = "https://nervousync.org/schemas/brain"),
 	})
 	private AbstractItem queryItem;
 	/**
@@ -68,8 +68,8 @@ public final class QueryData extends BeanObject {
 	 * <span class="zh-CN">查询条件实例对象列表</span>
 	 */
     @XmlElements({
-            @XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/database"),
-            @XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/database")
+            @XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/brain"),
+            @XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/brain")
     })
 	@XmlElementWrapper(name = "conditions")
 	private List<Condition> conditions;
@@ -85,8 +85,8 @@ public final class QueryData extends BeanObject {
 	 * <span class="zh-CN">分组筛选条件实例对象列表</span>
 	 */
     @XmlElements({
-            @XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/database"),
-            @XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/database")
+            @XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/brain"),
+            @XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/brain")
     })
 	@XmlElementWrapper(name = "having_list")
 	private List<Condition> havingList;

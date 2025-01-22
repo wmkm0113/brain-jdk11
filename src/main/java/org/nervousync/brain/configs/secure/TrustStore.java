@@ -29,8 +29,8 @@ import org.nervousync.commons.Globals;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision : 1.0.0 $ $Date: Jul 12, 2020 16:22:41 $
  */
-@XmlType(name = "trust_store", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "trust_store", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "trust_store", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "trust_store", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class TrustStore extends BeanObject {
 

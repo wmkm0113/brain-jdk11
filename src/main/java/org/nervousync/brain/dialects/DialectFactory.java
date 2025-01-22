@@ -18,15 +18,18 @@
 package org.nervousync.brain.dialects;
 
 import jakarta.annotation.Nonnull;
+import org.nervousync.annotations.provider.Provider;
 import org.nervousync.brain.annotations.dialect.SchemaDialect;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
+import org.nervousync.commons.Globals;
 import org.nervousync.utils.LoggerUtils;
+import org.nervousync.utils.MultilingualUtils;
+import org.nervousync.utils.ObjectUtils;
 import org.nervousync.utils.StringUtils;
 
 import java.sql.SQLException;
-import java.util.Hashtable;
-import java.util.Optional;
-import java.util.ServiceLoader;
+import java.util.*;
 
 /**
  * <h2 class="en-US">Database dialect factory, running in singleton mode</h2>
@@ -62,14 +65,78 @@ public final class DialectFactory {
 	 *                <span class="zh-CN">数据库方言实现类实例对象</span>
 	 */
 	public static void register(@Nonnull final Dialect dialect) {
-		Optional.ofNullable(dialect.getClass().getAnnotation(SchemaDialect.class))
+		Provider provider = dialect.getClass().getAnnotation(Provider.class);
+		if (provider == null) {
+			return;
+		}
+		Optional.of(dialect.getClass().getAnnotation(SchemaDialect.class))
 				.ifPresent(schemaDialect -> {
-					if (registered(schemaDialect.name())) {
-						LOGGER.warn("Override_Registered_Dialect", schemaDialect.name(),
-								REGISTERED_DIALECTS.get(schemaDialect.name()));
+					if (registered(provider.name())) {
+						LOGGER.warn("Override_Registered_Dialect", provider.name(),
+								REGISTERED_DIALECTS.get(provider.name()).getClass().getName());
 					}
-					REGISTERED_DIALECTS.put(schemaDialect.name(), dialect);
+					REGISTERED_DIALECTS.put(provider.name(), dialect);
 				});
+	}
+
+	/**
+	 * <h3 class="en-US">Get a list of registered database dialect names</h3>
+	 * <h3 class="zh-CN">获取已注册的数据库方言名称列表</h3>
+	 *
+	 * @param dialectType <span class="en-US">Database dialect type</span>
+	 *                    <span class="zh-CN">数据库方言类型</span>
+	 * @return <span class="en-US">Database dialect name list</span>
+	 * <span class="zh-CN">数据库方言名称列表</span>
+	 */
+	public static List<String> dialectNames(@Nonnull final DialectType dialectType) {
+		List<String> dialectNames = new ArrayList<>();
+		REGISTERED_DIALECTS.entrySet()
+				.stream()
+				.filter(entry -> ObjectUtils.nullSafeEquals(entry.getValue().type(), dialectType))
+				.forEach(entry -> dialectNames.add(entry.getKey()));
+		return dialectNames;
+	}
+
+	/**
+	 * <h3 class="en-US">Get the title of the given database dialect name</h3>
+	 * <h3 class="zh-CN">获取给定数据库方言名称的标题</h3>
+	 *
+	 * @param dialectName  <span class="en-US">Database dialect name</span>
+	 *                     <span class="zh-CN">数据库方言名称</span>
+	 * @param languageCode <span class="en-US">Language code</span>
+	 *                     <span class="zh-CN">语言代码</span>
+	 * @return <span class="en-US">Display title</span>
+	 * <span class="zh-CN">显示的标题</span>
+	 */
+	public static String displayName(final String dialectName, final String languageCode) {
+		if (StringUtils.isEmpty(dialectName)) {
+			return Globals.DEFAULT_VALUE_STRING;
+		}
+		return Optional.ofNullable(REGISTERED_DIALECTS.get(dialectName))
+				.map(Dialect::getClass)
+				.map(dialectClass -> MultilingualUtils.providerName(dialectClass, languageCode))
+				.orElse(Globals.DEFAULT_VALUE_STRING);
+	}
+
+	/**
+	 * <h3 class="en-US">Get the description of the given database dialect name</h3>
+	 * <h3 class="zh-CN">获取给定数据库方言名称的介绍信息</h3>
+	 *
+	 * @param dialectName  <span class="en-US">Database dialect name</span>
+	 *                     <span class="zh-CN">数据库方言名称</span>
+	 * @param languageCode <span class="en-US">Language code</span>
+	 *                     <span class="zh-CN">语言代码</span>
+	 * @return <span class="en-US">Display description information</span>
+	 * <span class="zh-CN">显示的介绍信息</span>
+	 */
+	public static String displayDescription(final String dialectName, final String languageCode) {
+		if (StringUtils.isEmpty(dialectName)) {
+			return Globals.DEFAULT_VALUE_STRING;
+		}
+		return Optional.ofNullable(REGISTERED_DIALECTS.get(dialectName))
+				.map(Dialect::getClass)
+				.map(dialectClass -> MultilingualUtils.providerDescription(dialectClass, languageCode))
+				.orElse(Globals.DEFAULT_VALUE_STRING);
 	}
 
 	/**

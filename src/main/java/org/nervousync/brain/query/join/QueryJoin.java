@@ -35,8 +35,8 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Jul 30, 2023 15:57:33 $
  */
-@XmlType(name = "query_join", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "query_join", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "query_join", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "query_join", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class QueryJoin extends SortedItem {
 

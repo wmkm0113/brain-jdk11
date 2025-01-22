@@ -40,8 +40,8 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Jun 27, 2018 23:02:27 $
  */
-@XmlType(name = "column_define", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "column_define", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "column_define", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "column_define", namespace = "https://nervousync.org/schemas/brain")
 public final class ColumnDefine extends BeanObject {
 
 	/**
@@ -127,7 +127,7 @@ public final class ColumnDefine extends BeanObject {
 	 * <span class="en-US">Column value generator configure</span>
 	 * <span class="zh-CN">数据生成器配置</span>
 	 */
-	@XmlElement(name = "generator_define", namespace = "https://nervousync.org/schemas/database")
+	@XmlElement(name = "generator_define", namespace = "https://nervousync.org/schemas/brain")
 	private GeneratorDefine generatorDefine;
 
 	/**

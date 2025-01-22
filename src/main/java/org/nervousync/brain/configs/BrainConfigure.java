@@ -25,6 +25,8 @@ import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
 import org.nervousync.brain.configs.storage.StorageConfig;
 import org.nervousync.brain.enumerations.ddl.DDLType;
+import org.nervousync.cache.config.CacheConfig;
+import org.nervousync.commons.Globals;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,10 +38,10 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@Hotmail.com">wmkm0113@Hotmail.com</a>
  * @version $Revision : 1.0 $ $Date: Dec 20, 2018 15:43:52 $
  */
-@XmlType(name = "brain_config", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "brain_config", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "brain_config", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "brain_config", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
-public final class Configure extends BeanObject {
+public final class BrainConfigure extends BeanObject {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>
@@ -80,14 +82,26 @@ public final class Configure extends BeanObject {
 	 * <span class="en-US">Data import/export configure information</span>
 	 * <span class="zh-CN">数据导入导出配置</span>
 	 */
-	@XmlElement(name = "storage_config", namespace = "https://nervousync.org/schemas/database")
+	@XmlElement(name = "storage_config", namespace = "https://nervousync.org/schemas/brain")
 	private StorageConfig storageConfig = null;
+	/**
+	 * <span class="en-US">Cache configure information</span>
+	 * <span class="zh-CN">缓存配置信息</span>
+	 */
+	@XmlElement(name = "cache_config", namespace = "https://nervousync.org/schemas/cache")
+	private CacheConfig cacheConfig = null;
+	/**
+	 * <span class="en-US">Last modified timestamp</span>
+	 * <span class="zh-CN">最后修改时间戳</span>
+	 */
+	@XmlElement(name = "last_modified")
+	private long lastModified = Globals.DEFAULT_VALUE_LONG;
 
 	/**
 	 * <h3 class="en-US">Constructor method for MAGI configuration information definition</h3>
 	 * <h3 class="zh-CN">MAGI配置信息定义的构造方法</h3>
 	 */
-	public Configure() {
+	public BrainConfigure() {
 		this.schemaConfigs = new ArrayList<>();
 	}
 
@@ -199,5 +213,49 @@ public final class Configure extends BeanObject {
 	 */
 	public void setStorageConfig(final StorageConfig storageConfig) {
 		this.storageConfig = storageConfig;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for cache configure information</h3>
+	 * <h3 class="zh-CN">缓存配置信息的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Cache configure information</span>
+	 * <span class="zh-CN">缓存配置信息</span>
+	 */
+	public CacheConfig getCacheConfig() {
+		return this.cacheConfig;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for cache configure information</h3>
+	 * <h3 class="zh-CN">缓存配置信息的Setter方法</h3>
+	 *
+	 * @param cacheConfig <span class="en-US">Cache configure information</span>
+	 *                    <span class="zh-CN">缓存配置信息</span>
+	 */
+	public void setCacheConfig(final CacheConfig cacheConfig) {
+		this.cacheConfig = cacheConfig;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the last modified timestamp</h3>
+	 * <h3 class="zh-CN">最后修改时间戳的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Last modified timestamp</span>
+	 * <span class="zh-CN">最后修改时间戳</span>
+	 */
+	public long getLastModified() {
+		return this.lastModified;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the last modified timestamp</h3>
+	 * <h3 class="zh-CN">最后修改时间戳的Setter方法</h3>
+	 *
+	 * @param lastModified <span class="en-US">Last modified timestamp</span>
+	 *                     <span class="zh-CN">最后修改时间戳</span>
+	 */
+	public void setLastModified(final long lastModified) {
+		this.lastModified = lastModified;
 	}
 }

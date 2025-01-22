@@ -20,12 +20,10 @@ package org.nervousync.brain.schemas.remote;
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.LockModeType;
 import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.xml.ws.BindingProvider;
 import org.glassfish.jersey.client.ClientProperties;
 import org.jetbrains.annotations.NotNull;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.auth.impl.TrustStoreAuthentication;
-import org.nervousync.brain.configs.auth.impl.UserAuthentication;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.ColumnDefine;
@@ -115,13 +113,10 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 					.property(ClientProperties.FOLLOW_REDIRECTS, HttpClient.Redirect.NORMAL)
 					.property(ClientProperties.CONNECT_TIMEOUT, this.getConnectTimeout());
 
-			if (this.trustStore != null) {
-				KeyStore keyStore = CertificateUtils.loadKeyStore(this.trustStore.getTrustStorePath(),
-						this.trustStore.getTrustStorePassword());
-				if (keyStore != null) {
-					this.clientBuilder.trustStore(keyStore);
-				}
-			}
+			Optional.ofNullable(this.trustStore)
+					.map(store -> CertificateUtils.loadKeyStore(store.getTrustStorePath(), store.getTrustStorePassword()))
+					.ifPresent(this.clientBuilder::trustStore);
+
 			if (this.authentication != null && this.authentication instanceof TrustStoreAuthentication) {
 				KeyStore keyStore =
 						CertificateUtils.loadKeyStore(((TrustStoreAuthentication) this.authentication).getTrustStorePath(),
@@ -131,49 +126,40 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 				}
 			}
 
-//			Optional.ofNullable(schemaConfig.getProxyConfig())
-//					.filter(proxyConfig -> StringUtils.notBlank(proxyConfig.getProxyAddress()))
-//					.ifPresent(proxyConfig -> {
-//						String proxyURI = proxyConfig.getProxyAddress();
-//						if (proxyConfig.getProxyPort() != Globals.DEFAULT_VALUE_INT) {
-//							proxyURI += ":" + proxyConfig.getProxyPort();
-//						}
-//						this.clientBuilder.property(ClientProperties.PROXY_URI, proxyURI);
-//						String authentication = Globals.DEFAULT_VALUE_STRING;
-//						if (StringUtils.notBlank(proxyConfig.getUserName())) {
-//							authentication += proxyConfig.getUserName() + ":";
-//							this.clientBuilder.property(ClientProperties.PROXY_USERNAME, proxyConfig.getUserName());
-//						}
-//						if (StringUtils.notBlank(proxyConfig.getPassword())) {
-//							authentication += proxyConfig.getPassword();
-//							this.clientBuilder.property(ClientProperties.PROXY_PASSWORD, proxyConfig.getPassword());
-//						}
-//						this.configMap.put("Proxy-Authorization",
-//								StringUtils.base64Encode(authentication.getBytes(Charset.forName(Globals.DEFAULT_ENCODING))));
-//					});
+			Optional.ofNullable(schemaConfig.getProxyConfig())
+					.filter(proxyConfig -> StringUtils.notBlank(proxyConfig.getProxyAddress()))
+					.ifPresent(proxyConfig -> {
+						String proxyURI = proxyConfig.getProxyAddress();
+						if (proxyConfig.getProxyPort() != Globals.DEFAULT_VALUE_INT) {
+							proxyURI += ":" + proxyConfig.getProxyPort();
+						}
+						this.clientBuilder.property(ClientProperties.PROXY_URI, proxyURI);
+						String authentication = Globals.DEFAULT_VALUE_STRING;
+						if (StringUtils.notBlank(proxyConfig.getUserName())) {
+							authentication += proxyConfig.getUserName() + ":";
+							this.clientBuilder.property(ClientProperties.PROXY_USERNAME, proxyConfig.getUserName());
+						}
+						if (StringUtils.notBlank(proxyConfig.getPassword())) {
+							authentication += proxyConfig.getPassword();
+							this.clientBuilder.property(ClientProperties.PROXY_PASSWORD, proxyConfig.getPassword());
+						}
+						this.configMap.put("Proxy-Authorization",
+								StringUtils.base64Encode(authentication.getBytes(Charset.forName(Globals.DEFAULT_ENCODING))));
+					});
 		} else {
 			this.clientBuilder = null;
 			if (this.getConnectTimeout() > 0) {
 				this.configMap.put("sun.net.client.defaultConnectTimeout", Integer.toString(this.getConnectTimeout()));
 			}
-			if (this.authentication != null && this.authentication instanceof UserAuthentication) {
-				UserAuthentication userAuthentication = (UserAuthentication) this.authentication;
-				if (StringUtils.notBlank(userAuthentication.getUserName())) {
-					this.configMap.put(BindingProvider.USERNAME_PROPERTY, userAuthentication.getUserName());
-				}
-				if (StringUtils.notBlank(userAuthentication.getPassWord())) {
-					this.configMap.put(BindingProvider.PASSWORD_PROPERTY, userAuthentication.getPassWord());
-				}
-			}
-//			Optional.ofNullable(schemaConfig.getProxyConfig())
-//					.filter(proxyConfig -> StringUtils.notBlank(proxyConfig.getProxyAddress()))
-//					.ifPresent(proxyConfig -> {
-//						ProxySelector.setDefault(new ServiceProxySelector(this.remoteAddress, proxyConfig));
-//						if (StringUtils.notBlank(proxyConfig.getUserName())) {
-//							Authenticator.setDefault(
-//									new ProxyAuthenticator(proxyConfig.getUserName(), proxyConfig.getPassword()));
-//						}
-//					});
+			Optional.ofNullable(schemaConfig.getProxyConfig())
+					.filter(proxyConfig -> StringUtils.notBlank(proxyConfig.getProxyAddress()))
+					.ifPresent(proxyConfig -> {
+						ProxySelector.setDefault(new ServiceProxySelector(this.remoteAddress, proxyConfig));
+						if (StringUtils.notBlank(proxyConfig.getUserName())) {
+							Authenticator.setDefault(
+									new ProxyAuthenticator(proxyConfig.getUserName(), proxyConfig.getPassword()));
+						}
+					});
 		}
 		this.activeConnections = new AtomicInteger(Globals.INITIALIZE_INT_VALUE);
 	}
@@ -280,13 +266,17 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	public void beginTransactional() throws SQLException {
 		if (this.operatorThreadLocal.get() == null) {
 			try {
+				Map<String, String> configMap = new HashMap<>(this.configMap);
+				Optional.ofNullable(this.dialect.properties(this.trustStore, this.authentication))
+						.map(ConvertUtils::toMap)
+						.ifPresent(configMap::putAll);
 				RemoteClient remoteClient;
 				switch (this.remoteType) {
 					case SOAP:
-						remoteClient = this.dialect.SOAPClient(this.remoteAddress, this.configMap);
+						remoteClient = this.dialect.SOAPClient(this.remoteAddress, configMap);
 						break;
 					case Restful:
-						remoteClient = this.dialect.restfulClient(this.remoteAddress, this.clientBuilder, this.configMap);
+						remoteClient = this.dialect.restfulClient(this.remoteAddress, this.clientBuilder, configMap);
 						break;
 					default:
 						throw new MultilingualSQLException(0x00DB00000030L, this.remoteType);
@@ -300,7 +290,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	}
 
 	@Override
-	public void rollback(final Exception e) throws Exception {
+	public void rollback(final Exception e) throws SQLException {
 		TransactionalConfig transactionalConfig = this.txConfig.get();
 		if (transactionalConfig != null && transactionalConfig.getIsolation() != Connection.TRANSACTION_NONE
 				&& transactionalConfig.rollback(e)) {
@@ -309,30 +299,30 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	}
 
 	@Override
-	public void commit() throws Exception {
+	public void commit() throws SQLException {
 		if (this.txConfig.get() != null) {
 			this.operatorThreadLocal.get().commit(this.txConfig.get().getTransactionalCode());
 		}
 	}
 
 	@Override
-	public void truncateTables() throws Exception {
+	public void truncateTables() throws SQLException {
 		this.operatorThreadLocal.get().truncateTables();
 	}
 
 	@Override
-	public void truncateTable(@NotNull final TableDefine tableDefine) throws Exception {
+	public void truncateTable(@NotNull final TableDefine tableDefine) throws SQLException {
 		this.operatorThreadLocal.get().truncateTable(tableDefine.getTableName());
 	}
 
 	@Override
-	public void dropTables(final DropOption dropOption) throws Exception {
+	public void dropTables(final DropOption dropOption) throws SQLException {
 		this.operatorThreadLocal.get().dropTables(dropOption);
 	}
 
 	@Override
 	public void dropTable(@NotNull final TableDefine tableDefine, @NotNull final DropOption dropOption)
-			throws Exception {
+			throws SQLException {
 		StringBuilder indexNames = new StringBuilder();
 		for (IndexDefine indexDefine : tableDefine.getIndexDefines()) {
 			indexNames.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(indexDefine.getIndexName());
@@ -353,7 +343,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 
 	@Override
 	public Map<String, Object> insert(@NotNull final TableDefine tableDefine,
-	                                  @NotNull final Map<String, Object> dataMap) throws Exception {
+	                                  @NotNull final Map<String, Object> dataMap) throws SQLException {
 		String tableName = this.shardingTable(tableDefine.getTableName(), dataMap);
 		String responseData =
 				this.operatorThreadLocal.get()
@@ -368,7 +358,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	@Override
 	public Map<String, Object> retrieve(@NotNull final TableDefine tableDefine, final String columns,
 	                                    @NotNull final Map<String, Object> filterMap, final boolean forUpdate)
-			throws Exception {
+			throws SQLException {
 		String tableName = this.shardingTable(tableDefine.getTableName(), filterMap);
 		String responseData =
 				this.operatorThreadLocal.get()
@@ -384,7 +374,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 
 	@Override
 	public int update(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> dataMap,
-	                  @NotNull final Map<String, Object> filterMap) throws Exception {
+	                  @NotNull final Map<String, Object> filterMap) throws SQLException {
 		String tableName = this.shardingTable(tableDefine.getTableName(), filterMap);
 		return this.operatorThreadLocal.get().update(tableName,
 				StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.FALSE),
@@ -393,7 +383,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 
 	@Override
 	public int delete(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> filterMap)
-			throws Exception {
+			throws SQLException {
 		String tableName = this.shardingTable(tableDefine.getTableName(), filterMap);
 		return this.operatorThreadLocal.get().delete(tableName,
 				StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE));
@@ -401,14 +391,14 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 
 	@Override
 	public List<Map<String, Object>> query(@NotNull final TableDefine tableDefine,
-	                                       @NotNull final QueryInfo queryInfo) throws Exception {
+	                                       @NotNull final QueryInfo queryInfo) throws SQLException {
 		return this.parseResponse(this.operatorThreadLocal.get().query(queryInfo.toFormattedJson()));
 	}
 
 	@Override
 	public List<Map<String, Object>> queryForUpdate(@NotNull final TableDefine tableDefine,
 	                                                final List<Condition> conditionList, final LockModeType lockOption)
-			throws Exception {
+			throws SQLException {
 		String tableName = this.shardingTable(tableDefine.getTableName(), conditionList);
 		StringBuilder stringBuilder = new StringBuilder();
 		for (ColumnDefine columnDefine : tableDefine.getColumnDefines()) {
@@ -425,7 +415,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	}
 
 	@Override
-	public Long queryTotal(@NotNull final TableDefine tableDefine, final QueryInfo queryInfo) throws Exception {
+	public Long queryTotal(@NotNull final TableDefine tableDefine, final QueryInfo queryInfo) throws SQLException {
 		List<Condition> conditionList = queryInfo.getConditionList();
 		return this.operatorThreadLocal.get().queryTotal(this.shardingTable(tableDefine.getTableName(), conditionList),
 				StringUtils.objectToString(conditionList, StringUtils.StringType.JSON, Boolean.FALSE));

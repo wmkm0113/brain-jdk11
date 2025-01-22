@@ -4,8 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.nervousync</groupId>
     <artifactId>brain-jdk11</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    <url>https://nervousync.org/projects/brain-jdk11/index.shtml</url>
+    <version>1.0.0</version>
+    <url>https://nervousync.org/projects/brain/jdk11/index.shtml</url>
     <name>Nervousync Brain Data Source Module</name>
     <description>
         Brain Java Database Connectivity Package, support database/table sharding, cross-schema query,
@@ -45,8 +45,8 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <junit.jupiter.version>5.11.2</junit.jupiter.version>
-        <junit.platform.version>1.11.2</junit.platform.version>
+        <junit.jupiter.version>5.11.4</junit.jupiter.version>
+        <junit.platform.version>1.11.4</junit.platform.version>
         <argLine>-Dfile.encoding=UTF-8</argLine>
     </properties>
     <dependencies>
@@ -63,21 +63,27 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-            <version>3.1.0</version>
-        </dependency>
-        <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <version>6.0.0</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <version>3.1.0</version>
         </dependency>
         <!-- Utils -->
         <dependency>
             <groupId>org.nervousync</groupId>
             <artifactId>utils-jdk11</artifactId>
             <version>1.2.2</version>
+        </dependency>
+        <!-- Cache API -->
+        <dependency>
+            <groupId>org.nervousync</groupId>
+            <artifactId>cache-api-jdk11</artifactId>
+            <version>1.1.7</version>
         </dependency>
     </dependencies>
     <profiles>

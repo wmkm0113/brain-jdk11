@@ -33,8 +33,8 @@ import java.util.*;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:42:19 $
  */
-@XmlType(name = "function_item", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "function_item", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "function_item", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "function_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class FunctionItem extends AbstractItem {
 
@@ -55,9 +55,9 @@ public final class FunctionItem extends AbstractItem {
      * <span class="zh-CN">函数参数数组</span>
      */
     @XmlElements({
-            @XmlElement(name = "column_parameter", type = ColumnParameter.class, namespace = "https://nervousync.org/schemas/database"),
-            @XmlElement(name = "constant_parameter", type = ConstantParameter.class, namespace = "https://nervousync.org/schemas/database"),
-            @XmlElement(name = "function_parameter", type = FunctionParameter.class, namespace = "https://nervousync.org/schemas/database")
+            @XmlElement(name = "column_parameter", type = ColumnParameter.class, namespace = "https://nervousync.org/schemas/brain"),
+            @XmlElement(name = "constant_parameter", type = ConstantParameter.class, namespace = "https://nervousync.org/schemas/brain"),
+            @XmlElement(name = "function_parameter", type = FunctionParameter.class, namespace = "https://nervousync.org/schemas/brain")
     })
     @XmlElementWrapper(name = "function_parameter_list")
     private List<AbstractParameter<?>> functionParams;

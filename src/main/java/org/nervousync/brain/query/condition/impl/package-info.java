@@ -22,10 +22,10 @@
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 26, 2023 13:05:49 $
  */
-@XmlSchema(namespace = "https://nervousync.org/schemas/database", elementFormDefault = XmlNsForm.QUALIFIED,
-        location = "https://nervousync.org/schemas/database_1_0.xsd",
+@XmlSchema(namespace = "https://nervousync.org/schemas/brain", elementFormDefault = XmlNsForm.QUALIFIED,
+        location = "https://nervousync.org/schemas/brain_config_1_0.xsd",
         xmlns = {
-                @XmlNs(prefix = "", namespaceURI = "https://nervousync.org/schemas/database"),
+                @XmlNs(prefix = "", namespaceURI = "https://nervousync.org/schemas/brain"),
                 @XmlNs(prefix = "xsd", namespaceURI = "http://www.w3.org/2001/XMLSchema"),
                 @XmlNs(prefix = "xsi", namespaceURI = "http://www.w3.org/2001/XMLSchema-instance")
         })

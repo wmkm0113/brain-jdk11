@@ -19,6 +19,7 @@ package org.nervousync.brain.dialects.distribute;
 
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.dialects.core.BaseDialect;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.dialects.DialectException;
 import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.commons.Globals;
@@ -44,7 +45,7 @@ public abstract class DistributeDialect extends BaseDialect {
 	 *                          <span class="zh-CN">如果实现类未找到org. nervousync. brain. annotations. dialect.SchemaDialect注解</span>
 	 */
 	protected DistributeDialect() throws DialectException {
-		super();
+		super(DialectType.Distribute);
 	}
 
 	@Override

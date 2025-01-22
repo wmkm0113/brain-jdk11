@@ -30,8 +30,8 @@ import org.nervousync.brain.enumerations.ddl.GenerationType;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 4, 2020 15:49:52 $
  */
-@XmlType(name = "generator_define", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "generator_define", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "generator_define", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "generator_define", namespace = "https://nervousync.org/schemas/brain")
 public final class GeneratorDefine extends BeanObject {
 
 	/**

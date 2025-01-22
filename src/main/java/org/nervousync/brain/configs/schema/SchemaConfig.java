@@ -38,7 +38,7 @@ import org.nervousync.commons.Globals;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision : 1.0.0 $ $Date: Jul 12, 2020 16:15:09 $
  */
-@XmlType(namespace = "https://nervousync.org/schemas/database")
+@XmlType(namespace = "https://nervousync.org/schemas/brain")
 @XmlSeeAlso({DistributeSchemaConfig.class, JdbcSchemaConfig.class, RemoteSchemaConfig.class})
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class SchemaConfig extends BeanObject {
@@ -132,6 +132,12 @@ public abstract class SchemaConfig extends BeanObject {
 	 */
 	@XmlElement(name = "max_connections")
 	private int maxConnections = BrainCommons.DEFAULT_MAX_CONNECTIONS;
+	/**
+	 * <span class="en-US">Last modified timestamp</span>
+	 * <span class="zh-CN">最后修改时间戳</span>
+	 */
+	@XmlElement(name = "last_modified")
+	private long lastModified = Globals.DEFAULT_VALUE_LONG;
 
 	/**
 	 * <h3 class="en-US">Getter method for data source name</h3>
@@ -417,5 +423,27 @@ public abstract class SchemaConfig extends BeanObject {
 	 */
 	public void setMaxConnections(final int maxConnections) {
 		this.maxConnections = maxConnections;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the last modified timestamp</h3>
+	 * <h3 class="zh-CN">最后修改时间戳的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Last modified timestamp</span>
+	 * <span class="zh-CN">最后修改时间戳</span>
+	 */
+	public long getLastModified() {
+		return this.lastModified;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the last modified timestamp</h3>
+	 * <h3 class="zh-CN">最后修改时间戳的Setter方法</h3>
+	 *
+	 * @param lastModified <span class="en-US">Last modified timestamp</span>
+	 *                     <span class="zh-CN">最后修改时间戳</span>
+	 */
+	public void setLastModified(final long lastModified) {
+		this.lastModified = lastModified;
 	}
 }

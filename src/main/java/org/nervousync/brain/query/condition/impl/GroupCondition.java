@@ -31,8 +31,8 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 19:12:02 $
  */
-@XmlType(name = "group_condition", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "group_condition", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "group_condition", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "group_condition", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class GroupCondition extends Condition {
 

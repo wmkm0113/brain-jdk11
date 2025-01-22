@@ -22,8 +22,8 @@ import org.nervousync.annotations.configs.Password;
 import org.nervousync.brain.configs.auth.Authentication;
 import org.nervousync.brain.enumerations.auth.AuthType;
 
-@XmlType(name = "token_authentication", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "token_authentication", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "token_authentication", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "token_authentication", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class TokenAuthentication extends Authentication {
 

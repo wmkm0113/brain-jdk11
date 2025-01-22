@@ -29,8 +29,8 @@ import org.nervousync.brain.enumerations.auth.AuthType;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision : 1.0.0 $ $Date: Apr 10, 2018 15:44:07 $
  */
-@XmlRootElement(name = "user_authentication", namespace = "https://nervousync.org/schemas/database")
-@XmlType(name = "user_authentication", namespace = "https://nervousync.org/schemas/database")
+@XmlRootElement(name = "user_authentication", namespace = "https://nervousync.org/schemas/brain")
+@XmlType(name = "user_authentication", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class UserAuthentication extends Authentication {
 

@@ -27,8 +27,8 @@ import org.nervousync.beans.core.BeanObject;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 18:10:21 $
  */
-@XmlType(name = "array_data", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "array_data", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "array_data", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "array_data", namespace = "https://nervousync.org/schemas/brain")
 public final class ArrayData extends BeanObject {
 
     /**

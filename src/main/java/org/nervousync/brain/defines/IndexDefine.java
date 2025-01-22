@@ -32,8 +32,8 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 4, 2020 16:33:28 $
  */
-@XmlType(name = "index_define", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "index_define", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "index_define", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "index_define", namespace = "https://nervousync.org/schemas/brain")
 public final class IndexDefine extends BeanObject {
 
 	/**

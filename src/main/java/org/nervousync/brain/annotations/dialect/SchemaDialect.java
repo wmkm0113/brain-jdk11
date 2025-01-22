@@ -34,15 +34,6 @@ import java.lang.annotation.*;
 public @interface SchemaDialect {
 
 	/**
-	 * <h3 class="en-US">Dialect name</h3>
-	 * <h3 class="zh-CN">方言名称</h3>
-	 *
-	 * @return <span class="en-US">Dialect name</span>
-	 * <span class="zh-CN">方言名称</span>
-	 */
-	String name();
-
-	/**
 	 * <h3 class="en-US">Support join query</h3>
 	 * <h3 class="zh-CN">支持关联查询</h3>
 	 *

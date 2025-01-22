@@ -22,8 +22,8 @@ import org.nervousync.commons.Globals;
  * @author Steven Wee	<a href="mailto:wmkm0113@Hotmail.com">wmkm0113@Hotmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Mar 26, 2020 14:49:15 $
  */
-@XmlType(name = "storage_config", namespace = "https://nervousync.org/schemas/database")
-@XmlRootElement(name = "storage_config", namespace = "https://nervousync.org/schemas/database")
+@XmlType(name = "storage_config", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "storage_config", namespace = "https://nervousync.org/schemas/brain")
 public final class StorageConfig extends BeanObject {
 
 	/**
@@ -56,9 +56,15 @@ public final class StorageConfig extends BeanObject {
 	 */
 	@XmlElement(name = "expire_time")
 	private long expireTime = BrainCommons.DEFAULT_STORAGE_EXPIRE_TIME;
+	/**
+	 * <span class="en-US">Last modified timestamp</span>
+	 * <span class="zh-CN">最后修改时间戳</span>
+	 */
+	@XmlElement(name = "last_modified")
+	private long lastModified = Globals.DEFAULT_VALUE_LONG;
 
 	/**
-	 * <h3 class="en-US">Constructor method for configure information of data import/export utilities</h3>
+	 * <h3 class="en-US">Constructor method for configured information of data import/export utilities</h3>
 	 * <h3 class="zh-CN">数据导入导出工具配置信息的构造方法</h3>
 	 */
 	public StorageConfig() {
@@ -150,5 +156,27 @@ public final class StorageConfig extends BeanObject {
 	 */
 	public void setExpireTime(final long expireTime) {
 		this.expireTime = expireTime;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the last modified timestamp</h3>
+	 * <h3 class="zh-CN">最后修改时间戳的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Last modified timestamp</span>
+	 * <span class="zh-CN">最后修改时间戳</span>
+	 */
+	public long getLastModified() {
+		return this.lastModified;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the last modified timestamp</h3>
+	 * <h3 class="zh-CN">最后修改时间戳的Setter方法</h3>
+	 *
+	 * @param lastModified <span class="en-US">Last modified timestamp</span>
+	 *                     <span class="zh-CN">最后修改时间戳</span>
+	 */
+	public void setLastModified(final long lastModified) {
+		this.lastModified = lastModified;
 	}
 }

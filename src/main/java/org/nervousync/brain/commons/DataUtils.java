@@ -59,11 +59,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class DataUtils {
 
 	/**
-	 * <span class="en-US">Singleton object of data import and export tool</span>
-	 * <span class="zh-CN">数据导入导出工具的单例对象</span>
-	 */
-	private volatile static DataUtils INSTANCE = null;
-	/**
 	 * <span class="en-US">Logger instance</span>
 	 * <span class="zh-CN">日志实例</span>
 	 */
@@ -80,15 +75,15 @@ public final class DataUtils {
 	 */
 	private static final Hashtable<String, List<TransferColumn>> REGISTERED_TRANSFER_CONFIGS = new Hashtable<>();
 	/**
+	 * <span class="en-US">Last modified timestamp</span>
+	 * <span class="zh-CN">最后修改时间戳</span>
+	 */
+	private final long lastModified;
+	/**
 	 * <span class="en-US">Task storage provider instance</span>
 	 * <span class="zh-CN">任务存储适配器实例对象</span>
 	 */
 	private final TaskProvider taskProvider;
-	/**
-	 * <span class="en-US">Data source instance object</span>
-	 * <span class="zh-CN">数据源实例对象</span>
-	 */
-	private final BrainDataSource dataSource;
 	/**
 	 * <span class="en-US">The base path for system execution</span>
 	 * <span class="zh-CN">系统执行的基础路径</span>
@@ -146,13 +141,10 @@ public final class DataUtils {
 	 * <h3 class="en-US">Private constructor</h3>
 	 * <h3 class="zh-CN">私有的构造方法</h3>
 	 *
-	 * @param dataSource    <span class="en-US">Data source instance object</span>
-	 *                      <span class="zh-CN">数据源实例对象</span>
 	 * @param storageConfig <span class="en-US">Data import/export configure information</span>
 	 *                      <span class="zh-CN">数据导入导出配置</span>
 	 */
-	private DataUtils(@Nonnull final BrainDataSource dataSource, @Nonnull final StorageConfig storageConfig) {
-		this.dataSource = dataSource;
+	private DataUtils(@Nonnull final StorageConfig storageConfig) {
 		this.basePath = StringUtils.isEmpty(storageConfig.getBasePath())
 				? BrainCommons.DEFAULT_TMP_PATH
 				: storageConfig.getBasePath();
@@ -165,7 +157,7 @@ public final class DataUtils {
 		} else {
 			this.taskProvider = new MemoryTaskProviderImpl();
 		}
-		this.taskProvider.initialize();
+		this.taskProvider.initialize(this.basePath);
 		this.threadLimit = (storageConfig.getThreadLimit() <= Globals.INITIALIZE_INT_VALUE)
 				? BrainCommons.DEFAULT_PROCESS_THREAD_LIMIT
 				: storageConfig.getThreadLimit();
@@ -182,22 +174,57 @@ public final class DataUtils {
 		if (LOGGER.isDebugEnabled()) {
 			LOGGER.debug("Data_Utils_Config", this.threadLimit, this.expireTime);
 		}
+		this.lastModified = storageConfig.getLastModified();
 	}
 
 	/**
 	 * <h3 class="en-US">Static method is used to initialize data import and export tools</h3>
 	 * <h3 class="zh-CN">静态方法用于初始化数据导入导出工具</h3>
 	 *
-	 * @param dataSource    <span class="en-US">Data source instance object</span>
-	 *                      <span class="zh-CN">数据源实例对象</span>
 	 * @param storageConfig <span class="en-US">Data import/export configure information</span>
 	 *                      <span class="zh-CN">数据导入导出配置</span>
 	 */
-	public static void initialize(@Nonnull final BrainDataSource dataSource,
-	                              @Nonnull final StorageConfig storageConfig) {
-		if (INSTANCE == null) {
-			INSTANCE = new DataUtils(dataSource, storageConfig);
+	public static void initialize(@Nonnull final StorageConfig storageConfig) {
+		DataUtilsHolder.initialize(storageConfig);
+	}
+
+	/**
+	 * <h3 class="en-US">Destroy current instance</h3>
+	 * <h3 class="zh-CN">销毁当前实例</h3>
+	 */
+	public static void destroy() {
+		DataUtilsHolder.destroy();
+	}
+
+	/**
+	 * <h3 class="en-US">Get a list of registered task storage adapter identification codes</h3>
+	 * <h3 class="zh-CN">获取已注册的任务存储适配器识别代码列表</h3>
+	 *
+	 * @return <span class="en-US">Task storage adapter identification codes</span>
+	 * <span class="zh-CN">任务存储适配器识别代码列表</span>
+	 */
+	public static List<String> registeredProviders() {
+		return new ArrayList<>(REGISTERED_TASK_PROVIDERS.keySet());
+	}
+
+	/**
+	 * <h3 class="en-US">Get the given task storage adapter name</h3>
+	 * <h3 class="zh-CN">获取给定的任务存储适配器名称</h3>
+	 *
+	 * @param providerName <span class="en-US">Task store provider name</span>
+	 *                     <span class="zh-CN">任务存储适配器名称</span>
+	 * @param languageCode <span class="en-US">Language code</span>
+	 *                     <span class="zh-CN">语言代码</span>
+	 * @return <span class="en-US">Provider name</span>
+	 * <span class="zh-CN">适配器名称</span>
+	 */
+	public static String providerName(final String providerName, final String languageCode) {
+		if (StringUtils.isEmpty(providerName)) {
+			return Globals.DEFAULT_VALUE_STRING;
 		}
+		return Optional.ofNullable(REGISTERED_TASK_PROVIDERS.get(providerName))
+				.map(providerClass -> MultilingualUtils.providerName(providerClass, languageCode))
+				.orElse(Globals.DEFAULT_VALUE_STRING);
 	}
 
 	/**
@@ -224,7 +251,20 @@ public final class DataUtils {
 	 * <span class="zh-CN">导入导出工具的单例实例对象</span>
 	 */
 	public static DataUtils getInstance() {
-		return INSTANCE;
+		return DataUtilsHolder.INSTANCE;
+	}
+
+	/**
+	 * <h3 class="en-US">Checks whether the given modification time is consistent with the current modification time</h3>
+	 * <h3 class="zh-CN">检查给定的修改时间与当前的修改时间是否一致</h3>
+	 *
+	 * @param lastModified <span class="en-US">Last modified timestamp</span>
+	 *                     <span class="zh-CN">最后修改时间戳</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
+	 */
+	private boolean match(final long lastModified) {
+		return lastModified != Globals.DEFAULT_VALUE_LONG && this.lastModified == lastModified;
 	}
 
 	/**
@@ -370,7 +410,7 @@ public final class DataUtils {
 	 * @return <span class="en-US">Task details</span>
 	 * <span class="zh-CN">任务详细信息</span>
 	 */
-	public AbstractTask taskInfo(Long userCode, Long taskCode) {
+	public AbstractTask taskInfo(final Long userCode, final Long taskCode) {
 		return this.taskProvider.taskInfo(userCode, taskCode);
 	}
 
@@ -382,10 +422,10 @@ public final class DataUtils {
 	 *                 <span class="zh-CN">数据保存地址</span>
 	 * @return <span class="en-US">Data generator instance object</span>
 	 * <span class="zh-CN">数据生成器实例对象</span>
-	 * @throws FileNotFoundException <span class="en-US">Error creating data file</span>
-	 *                               <span class="zh-CN">创建数据文件出错</span>
+	 * @throws IOException <span class="en-US">Error creating data file</span>
+	 *                     <span class="zh-CN">创建数据文件出错</span>
 	 */
-	public static DataGenerator newGenerator(final String dataPath) throws FileNotFoundException {
+	public static DataGenerator newGenerator(final String dataPath) throws IOException {
 		return new DataGenerator(dataPath);
 	}
 
@@ -405,19 +445,15 @@ public final class DataUtils {
 	}
 
 	/**
-	 * <h3 class="en-US">Destroy current instance</h3>
-	 * <h3 class="zh-CN">销毁当前实例</h3>
+	 * <h3 class="en-US">Close current instance</h3>
+	 * <h3 class="zh-CN">关闭当前实例</h3>
 	 */
-	public static void destroy() {
-		if (INSTANCE == null) {
-			return;
+	public void close() {
+		if (this.scheduledExecutorService != null) {
+			this.scheduledExecutorService.shutdown();
+			this.scheduledExecutorService = null;
 		}
-		if (INSTANCE.scheduledExecutorService != null) {
-			INSTANCE.scheduledExecutorService.shutdown();
-			INSTANCE.scheduledExecutorService = null;
-		}
-		INSTANCE.taskProvider.destroy();
-		INSTANCE = null;
+		this.taskProvider.destroy();
 	}
 
 	/**
@@ -467,35 +503,18 @@ public final class DataUtils {
 	}
 
 	/**
-	 * <h3 class="en-US">Static methods are used to update the processing node and start execution time of the task</h3>
-	 * <h3 class="zh-CN">静态方法用于更新任务的处理节点和开始执行时间</h3>
-	 *
-	 * @param taskCode     <span class="en-US">task identification code</span>
-	 *                     <span class="zh-CN">任务识别代码</span>
-	 * @param identifyCode <span class="en-US">Execution node unique identification code</span>
-	 *                     <span class="zh-CN">执行节点唯一识别代码</span>
-	 */
-	private static void processTask(@Nonnull final Long taskCode, final String identifyCode) {
-		if (INSTANCE != null) {
-			INSTANCE.taskProvider.processTask(taskCode, identifyCode);
-		}
-	}
-
-	/**
 	 * <h3 class="en-US">Complete the thread task and save the task processing results to the task list</h3>
 	 * <h3 class="zh-CN">完成线程任务，并将任务处理结果保存到任务列表中</h3>
 	 *
 	 * @param processThread <span class="en-US">Task processing thread instance object</span>
 	 *                      <span class="zh-CN">任务处理线程实例对象</span>
 	 */
-	private static void finishTask(final ProcessThread processThread) {
-		if (INSTANCE != null) {
-			synchronized (INSTANCE.runningThreads) {
-				INSTANCE.runningThreads.remove(processThread);
-			}
-			INSTANCE.taskProvider.finishTask(processThread.getTaskCode(), processThread.isHasError(),
-					processThread.errorMessage());
+	private void finishTask(final ProcessThread processThread) {
+		synchronized (this.runningThreads) {
+			this.runningThreads.remove(processThread);
 		}
+		this.taskProvider.finishTask(processThread.getTaskCode(), processThread.isHasError(),
+				processThread.errorMessage());
 	}
 
 	/**
@@ -513,7 +532,7 @@ public final class DataUtils {
 		if (ObjectUtils.nullSafeEquals(taskCode, Globals.DEFAULT_VALUE_LONG)) {
 			return Globals.DEFAULT_VALUE_STRING;
 		}
-		String dataPath = this.dataPath(taskCode);
+		String dataPath = dataPath(this.basePath, taskCode);
 		if (FileUtils.saveFile(inputStream, dataPath)) {
 			return dataPath;
 		}
@@ -524,13 +543,15 @@ public final class DataUtils {
 	 * <h3 class="en-US">Get the data file location for the given task code</h3>
 	 * <h3 class="zh-CN">获取给定任务代码的数据文件位置</h3>
 	 *
+	 * @param basePath <span class="en-US">The base path for system execution</span>
+	 *                 <span class="zh-CN">系统执行的基础路径</span>
 	 * @param taskCode <span class="en-US">task identification code</span>
 	 *                 <span class="zh-CN">任务识别代码</span>
 	 * @return <span class="en-US">data file location</span>
 	 * <span class="zh-CN">数据文件位置</span>
 	 */
-	private String dataPath(@Nonnull final Long taskCode) {
-		return this.basePath + Globals.DEFAULT_PAGE_SEPARATOR + Long.toHexString(taskCode)
+	private static String dataPath(final String basePath, @Nonnull final Long taskCode) {
+		return basePath + Globals.DEFAULT_PAGE_SEPARATOR + Long.toHexString(taskCode)
 				+ BrainCommons.DATA_FILE_EXTENSION_NAME;
 	}
 
@@ -561,16 +582,15 @@ public final class DataUtils {
 		try {
 			while (this.runningThreads.size() < this.threadLimit) {
 				AbstractTask taskInfo = this.taskProvider.nextTask(this.identifyCode);
-				if (taskInfo == null
-						|| this.runningThreads.stream().anyMatch(processThread ->
+				if (taskInfo == null || this.runningThreads.stream().anyMatch(processThread ->
 						ObjectUtils.nullSafeEquals(processThread.taskCode, taskInfo.getTaskCode()))) {
 					break;
 				}
 				ProcessThread processThread;
 				if (taskInfo instanceof ImportTask) {
-					processThread = new ImportThread(this.dataSource, (ImportTask) taskInfo);
+					processThread = new ImportThread((ImportTask) taskInfo, this);
 				} else if (taskInfo instanceof ExportTask) {
-					processThread = new ExportThread(this.dataSource, (ExportTask) taskInfo);
+					processThread = new ExportThread((ExportTask) taskInfo, this);
 				} else {
 					return;
 				}
@@ -603,10 +623,10 @@ public final class DataUtils {
 	}
 
 	/**
-	 * <h3 class="en-US">Parse data list to data map which data list read from excel file</h3>
+	 * <h3 class="en-US">Parse the data list to the data map which data lists read from the Excel file</h3>
 	 * <h3 class="zh-CN">解析Excel读取的数据列表为数据映射表</h3>
 	 *
-	 * @param dataValues <span class="en-US">Data list which read from excel file</span>
+	 * @param dataValues <span class="en-US">Data list which read from Excel file</span>
 	 *                   <span class="zh-CN">Excel读取的数据列表</span>
 	 * @return <span class="en-US">Parsed data map</span>
 	 * <span class="zh-CN">解析的数据映射表</span>
@@ -641,6 +661,11 @@ public final class DataUtils {
 		 * <span class="zh-CN">当前存储的任务信息列表</span>
 		 */
 		private final List<AbstractTask> taskInfoList;
+		/**
+		 * <span class="en-US">The base path for system execution</span>
+		 * <span class="zh-CN">系统执行的基础路径</span>
+		 */
+		private String basePath = Globals.DEFAULT_VALUE_STRING;
 
 		/**
 		 * <h3 class="en-US">Constructor of a memory-only task adapter implementation class</h3>
@@ -655,7 +680,11 @@ public final class DataUtils {
 		 * @see org.nervousync.database.providers.data.TaskProvider#initialize()
 		 */
 		@Override
-		public void initialize() {
+		public void initialize(final String basePath) {
+			if (StringUtils.notBlank(basePath)) {
+				this.basePath = basePath;
+				FileUtils.makeDir(this.basePath);
+			}
 		}
 
 		/*
@@ -728,7 +757,7 @@ public final class DataUtils {
 					AbstractTask abstractTask = iterator.next();
 					if (ObjectUtils.nullSafeEquals(abstractTask.getTaskCode(), taskCode)
 							&& ObjectUtils.nullSafeEquals(abstractTask.getUserCode(), userCode)) {
-						if (FileUtils.removeFile(INSTANCE.dataPath(abstractTask.getTaskCode()))) {
+						if (FileUtils.removeFile(DataUtils.dataPath(this.basePath, abstractTask.getTaskCode()))) {
 							iterator.remove();
 						} else {
 							return Boolean.FALSE;
@@ -1024,7 +1053,7 @@ public final class DataUtils {
 		}
 
 		/**
-		 * <h3 class="en-US">Write given entity object instance data to excel file</h3>
+		 * <h3 class="en-US">Write given entity object instance data to the Excel file</h3>
 		 * <h3 class="zh-CN">写入数据表实体类对象数据到Excel文件</h3>
 		 *
 		 * @param sheetName <span class="en-US">Sheet name</span>
@@ -1072,15 +1101,10 @@ public final class DataUtils {
 	 */
 	public static final class DataGenerator implements Closeable {
 		/**
-		 * <span class="en-US">File storage path</span>
-		 * <span class="zh-CN">文件存储路径</span>
+		 * <span class="en-US">Writable file object instance</span>
+		 * <span class="zh-CN">写入文件实例对象</span>
 		 */
-		private final String dataPath;
-		/**
-		 * <span class="en-US">Temporary file object instance</span>
-		 * <span class="zh-CN">临时文件实例对象</span>
-		 */
-		private final StandardFile tmpFile;
+		private final StandardFile dataFile;
 		/**
 		 * <span class="en-US">Data identification code list</span>
 		 * <span class="zh-CN">数据识别代码列表</span>
@@ -1091,6 +1115,11 @@ public final class DataUtils {
 		 * <span class="zh-CN">总记录数</span>
 		 */
 		private long totalCount = 0L;
+		/**
+		 * <span class="en-US">Pointer position</span>
+		 * <span class="zh-CN">指针位置</span>
+		 */
+		private long position = 8L;
 
 		/**
 		 * <h3 class="en-US">Private constructor method for data generator</h3>
@@ -1098,21 +1127,17 @@ public final class DataUtils {
 		 *
 		 * @param dataPath <span class="en-US">File storage path</span>
 		 *                 <span class="zh-CN">文件存储路径</span>
-		 * @throws FileNotFoundException <span class="en-US">If the file storage path is incorrect</span>
-		 *                               <span class="zh-CN">如果文件存储路径不正确</span>
+		 * @throws IOException <span class="en-US">If the file storage path is incorrect</span>
+		 *                     <span class="zh-CN">如果文件存储路径不正确</span>
 		 */
-		private DataGenerator(final String dataPath) throws FileNotFoundException {
-			this.dataPath = dataPath;
-			String tmpPath = this.dataPath + BrainCommons.DATA_TMP_FILE_EXTENSION_NAME;
-			if (FileUtils.isExists(tmpPath)) {
-				FileUtils.removeFile(tmpPath);
-			}
-			this.tmpFile = new StandardFile(tmpPath, Boolean.TRUE);
+		private DataGenerator(final String dataPath) throws IOException {
+			this.dataFile = new StandardFile(dataPath, Boolean.TRUE);
+			this.dataFile.seek(this.position);
 			this.recordTypes = new ArrayList<>();
 		}
 
 		/**
-		 * <h3 class="en-US">Append data record to target file</h3>
+		 * <h3 class="en-US">Append data record to the target file</h3>
 		 * <h3 class="zh-CN">向文件中追加记录</h3>
 		 *
 		 * @param removeRecord <span class="en-US">Entity object instance will be removed</span>
@@ -1128,7 +1153,7 @@ public final class DataUtils {
 		}
 
 		/**
-		 * <h3 class="en-US">Append data record to target file, data records from given excel file</h3>
+		 * <h3 class="en-US">Append data record to the target file, data records from given Excel files</h3>
 		 * <h3 class="zh-CN">向文件中追加Excel文件中的记录</h3>
 		 *
 		 * @param excelFilePath <span class="en-US">Excel file path</span>
@@ -1146,7 +1171,7 @@ public final class DataUtils {
 		}
 
 		/**
-		 * <h3 class="en-US">Write data to temporary file</h3>
+		 * <h3 class="en-US">Write data to the temporary file</h3>
 		 * <h3 class="zh-CN">写入数据到临时文件</h3>
 		 *
 		 * @param removeRecord <span class="en-US">Entity object instance will be removed</span>
@@ -1177,8 +1202,9 @@ public final class DataUtils {
 				dataBytes[4] = removeRecord ? (byte) 1 : (byte) 0;
 				RawUtils.writeInt(dataBytes, 5, ByteOrder.LITTLE_ENDIAN, index);
 				RawUtils.writeString(dataBytes, 9, dataContent);
-				this.tmpFile.write(dataBytes);
+				this.dataFile.write(dataBytes);
 				this.totalCount++;
+				this.position += totalLength;
 			} catch (DataInvalidException | IOException e) {
 				if (LOGGER.isDebugEnabled()) {
 					LOGGER.debug("Stack_Message_Error", e);
@@ -1186,37 +1212,29 @@ public final class DataUtils {
 			}
 		}
 
-		/**
-		 * (Non-javadoc)
-		 *
-		 * @see Closeable#close()
-		 */
 		@Override
 		public void close() throws IOException {
-			this.tmpFile.close();
-			String tmpFilePath = this.dataPath + BrainCommons.DATA_TMP_FILE_EXTENSION_NAME;
-			try (StandardFile dataFile = new StandardFile(this.dataPath, Boolean.TRUE);
-			     FileInputStream fileInputStream = new FileInputStream(tmpFilePath)) {
+			try {
 				byte[] buffer = new byte[8];
+				RawUtils.writeLong(buffer, ByteOrder.LITTLE_ENDIAN, this.position);
+				this.dataFile.seek(0L);
+				this.dataFile.write(buffer);
+
+				this.dataFile.seek(this.position);
+				buffer = new byte[8];
 				RawUtils.writeLong(buffer, ByteOrder.LITTLE_ENDIAN, this.totalCount);
-				dataFile.write(buffer);
+				this.dataFile.write(buffer);
 				buffer = new byte[4];
 				RawUtils.writeInt(buffer, ByteOrder.LITTLE_ENDIAN, this.recordTypes.size());
-				dataFile.write(buffer);
+				this.dataFile.write(buffer);
 				for (String recordType : this.recordTypes) {
 					buffer = new byte[TYPE_LENGTH];
 					RawUtils.writeString(buffer, recordType);
-					dataFile.write(buffer);
-				}
-				byte[] readBuffer = new byte[Globals.DEFAULT_BUFFER_SIZE];
-				int readLength;
-				while ((readLength = fileInputStream.read(readBuffer)) != Globals.DEFAULT_VALUE_INT) {
-					dataFile.write(readBuffer, Globals.INITIALIZE_INT_VALUE, readLength);
+					this.dataFile.write(buffer);
 				}
 			} catch (DataInvalidException e) {
 				throw new IOException(e);
 			}
-			FileUtils.removeFile(this.dataPath + BrainCommons.DATA_TMP_FILE_EXTENSION_NAME);
 		}
 	}
 
@@ -1269,27 +1287,15 @@ public final class DataUtils {
 		 */
 		private long failedCount = 0L;
 		/**
-		 * <span class="en-US">Current position</span>
-		 * <span class="zh-CN">当前地址</span>
-		 */
-		private long position = 0L;
-		/**
 		 * <span class="en-US">Error message builder</span>
 		 * <span class="zh-CN">错误信息收集器</span>
 		 */
 		private final StringBuilder errorLog;
-		/**
-		 * <span class="en-US">Data source instance object</span>
-		 * <span class="zh-CN">数据源实例对象</span>
-		 */
-		private final BrainDataSource dataSource;
 
 		/**
 		 * <h3 class="en-US">Default constructor method for data parser</h3>
 		 * <h3 class="zh-CN">数据解析器的默认构造方法</h3>
 		 *
-		 * @param dataSource    <span class="en-US">Data source instance object</span>
-		 *                      <span class="zh-CN">数据源实例对象</span>
 		 * @param transactional <span class="en-US">Process data using transactional mode</span>
 		 *                      <span class="zh-CN">使用事务模式处理数据</span>
 		 * @param timeout       <span class="en-US">Transactional timeout</span>
@@ -1299,9 +1305,8 @@ public final class DataUtils {
 		 * @throws DataParseException <span class="en-US">If data file invalid</span>
 		 *                            <span class="zh-CN">如果数据文件非法</span>
 		 */
-		public DataParser(@Nonnull final BrainDataSource dataSource, final boolean transactional,
-		                  final int timeout, final String dataPath) throws DataParseException {
-			this.dataSource = dataSource;
+		public DataParser(final boolean transactional, final int timeout, final String dataPath)
+				throws DataParseException {
 			this.transactional = transactional;
 			this.timeout = timeout;
 			this.errorLog = new StringBuilder();
@@ -1311,16 +1316,18 @@ public final class DataUtils {
 
 			try {
 				this.dataFile = new StandardFile(dataPath);
-				this.endPosition = FileUtils.fileSize(dataPath);
-			} catch (FileNotFoundException e) {
+				byte[] positionBytes = new byte[8];
+				this.dataFile.read(positionBytes);
+				this.endPosition = RawUtils.readLong(positionBytes, ByteOrder.LITTLE_ENDIAN);
+			} catch (IOException | DataInvalidException e) {
 				this.errorLog.append(e.getMessage()).append(FileUtils.CRLF);
 				throw new DataParseException(0x00DB00000006L, e);
 			}
 
 			try {
+				this.dataFile.seek(this.endPosition);
 				byte[] longBuffer = new byte[8];
 				if (this.dataFile.read(longBuffer) == 8) {
-					this.position += 8;
 					this.totalCount = RawUtils.readLong(longBuffer, ByteOrder.LITTLE_ENDIAN);
 				} else {
 					throw new DataParseException(0x00DB00000005L);
@@ -1329,7 +1336,6 @@ public final class DataUtils {
 				byte[] intBuffer = new byte[4];
 				int headerCount;
 				if (this.dataFile.read(intBuffer) == 4) {
-					this.position += 4;
 					headerCount = RawUtils.readInt(intBuffer, ByteOrder.LITTLE_ENDIAN);
 				} else {
 					throw new DataParseException(0x00DB00000005L);
@@ -1344,9 +1350,9 @@ public final class DataUtils {
 					} else {
 						throw new DataParseException(0x00DB00000005L);
 					}
-					this.position += TYPE_LENGTH;
 					headerCount--;
 				} while (headerCount > 0);
+				this.dataFile.seek(8L);
 			} catch (IOException | DataInvalidException e) {
 				this.errorLog.append(e.getMessage()).append(FileUtils.CRLF);
 				throw new DataParseException(0x00DB00000007L, e);
@@ -1354,7 +1360,7 @@ public final class DataUtils {
 		}
 
 		/**
-		 * <h3 class="en-US">Process data in target file path</h3>
+		 * <h3 class="en-US">Process data in the target file path</h3>
 		 * <h3 class="zh-CN">处理数据文件中的数据</h3>
 		 *
 		 * @throws DataParseException   <span class="en-US">File data length invalid</span>
@@ -1369,15 +1375,15 @@ public final class DataUtils {
 			TransactionalConfig txConfig = this.transactional
 					? TransactionalConfig.newInstance(this.timeout, Connection.TRANSACTION_READ_COMMITTED, rollbackClasses)
 					: null;
+			BrainDataSource dataSource = BrainDataSource.getInstance();
 			if (txConfig != null) {
-				this.dataSource.initTransactional(txConfig);
+				dataSource.initTransactional(txConfig);
 			}
 			byte[] intBuffer = new byte[4];
 			byte[] readBuffer;
-			while (this.position < this.endPosition) {
+			while (this.dataFile.getFilePointer() < this.endPosition) {
 				boolean success = Boolean.FALSE;
 				if (this.dataFile.read(intBuffer) == 4) {
-					this.position += 4;
 					int dataLength = RawUtils.readInt(intBuffer, ByteOrder.LITTLE_ENDIAN);
 					if (dataLength > 0) {
 						readBuffer = new byte[dataLength];
@@ -1385,20 +1391,19 @@ public final class DataUtils {
 							DataRecord dataRecord = DataRecord.fromBytes(this.recordTypes, readBuffer);
 							if (dataRecord != null) {
 								try {
-									this.process(this.dataSource, dataRecord);
+									this.process(dataSource, dataRecord);
 									success = Boolean.TRUE;
 								} catch (Exception e) {
 									if (txConfig != null) {
-										this.dataSource.rollback(e);
+										dataSource.rollback(e);
 										break;
 									}
 								}
 							}
 						}
 					}
-					this.position += dataLength;
 				} else {
-					throw new DataParseException(0x00DB00000008L, this.position);
+					throw new DataParseException(0x00DB00000008L, this.dataFile.getFilePointer());
 				}
 				if (success) {
 					this.successCount++;
@@ -1407,7 +1412,7 @@ public final class DataUtils {
 				}
 			}
 			if (txConfig != null) {
-				this.dataSource.endTransactional();
+				dataSource.endTransactional();
 			}
 		}
 
@@ -1423,7 +1428,7 @@ public final class DataUtils {
 		}
 
 		/**
-		 * <h3 class="en-US">Read error message</h3>
+		 * <h3 class="en-US">Read the error message</h3>
 		 * <h3 class="zh-CN">读取错误信息</h3>
 		 *
 		 * @return <span class="en-US">Error message</span>
@@ -1466,11 +1471,9 @@ public final class DataUtils {
 							.filter(StringUtils::notBlank)
 							.ifPresent(columnValue -> {
 								if (transferColumn.isPrimaryKey()) {
-									filterMap.put(transferColumn.getColumnName(),
-											(Serializable) transferColumn.unmarshall(columnValue));
+									filterMap.put(transferColumn.getColumnName(), transferColumn.unmarshall(columnValue));
 								} else {
-									convertMap.put(transferColumn.getColumnName(),
-											(Serializable) transferColumn.unmarshall(columnValue));
+									convertMap.put(transferColumn.getColumnName(), transferColumn.unmarshall(columnValue));
 								}
 							}));
 			if (dataRecord.isRemoveOperate()) {
@@ -1516,16 +1519,15 @@ public final class DataUtils {
 		 * <span class="en-US">Data source instance object</span>
 		 * <span class="zh-CN">数据源实例对象</span>
 		 */
-		protected final BrainDataSource dataSource;
+		protected final BrainDataSource dataSource = BrainDataSource.getInstance();
+		protected final DataUtils dataUtils;
 
 		/**
-		 * @param dataSource <span class="en-US">Data source instance object</span>
-		 *                   <span class="zh-CN">数据源实例对象</span>
-		 * @param taskCode   <span class="en-US">Task unique identification code</span>
-		 *                   <span class="zh-CN">任务唯一识别代码</span>
+		 * @param taskCode <span class="en-US">Task unique identification code</span>
+		 *                 <span class="zh-CN">任务唯一识别代码</span>
 		 */
-		protected ProcessThread(final BrainDataSource dataSource, final long taskCode) {
-			this.dataSource = dataSource;
+		protected ProcessThread(final long taskCode, final DataUtils dataUtils) {
+			this.dataUtils = dataUtils;
 			this.taskCode = taskCode;
 			this.errorLog = new StringBuilder();
 		}
@@ -1536,9 +1538,9 @@ public final class DataUtils {
 		 */
 		@Override
 		public void run() {
-			DataUtils.processTask(this.taskCode, INSTANCE.identifyCode);
+			this.dataUtils.taskProvider.processTask(this.taskCode, this.dataUtils.identifyCode);
 			this.process();
-			DataUtils.finishTask(this);
+			this.dataUtils.finishTask(this);
 		}
 
 		public abstract void process();
@@ -1576,13 +1578,11 @@ public final class DataUtils {
 		private final List<QueryInfo> queryInfoList;
 
 		/**
-		 * @param dataSource <span class="en-US">Data source instance object</span>
-		 *                   <span class="zh-CN">数据源实例对象</span>
 		 * @param exportTask <span class="en-US">Data export task information</span>
 		 *                   <span class="zh-CN">数据导出任务信息</span>
 		 */
-		public ExportThread(final BrainDataSource dataSource, final ExportTask exportTask) {
-			super(dataSource, exportTask.getTaskCode());
+		public ExportThread(final ExportTask exportTask, final DataUtils dataUtils) {
+			super(exportTask.getTaskCode(), dataUtils);
 			this.compatibilityMode = exportTask.getCompatibilityMode();
 			this.queryInfoList = exportTask.getQueryInfoList();
 		}
@@ -1590,7 +1590,7 @@ public final class DataUtils {
 		@Override
 		public void process() {
 			try (DataExporter dataExporter =
-					     new DataExporter(INSTANCE.exportPath(this.getTaskCode(), this.compatibilityMode))) {
+					     new DataExporter(this.dataUtils.exportPath(this.getTaskCode(), this.compatibilityMode))) {
 				if (this.dataSource != null) {
 					for (QueryInfo queryInfo : this.queryInfoList) {
 						this.dataSource.query(queryInfo)
@@ -1632,8 +1632,8 @@ public final class DataUtils {
 		 */
 		private final int timeout;
 
-		public ImportThread(final BrainDataSource dataSource, final ImportTask taskInfo) {
-			super(dataSource, taskInfo.getTaskCode());
+		public ImportThread(final ImportTask taskInfo, final DataUtils dataUtils) {
+			super(taskInfo.getTaskCode(), dataUtils);
 			this.dataPath = taskInfo.getDataPath();
 			this.transactional = taskInfo.getTransactional();
 			this.timeout = taskInfo.getTimeout();
@@ -1641,14 +1641,39 @@ public final class DataUtils {
 
 		@Override
 		public void process() {
-			try (final DataParser dataParser =
-					     new DataParser(this.dataSource, this.transactional, this.timeout, this.dataPath)) {
+			try (final DataParser dataParser = new DataParser(this.transactional, this.timeout, this.dataPath)) {
 				dataParser.process();
 				this.hasError = dataParser.hasError();
 				this.errorLog.append(dataParser.errorMessage());
 			} catch (Exception e) {
 				this.errorLog.append(e.getMessage()).append(FileUtils.CRLF);
 				this.hasError = Boolean.TRUE;
+			}
+		}
+	}
+
+	private static final class DataUtilsHolder {
+
+		/**
+		 * <span class="en-US">Singleton object of data import and export tool</span>
+		 * <span class="zh-CN">数据导入导出工具的单例对象</span>
+		 */
+		private static DataUtils INSTANCE = null;
+
+		static void initialize(final StorageConfig storageConfig) {
+			if (INSTANCE != null && INSTANCE.match(storageConfig.getLastModified())) {
+				return;
+			}
+			if (INSTANCE != null) {
+				destroy();
+			}
+			INSTANCE = new DataUtils(storageConfig);
+		}
+
+		static void destroy() {
+			if (INSTANCE != null) {
+				INSTANCE.close();
+				INSTANCE = null;
 			}
 		}
 	}

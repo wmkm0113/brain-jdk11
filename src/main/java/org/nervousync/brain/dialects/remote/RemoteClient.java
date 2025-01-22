@@ -26,6 +26,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.xml.ws.WebServiceClient;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 
+import java.sql.SQLException;
+
 /**
  * <h2 class="en-US">Data source operator interface</h2>
  * <h2 class="zh-CN">数据源操作器接口</h2>
@@ -316,8 +318,8 @@ public interface RemoteClient {
 	 *                   <span class="zh-CN">查询条件实例对象列表</span>
 	 * @return <span class="en-US">Total record count</span>
 	 * <span class="zh-CN">总记录条数</span>
-	 * @throws Exception <span class="en-US">An error occurred during execution</span>
-	 *                   <span class="zh-CN">执行过程中出错</span>
+	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
+	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
 	@GET
 	@Path("/search/{tableName}/count")
@@ -325,6 +327,6 @@ public interface RemoteClient {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@WebMethod
 	Long queryTotal(@Nonnull @WebParam @PathParam("tableName") final String tableName,
-	                @Nonnull @WebParam @QueryParam("conditions") final String conditions) throws Exception;
+	                @Nonnull @WebParam @QueryParam("conditions") final String conditions) throws SQLException;
 
 }
