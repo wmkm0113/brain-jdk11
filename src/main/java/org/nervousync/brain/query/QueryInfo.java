@@ -94,7 +94,7 @@ public final class QueryInfo extends BeanObject {
 	@XmlElementWrapper(name = "condition_list")
 	private List<Condition> conditionList;
 	/**
-	 * <span class="en-US">Query order by columns list</span>
+	 * <span class="en-US">Query order by columns' list</span>
 	 * <span class="zh-CN">查询排序数据列列表</span>
 	 */
 	@XmlElement(name = "order_by")

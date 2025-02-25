@@ -18,7 +18,6 @@
 package org.nervousync.brain.schemas.jdbc;
 
 import jakarta.annotation.Nonnull;
-import jakarta.persistence.LockModeType;
 import org.jetbrains.annotations.NotNull;
 import org.nervousync.brain.command.GeneratedCommand;
 import org.nervousync.brain.commons.BrainCommons;
@@ -737,7 +736,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 
 	@Override
 	public List<Map<String, Object>> queryForUpdate(@Nonnull final TableDefine tableDefine,
-	                                                final List<Condition> conditionList, final LockModeType lockOption)
+	                                                final List<Condition> conditionList)
 			throws SQLException {
 		StringBuilder stringBuilder = new StringBuilder();
 		for (ColumnDefine columnDefine : tableDefine.getColumnDefines()) {
@@ -751,7 +750,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 				this.shardingDatabase(tableDefine.getTableName(), conditionList),
 				this.dialect.queryCommand(tableName,
 						stringBuilder.substring(BrainCommons.DEFAULT_SPLIT_CHARACTER.length()),
-						conditionList, LockModeType.NONE.equals(lockOption) ? tableDefine.getLockOption() : lockOption),
+						conditionList, tableDefine.getLockOption()),
 				Boolean.TRUE);
 	}
 
@@ -824,7 +823,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 *                    <span class="zh-CN">数据库连接</span>
 	 * @param ddlType     <span class="en-US">Enumeration value of DDL operate</span>
 	 *                    <span class="zh-CN">操作类型枚举值</span>
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
 	 *                      <span class="zh-CN">执行过程中出错</span>
@@ -849,7 +848,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 *                    <span class="zh-CN">数据库连接</span>
 	 * @param ddlType     <span class="en-US">Enumeration value of DDL operate</span>
 	 *                    <span class="zh-CN">操作类型枚举值</span>
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param tableName   <span class="en-US">Data table name</span>
 	 *                    <span class="zh-CN">数据表名</span>
@@ -1032,10 +1031,14 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * <h3 class="en-US">Execute data query</h3>
 	 * <h3 class="zh-CN">执行数据查询</h3>
 	 *
+	 * @param tableDefine      <span class="en-US">Table defines information</span>
+	 *                         <span class="zh-CN">数据表定义信息</span>
 	 * @param shardingDatabase <span class="en-US">Sharded database name</span>
 	 *                         <span class="zh-CN">分片数据库名</span>
 	 * @param sqlCommand       <span class="en-US">SQL command to execute</span>
 	 *                         <span class="zh-CN">要执行的SQL命令</span>
+	 * @param forUpdate        <span class="en-US">Retrieve result using for update record</span>
+	 *                         <span class="zh-CN">检索结果用于更新记录</span>
 	 * @return <span class="en-US">Query record list</span>
 	 * <span class="zh-CN">查询到的记录列表</span>
 	 * @throws SQLException <span class="en-US">An error occurred during execution</span>

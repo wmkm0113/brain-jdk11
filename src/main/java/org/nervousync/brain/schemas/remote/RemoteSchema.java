@@ -18,7 +18,6 @@
 package org.nervousync.brain.schemas.remote;
 
 import jakarta.annotation.Nonnull;
-import jakarta.persistence.LockModeType;
 import jakarta.ws.rs.client.ClientBuilder;
 import org.glassfish.jersey.client.ClientProperties;
 import org.jetbrains.annotations.NotNull;
@@ -397,7 +396,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 
 	@Override
 	public List<Map<String, Object>> queryForUpdate(@NotNull final TableDefine tableDefine,
-	                                                final List<Condition> conditionList, final LockModeType lockOption)
+	                                                final List<Condition> conditionList)
 			throws SQLException {
 		String tableName = this.shardingTable(tableDefine.getTableName(), conditionList);
 		StringBuilder stringBuilder = new StringBuilder();
@@ -411,7 +410,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 				this.operatorThreadLocal.get()
 						.queryForUpdate(tableName, stringBuilder.toString(),
 								StringUtils.objectToString(conditionList, StringUtils.StringType.JSON, Boolean.FALSE),
-								LockModeType.NONE.equals(lockOption) ? tableDefine.getLockOption() : lockOption));
+								tableDefine.getLockOption()));
 	}
 
 	@Override

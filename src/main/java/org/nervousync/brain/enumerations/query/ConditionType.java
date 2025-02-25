@@ -34,5 +34,10 @@ public enum ConditionType {
      * <span class="en-US">Condition group</span>
      * <span class="zh-CN">条件组</span>
      */
-	GROUP
+	GROUP,
+    /**
+     * <span class="en-US">Condition constant</span>
+     * <span class="zh-CN">固定值</span>
+     */
+	CONSTANT
 }

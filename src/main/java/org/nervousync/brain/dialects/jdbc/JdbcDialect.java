@@ -37,6 +37,7 @@ import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
+import org.nervousync.brain.query.condition.impl.ConstantCondition;
 import org.nervousync.brain.query.condition.impl.GroupCondition;
 import org.nervousync.brain.query.core.AbstractItem;
 import org.nervousync.brain.query.core.SortedItem;
@@ -472,6 +473,24 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
+	 * <h3 class="en-US">Pager query command</h3>
+	 * <h3 class="zh-CN">分页查询命令</h3>
+	 *
+	 * @param sqlCmd    <span class="en-US">Query command</span>
+	 *                  <span class="zh-CN">查询命令</span>
+	 * @param offset    <span class="en-US">Query result offset</span>
+	 *                  <span class="zh-CN">查询起始记录数</span>
+	 * @param pageLimit <span class="en-US">Query page limit</span>
+	 *                  <span class="zh-CN">查询分页记录数</span>
+	 * @param values    <span class="en-US">Parameter value list</span>
+	 *                  <span class="zh-CN">参数值列表</span>
+	 * @return <span class="en-US">Generated SQL command</span>
+	 * <span class="zh-CN">生成的SQL命令</span>
+	 */
+	protected abstract String limitCommand(@Nonnull final String sqlCmd, final int offset, final int pageLimit,
+	                                       @Nonnull List<Object> values);
+
+	/**
 	 * <h3 class="en-US">Create database parameters command</h3>
 	 * <h3 class="zh-CN">创建数据库的参数命令</h3>
 	 *
@@ -781,25 +800,38 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *
 	 * @param whereClause <span class="en-US">Generated where sentences</span>
 	 *                    <span class="zh-CN">生成的Where字句</span>
+	 * @param forUpdate   <span class="en-US">Retrieve result using for update record</span>
+	 *                    <span class="zh-CN">检索结果用于更新记录</span>
 	 * @param lockOption  <span class="en-US">Query record lock option</span>
 	 *                    <span class="zh-CN">查询记录锁定选项</span>
 	 * @return <span class="en-US">Generated SQL command</span>
 	 * <span class="zh-CN">生成的SQL命令</span>
 	 */
-	protected String lockWhereClause(final String whereClause, final LockModeType lockOption) {
+	protected String lockWhereClause(final String whereClause, final boolean forUpdate, final LockModeType lockOption) {
+		StringBuilder sqlBuilder = new StringBuilder(WHERE_COMMAND).append(BrainCommons.DEFAULT_WHERE_CLAUSE);
 		if (StringUtils.isEmpty(whereClause)) {
-			return Globals.DEFAULT_VALUE_STRING;
+			if (this.logger.isDebugEnabled()) {
+				this.logger.warn("Query_Condition_Empty");
+			}
 		}
-		switch (lockOption) {
-			case WRITE:
-			case PESSIMISTIC_WRITE:
-				return WHERE_COMMAND + BrainCommons.DEFAULT_WHERE_CLAUSE + whereClause + "FOR UPDATE NOWAIT ";
-			case READ:
-			case PESSIMISTIC_READ:
-				return WHERE_COMMAND + BrainCommons.DEFAULT_WHERE_CLAUSE + whereClause + "LOCK IN SHARE MODE ";
-			default:
-				return WHERE_COMMAND + BrainCommons.DEFAULT_WHERE_CLAUSE + whereClause;
+		sqlBuilder.append(whereClause);
+		if (forUpdate) {
+			switch (lockOption) {
+				case WRITE:
+				case PESSIMISTIC_WRITE:
+					sqlBuilder.append(" FOR UPDATE NOWAIT ");
+					break;
+				case READ:
+				case PESSIMISTIC_READ:
+					sqlBuilder.append(" LOCK IN SHARE MODE ");
+					break;
+				default:
+					return WHERE_COMMAND + BrainCommons.DEFAULT_WHERE_CLAUSE + whereClause;
+			}
+		} else {
+			sqlBuilder.append(" SKIP LOCKED");
 		}
+		return sqlBuilder.toString();
 	}
 
 	/**
@@ -1058,12 +1090,7 @@ public abstract class JdbcDialect extends BaseDialect {
 				.append(StringUtils.isEmpty(columns) ? " * " : columns)
 				.append(FROM_COMMAND)
 				.append(this.nameCase(shardingName));
-		String whereClause = this.whereClause(filterMap, values);
-		if (forUpdate) {
-			sqlBuilder.append(this.lockWhereClause(whereClause, lockOption));
-		} else {
-			sqlBuilder.append(WHERE_COMMAND).append(BrainCommons.DEFAULT_WHERE_CLAUSE).append(whereClause);
-		}
+		sqlBuilder.append(this.lockWhereClause(this.whereClause(filterMap, values), forUpdate, lockOption));
 		return new GeneratedCommand(sqlBuilder.toString(), values);
 	}
 
@@ -1088,8 +1115,8 @@ public abstract class JdbcDialect extends BaseDialect {
 		if (!queryJoinList.isEmpty()) {
 			aliasMap.put(tableName, "t_0");
 			for (QueryJoin queryJoin : queryJoinList) {
-				if (!aliasMap.containsKey(queryJoin.getJoinTable())) {
-					aliasMap.put(queryJoin.getJoinTable(), "t_" + aliasMap.size());
+				if (!aliasMap.containsKey(queryJoin.getRightTable())) {
+					aliasMap.put(queryJoin.getRightTable(), "t_" + aliasMap.size());
 				}
 			}
 		}
@@ -1109,7 +1136,7 @@ public abstract class JdbcDialect extends BaseDialect {
 			}
 		}
 		List<Object> values = new ArrayList<>();
-		sqlBuilder.append(this.lockWhereClause(this.whereClause(aliasMap, conditionList, values), LockModeType.NONE));
+		sqlBuilder.append(this.whereClause(aliasMap, conditionList, values));
 		return new GeneratedCommand(sqlBuilder.toString(), values);
 	}
 
@@ -1139,7 +1166,7 @@ public abstract class JdbcDialect extends BaseDialect {
 						.append(FROM_COMMAND)
 						.append(this.nameCase(tableName));
 		List<Object> values = new ArrayList<>();
-		sqlBuilder.append(this.lockWhereClause(this.whereClause(Map.of(), conditionList, values), lockOption));
+		sqlBuilder.append(this.lockWhereClause(this.whereClause(Map.of(), conditionList, values), Boolean.TRUE, lockOption));
 		return new GeneratedCommand(sqlBuilder.toString(), values);
 	}
 
@@ -1159,10 +1186,12 @@ public abstract class JdbcDialect extends BaseDialect {
 			throw new MultilingualSQLException(0x00DB00000010L);
 		}
 		final Map<String, String> aliasMap = new HashMap<>();
-		aliasMap.put(queryInfo.getTableName(), "t_0");
+		aliasMap.put(queryInfo.getTableName(),
+				StringUtils.isEmpty(queryInfo.getAliasName()) ? "t_0" : queryInfo.getAliasName());
 		for (QueryJoin queryJoin : queryInfo.getQueryJoins()) {
-			if (!aliasMap.containsKey(queryJoin.getJoinTable())) {
-				aliasMap.put(queryJoin.getJoinTable(), "t_" + aliasMap.size());
+			if (!aliasMap.containsKey(queryJoin.getRightTable())) {
+				aliasMap.put(queryJoin.getRightTable(),
+						StringUtils.isEmpty(queryJoin.getAliasName()) ? "t_" + aliasMap.size() : queryJoin.getAliasName());
 			}
 		}
 
@@ -1196,15 +1225,10 @@ public abstract class JdbcDialect extends BaseDialect {
 		for (QueryJoin queryJoin : queryInfo.getQueryJoins()) {
 			sqlBuilder.append(this.joinCommand(aliasMap, queryJoin, aliasCommand));
 		}
-		String whereClause = this.whereClause(aliasMap, queryInfo.getConditionList(), values);
-		if (StringUtils.isEmpty(whereClause)) {
-			if (this.logger.isDebugEnabled()) {
-				this.logger.warn("Query_Condition_Empty");
-			}
-		} else {
-			sqlBuilder.append(WHERE_COMMAND).append(BrainCommons.DEFAULT_WHERE_CLAUSE).append(whereClause);
-		}
-
+		sqlBuilder.append(WHERE_COMMAND)
+				.append(BrainCommons.DEFAULT_WHERE_CLAUSE)
+				.append(this.whereClause(aliasMap, queryInfo.getConditionList(), values))
+				.append(" SKIP LOCKED");
 		String orderBy = this.orderBy(aliasMap, queryInfo.getOrderByList());
 		if (StringUtils.notBlank(orderBy)) {
 			sqlBuilder.append(ORDER_BY_COMMAND).append(orderBy);
@@ -1214,7 +1238,16 @@ public abstract class JdbcDialect extends BaseDialect {
 		if (StringUtils.notBlank(groupBy)) {
 			sqlBuilder.append(GROUP_BY_COMMAND).append(groupBy);
 		}
-		return new GeneratedCommand(sqlBuilder.toString(), values);
+
+		String sqlCmd;
+		if (queryInfo.getPageNo() > 1 || queryInfo.getPageLimit() > 0) {
+			int pageNo = queryInfo.getPageNo() > 0 ? queryInfo.getPageNo() : BrainCommons.DEFAULT_PAGE_NO;
+			int pageLimit = (queryInfo.getPageLimit() > 0) ? queryInfo.getPageLimit() : BrainCommons.DEFAULT_PAGE_LIMIT;
+			sqlCmd = this.limitCommand(sqlBuilder.toString(), pageLimit * (pageNo - 1), pageLimit, values);
+		} else {
+			sqlCmd = sqlBuilder.toString();
+		}
+		return new GeneratedCommand(sqlCmd, values);
 	}
 
 	/**
@@ -1346,8 +1379,8 @@ public abstract class JdbcDialect extends BaseDialect {
 			default:
 				throw new MultilingualSQLException(0x00DB00000013L, queryJoin.getJoinType());
 		}
-		sqlBuilder.append(this.nameCase(queryJoin.getJoinTable()));
-		String aliasName = aliasMap.get(queryJoin.getJoinTable());
+		sqlBuilder.append(this.nameCase(queryJoin.getRightTable()));
+		String aliasName = aliasMap.get(queryJoin.getRightTable());
 		if (StringUtils.notBlank(aliasName)) {
 			sqlBuilder.append(aliasCommand)
 					.append(BrainCommons.WHITE_SPACE)
@@ -1358,12 +1391,12 @@ public abstract class JdbcDialect extends BaseDialect {
 		for (JoinInfo joinInfo : queryJoin.getJoinInfos()) {
 			if (columnBuilder.length() > 0) {
 				columnBuilder.append(BrainCommons.WHITE_SPACE)
-						.append(ConnectionCode.AND)
+						.append(joinInfo.getConnectionCode())
 						.append(BrainCommons.WHITE_SPACE);
 			}
-			columnBuilder.append(this.columnName(aliasMap, queryJoin.getDriverTable(), joinInfo.getJoinKey()))
+			columnBuilder.append(this.columnName(aliasMap, joinInfo.getLeftTable(), joinInfo.getLeftKey()))
 					.append(BrainCommons.OPERATOR_EQUAL)
-					.append(this.columnName(aliasMap, queryJoin.getJoinTable(), joinInfo.getReferenceKey()));
+					.append(this.columnName(aliasMap, queryJoin.getRightTable(), joinInfo.getRightKey()));
 		}
 		sqlBuilder.append(BrainCommons.BRACKETS_BEGIN).append(columnBuilder).append(BrainCommons.BRACKETS_END);
 		return sqlBuilder.toString();
@@ -1403,6 +1436,14 @@ public abstract class JdbcDialect extends BaseDialect {
 						sqlBuilder.append(BrainCommons.BRACKETS_BEGIN)
 								.append(groupWhereClause)
 								.append(BrainCommons.BRACKETS_END);
+					}
+					break;
+				case CONSTANT:
+					ConstantCondition constantCondition = condition.unwrap(ConstantCondition.class);
+					if (constantCondition.isMatchResult()) {
+						sqlBuilder.append(BrainCommons.CONSTANT_CLAUSE_TRUE);
+					} else {
+						sqlBuilder.append(BrainCommons.CONSTANT_CLAUSE_FALSE);
 					}
 					break;
 				default:

@@ -522,7 +522,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <h3 class="en-US">Truncate data table</h3>
 	 * <h3 class="zh-CN">清空数据表</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
@@ -530,7 +530,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	public abstract void truncateTable(@Nonnull final TableDefine tableDefine) throws Exception;
 
 	/**
-	 * <h3 class="en-US">Drop all data table</h3>
+	 * <h3 class="en-US">Drop all data tables</h3>
 	 * <h3 class="zh-CN">删除所有数据表</h3>
 	 *
 	 * @param dropOption <span class="en-US">Cascading delete options</span>
@@ -544,7 +544,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <h3 class="en-US">Drop data table</h3>
 	 * <h3 class="zh-CN">删除数据表</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param dropOption  <span class="en-US">Cascading delete options</span>
 	 *                    <span class="zh-CN">级联删除选项</span>
@@ -558,7 +558,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <h3 class="en-US">Execute lock record command</h3>
 	 * <h3 class="zh-CN">执行数据锁定命令</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param filterMap   <span class="en-US">Filter data mapping</span>
 	 *                    <span class="zh-CN">查询数据映射表</span>
@@ -590,7 +590,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <h3 class="en-US">Execute retrieve record command</h3>
 	 * <h3 class="zh-CN">执行数据唯一检索命令</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param columns     <span class="en-US">Query column names</span>
 	 *                    <span class="zh-CN">查询数据列名</span>
@@ -645,7 +645,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <h3 class="en-US">Execute query record command</h3>
 	 * <h3 class="zh-CN">执行数据检索命令</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param queryInfo   <span class="en-US">Query record information</span>
 	 *                    <span class="zh-CN">数据检索信息</span>
@@ -661,26 +661,41 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <h3 class="en-US">Execute query commands for data updates</h3>
 	 * <h3 class="zh-CN">执行用于数据更新的查询命令</h3>
 	 *
-	 * @param tableDefine   <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
+	 *                    <span class="zh-CN">数据表定义信息</span>
+	 * @param queryInfo   <span class="en-US">Query record information</span>
+	 *                    <span class="zh-CN">数据检索信息</span>
+	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
+	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
+	 * @throws Exception <span class="en-US">An error occurred during execution</span>
+	 *                   <span class="zh-CN">执行过程中出错</span>
+	 */
+	public final List<Map<String, Object>> queryForUpdate(@NotNull final TableDefine tableDefine,
+	                                                      @Nonnull final QueryInfo queryInfo) throws Exception {
+		return this.queryForUpdate(tableDefine, queryInfo.getConditionList());
+	}
+
+	/**
+	 * <h3 class="en-US">Execute query commands for data updates</h3>
+	 * <h3 class="zh-CN">执行用于数据更新的查询命令</h3>
+	 *
+	 * @param tableDefine   <span class="en-US">Table defines information</span>
 	 *                      <span class="zh-CN">数据表定义信息</span>
 	 * @param conditionList <span class="en-US">Query condition instance list</span>
 	 *                      <span class="zh-CN">查询条件实例对象列表</span>
-	 * @param lockOption    <span class="en-US">Query record lock option</span>
-	 *                      <span class="zh-CN">查询记录锁定选项</span>
 	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
 	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public abstract List<Map<String, Object>> queryForUpdate(@Nonnull final TableDefine tableDefine,
-	                                                         final List<Condition> conditionList,
-	                                                         final LockModeType lockOption) throws Exception;
+	                                                         final List<Condition> conditionList) throws Exception;
 
 	/**
 	 * <h3 class="en-US">Query total record count</h3>
 	 * <h3 class="zh-CN">查询总记录数</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param queryInfo   <span class="en-US">Query record information</span>
 	 *                    <span class="zh-CN">数据检索信息</span>

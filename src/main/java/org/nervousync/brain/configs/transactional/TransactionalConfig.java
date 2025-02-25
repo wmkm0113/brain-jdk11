@@ -17,10 +17,12 @@
 package org.nervousync.brain.configs.transactional;
 
 import jakarta.annotation.Nonnull;
+import org.intellij.lang.annotations.MagicConstant;
 import org.nervousync.utils.ClassUtils;
 import org.nervousync.utils.IDUtils;
 
 import java.io.Serializable;
+import java.sql.Connection;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
@@ -51,6 +53,7 @@ public final class TransactionalConfig implements Serializable {
      * <span class="en-US">The isolation value of transactional</span>
      * <span class="zh-CN">事务的等级代码</span>
      */
+    @MagicConstant(valuesFromClass = Connection.class)
     private final int isolation;
     /**
      * <span class="en-US">The rollback exception class of transactional</span>
@@ -69,7 +72,9 @@ public final class TransactionalConfig implements Serializable {
      * @param rollBackForClasses <span class="en-US">The rollback exception class of transactional</span>
      *                           <span class="zh-CN">事务的回滚异常</span>
      */
-    private TransactionalConfig(final int timeout, final int isolation, final Class<?>[] rollBackForClasses) {
+    private TransactionalConfig(final int timeout,
+                                @MagicConstant(valuesFromClass = Connection.class) final int isolation,
+                                final Class<?>[] rollBackForClasses) {
         this.transactionalCode = IDUtils.snowflake();
         this.timeout = timeout;
         this.isolation = isolation;
@@ -89,7 +94,8 @@ public final class TransactionalConfig implements Serializable {
      * @return <span class="en-US">Generated transactional configure information instance</span>
      * <span class="zh-CN">生成的事务配置信息实例对象</span>
      */
-    public static TransactionalConfig newInstance(final int timeout, final int isolation,
+    public static TransactionalConfig newInstance(final int timeout,
+                                                  @MagicConstant(valuesFromClass = Connection.class)final int isolation,
                                                   final Class<?>[] rollBackForClasses) {
         if (timeout < 0 || rollBackForClasses.length == 0) {
             return null;
@@ -126,6 +132,7 @@ public final class TransactionalConfig implements Serializable {
      * @return <span class="en-US">The isolation value of transactional</span>
      * <span class="zh-CN">事务的等级代码</span>
      */
+    @MagicConstant(valuesFromClass = Connection.class)
     public int getIsolation() {
         return this.isolation;
     }

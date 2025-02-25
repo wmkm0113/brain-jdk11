@@ -17,7 +17,6 @@
 
 package org.nervousync.brain.schemas.distribute;
 
-import jakarta.persistence.LockModeType;
 import org.jetbrains.annotations.NotNull;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
@@ -187,10 +186,10 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 
 	@Override
 	public List<Map<String, Object>> queryForUpdate(@NotNull final TableDefine tableDefine,
-	                                                final List<Condition> conditionList, final LockModeType lockOption)
+	                                                final List<Condition> conditionList)
 			throws Exception {
 		return this.distributeClient.queryForUpdate(this.shardingDatabase(tableDefine.getTableName(), conditionList),
-				tableDefine, conditionList, lockOption);
+				tableDefine, conditionList);
 	}
 
 	@Override

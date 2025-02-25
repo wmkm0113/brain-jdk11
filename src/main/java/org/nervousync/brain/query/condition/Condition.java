@@ -23,6 +23,7 @@ import jakarta.xml.bind.annotation.XmlTransient;
 import org.nervousync.brain.enumerations.query.ConditionCode;
 import org.nervousync.brain.enumerations.query.ConditionType;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
+import org.nervousync.brain.query.condition.impl.ConstantCondition;
 import org.nervousync.brain.query.condition.impl.GroupCondition;
 import org.nervousync.brain.query.core.SortedItem;
 import org.nervousync.brain.query.param.AbstractParameter;
@@ -181,5 +182,28 @@ public abstract class Condition extends SortedItem implements Wrapper {
 		columnCondition.setConditionParameter(conditionParameter);
 
 		return columnCondition;
+	}
+
+	/**
+	 * <h3 class="en-US">Static method is used to generate constant condition instance object</h3>
+	 * <h3 class="zh-CN">静态方法用于生成固定条件实例对象</h3>
+	 *
+	 * @param sortCode       <span class="en-US">Sort code</span>
+	 *                       <span class="zh-CN">排序代码</span>
+	 * @param connectionCode <span class="en-US">Query connection code</span>
+	 *                       <span class="zh-CN">查询条件连接代码</span>
+	 * @param matchResult    <span class="en-US">Match result</span>
+	 *                       <span class="zh-CN">匹配结果</span>
+	 * @return <span class="en-US">Generated object instance</span>
+	 * <span class="zh-CN">生成的对象实例</span>
+	 */
+	public static ConstantCondition constant(final int sortCode, final ConnectionCode connectionCode,
+	                                         final boolean matchResult) {
+		ConstantCondition condition = new ConstantCondition(matchResult);
+
+		condition.setConnectionCode(connectionCode);
+		condition.setSortCode(sortCode);
+
+		return condition;
 	}
 }

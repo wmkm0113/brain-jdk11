@@ -50,7 +50,7 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 28, 2020 11:46:08 $
  */
-public final class QueryBuilder implements Builder<QueryInfo> {
+public final class BrainQueryBuilder implements Builder<QueryInfo> {
 
 	/**
 	 * <span class="en-US">Data table name</span>
@@ -117,7 +117,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @param aliasName <span class="en-US">Data table alias name</span>
 	 *                  <span class="zh-CN">数据表别名</span>
 	 */
-	private QueryBuilder(final String tableName, final String aliasName) {
+	private BrainQueryBuilder(final String tableName, final String aliasName) {
 		this.tableName = tableName;
 		this.aliasName = aliasName;
 		this.queryJoins = new ArrayList<>();
@@ -137,7 +137,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Query builder instance object</span>
 	 * <span class="zh-CN">查询构建器实例对象</span>
 	 */
-	public static QueryBuilder newBuilder(final String tableName) {
+	public static BrainQueryBuilder newBuilder(final String tableName) {
 		return newBuilder(tableName, Globals.DEFAULT_VALUE_STRING);
 	}
 
@@ -152,8 +152,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Query builder instance object</span>
 	 * <span class="zh-CN">查询构建器实例对象</span>
 	 */
-	public static QueryBuilder newBuilder(final String tableName, final String aliasName) {
-		return new QueryBuilder(tableName, aliasName);
+	public static BrainQueryBuilder newBuilder(final String tableName, final String aliasName) {
+		return new BrainQueryBuilder(tableName, aliasName);
 	}
 
 	/**
@@ -162,8 +162,6 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 *
 	 * @param joinType    <span class="en-US">Join type</span>
 	 *                    <span class="zh-CN">关联类型</span>
-	 * @param drivenTable <span class="en-US">Data table name</span>
-	 *                    <span class="zh-CN">数据表名</span>
 	 * @param joinTable   <span class="en-US">Join table name</span>
 	 *                    <span class="zh-CN">关联数据表名</span>
 	 * @param joinInfos   <span class="en-US">Join column information list</span>
@@ -173,9 +171,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query join information already exists</span>
 	 *                      <span class="zh-CN">如果关联信息已存在</span>
 	 */
-	public QueryBuilder joinTable(final JoinType joinType, final String drivenTable,
-	                              final String joinTable, final List<JoinInfo> joinInfos) throws SQLException {
-		return this.joinTable(joinType, drivenTable, joinTable, Globals.DEFAULT_VALUE_STRING, joinInfos);
+	public BrainQueryBuilder joinTable(final JoinType joinType, final String joinTable, final List<JoinInfo> joinInfos)
+			throws SQLException {
+		return this.joinTable(joinType, joinTable, Globals.DEFAULT_VALUE_STRING, joinInfos);
 	}
 
 	/**
@@ -184,8 +182,6 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 *
 	 * @param joinType    <span class="en-US">Join type</span>
 	 *                    <span class="zh-CN">关联类型</span>
-	 * @param drivenTable <span class="en-US">Data table name</span>
-	 *                    <span class="zh-CN">数据表名</span>
 	 * @param joinTable   <span class="en-US">Join table name</span>
 	 *                    <span class="zh-CN">关联数据表名</span>
 	 * @param aliasName   <span class="en-US">Join table alias name</span>
@@ -197,13 +193,14 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query join information already exists</span>
 	 *                      <span class="zh-CN">如果关联信息已存在</span>
 	 */
-	public QueryBuilder joinTable(final JoinType joinType, final String drivenTable,
-	                              final String joinTable, final String aliasName, final List<JoinInfo> joinInfos)
+	public BrainQueryBuilder joinTable(final JoinType joinType, final String joinTable, final String aliasName,
+	                                   final List<JoinInfo> joinInfos)
 			throws SQLException {
-		if (this.queryJoins.stream().anyMatch(queryJoin -> queryJoin.match(drivenTable, joinTable))) {
-			throw new MultilingualSQLException(0x00DB00010014L, drivenTable, joinTable);
+		if (this.queryJoins.stream().anyMatch(queryJoin ->
+				ObjectUtils.nullSafeEquals(queryJoin.getRightTable(), joinTable))) {
+			throw new MultilingualSQLException(0x00DB00010014L, joinTable);
 		}
-		this.queryJoins.add(new QueryJoin(drivenTable, joinTable, aliasName, joinType, joinInfos));
+		this.queryJoins.add(new QueryJoin(joinTable, aliasName, joinType, joinInfos));
 		return this;
 	}
 
@@ -220,7 +217,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public QueryBuilder queryColumn(final String tableName, final String columnName) throws SQLException {
+	public BrainQueryBuilder queryColumn(final String tableName, final String columnName) throws SQLException {
 		return this.queryColumn(tableName, columnName, Boolean.FALSE);
 	}
 
@@ -239,7 +236,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public QueryBuilder queryColumn(final String tableName, final String columnName, final String aliasName)
+	public BrainQueryBuilder queryColumn(final String tableName, final String columnName, final String aliasName)
 			throws SQLException {
 		return this.queryColumn(tableName, columnName, aliasName, Globals.DEFAULT_VALUE_INT);
 	}
@@ -261,8 +258,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public QueryBuilder queryColumn(final String tableName, final String columnName,
-	                                final String aliasName, final int sortCode) throws SQLException {
+	public BrainQueryBuilder queryColumn(final String tableName, final String columnName,
+	                                     final String aliasName, final int sortCode) throws SQLException {
 		return this.queryColumn(tableName, columnName, Boolean.FALSE, aliasName, sortCode);
 	}
 
@@ -281,7 +278,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public QueryBuilder queryColumn(final String tableName, final String columnName, final boolean distinct)
+	public BrainQueryBuilder queryColumn(final String tableName, final String columnName, final boolean distinct)
 			throws SQLException {
 		return this.queryColumn(tableName, columnName, distinct, Globals.DEFAULT_VALUE_INT);
 	}
@@ -303,8 +300,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public QueryBuilder queryColumn(final String tableName, final String columnName,
-	                                final boolean distinct, final int sortCode) throws SQLException {
+	public BrainQueryBuilder queryColumn(final String tableName, final String columnName,
+	                                     final boolean distinct, final int sortCode) throws SQLException {
 		return this.queryColumn(tableName, columnName, distinct, Globals.DEFAULT_VALUE_STRING, sortCode);
 	}
 
@@ -327,8 +324,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public QueryBuilder queryColumn(final String tableName, final String columnName,
-	                                final boolean distinct, final String aliasName, final int sortCode)
+	public BrainQueryBuilder queryColumn(final String tableName, final String columnName,
+	                                     final boolean distinct, final String aliasName, final int sortCode)
 			throws SQLException {
 		for (AbstractItem item : this.itemList) {
 			if (ItemType.COLUMN.equals(item.getItemType())) {
@@ -356,7 +353,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final String tableName, final String columnName, final Object matchValue) {
+	public BrainQueryBuilder greater(final String tableName, final String columnName, final Object matchValue) {
 		return this.greater(Boolean.FALSE, tableName, columnName, matchValue);
 	}
 
@@ -375,8 +372,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final String tableName, final String columnName,
-	                            final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder greater(final String tableName, final String columnName,
+	                                 final String matchTable, final String matchColumn) {
 		return this.greater(Boolean.FALSE, tableName, columnName,
 				matchTable, matchColumn);
 	}
@@ -396,8 +393,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final String tableName, final String columnName, final String functionName,
-	                            final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder greater(final String tableName, final String columnName, final String functionName,
+	                                 final AbstractParameter<?>... functionParams) {
 		return this.greater(Boolean.FALSE, tableName, columnName,
 				functionName, functionParams);
 	}
@@ -415,7 +412,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder greater(final String tableName, final String columnName, final QueryData subQuery) {
 		return this.greater(Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -434,8 +431,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final String tableName, final String columnName,
-	                                 final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder greaterEqual(final String tableName, final String columnName,
+	                                      final String matchTable, final String matchColumn) {
 		return this.greaterEqual(Boolean.FALSE, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -454,8 +451,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final String tableName, final String columnName,
-	                                 final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder greaterEqual(final String tableName, final String columnName,
+	                                      final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.greaterEqual(Boolean.FALSE, tableName, columnName, functionName, functionParams);
 	}
 
@@ -472,7 +469,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder greaterEqual(final String tableName, final String columnName, final QueryData subQuery) {
 		return this.greaterEqual(Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -489,7 +486,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final String tableName, final String columnName, final Object matchValue) {
+	public BrainQueryBuilder greaterEqual(final String tableName, final String columnName, final Object matchValue) {
 		return this.greaterEqual(Boolean.FALSE, tableName, columnName, matchValue);
 	}
 
@@ -508,8 +505,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final String tableName, final String columnName,
-	                         final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder less(final String tableName, final String columnName,
+	                              final String matchTable, final String matchColumn) {
 		return this.less(Boolean.FALSE, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -528,8 +525,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final String tableName, final String columnName,
-	                         final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder less(final String tableName, final String columnName,
+	                              final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.less(Boolean.FALSE, tableName, columnName, functionName, functionParams);
 	}
 
@@ -546,7 +543,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder less(final String tableName, final String columnName, final QueryData subQuery) {
 		return this.less(Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -563,7 +560,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final String tableName, final String columnName, final Object matchValue) {
+	public BrainQueryBuilder less(final String tableName, final String columnName, final Object matchValue) {
 		return this.less(Boolean.FALSE, tableName, columnName, matchValue);
 	}
 
@@ -582,8 +579,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final String tableName, final String columnName,
-	                              final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder lessEqual(final String tableName, final String columnName,
+	                                   final String matchTable, final String matchColumn) {
 		return this.lessEqual(Boolean.FALSE, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -602,8 +599,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final String tableName, final String columnName, final String functionName,
-	                              final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder lessEqual(final String tableName, final String columnName, final String functionName,
+	                                   final AbstractParameter<?>... functionParams) {
 		return this.lessEqual(Boolean.FALSE, tableName, columnName, functionName, functionParams);
 	}
 
@@ -620,7 +617,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder lessEqual(final String tableName, final String columnName, final QueryData subQuery) {
 		return this.lessEqual(Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -637,8 +634,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final String tableName, final String columnName,
-	                              final Object matchValue) {
+	public BrainQueryBuilder lessEqual(final String tableName, final String columnName,
+	                                   final Object matchValue) {
 		return this.lessEqual(Boolean.FALSE, tableName, columnName, matchValue);
 	}
 
@@ -657,8 +654,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final String tableName, final String columnName,
-	                            final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder equalTo(final String tableName, final String columnName,
+	                                 final String matchTable, final String matchColumn) {
 		return this.equalTo(Boolean.FALSE, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -677,8 +674,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final String tableName, final String columnName, final String functionName,
-	                            final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder equalTo(final String tableName, final String columnName, final String functionName,
+	                                 final AbstractParameter<?>... functionParams) {
 		return this.equalTo(Boolean.FALSE, tableName, columnName, functionName, functionParams);
 	}
 
@@ -695,7 +692,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder equalTo(final String tableName, final String columnName, final QueryData subQuery) {
 		return this.equalTo(Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -712,7 +709,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final String tableName, final String columnName, final Object matchValue) {
+	public BrainQueryBuilder equalTo(final String tableName, final String columnName, final Object matchValue) {
 		return this.equalTo(Boolean.FALSE, tableName, columnName, matchValue);
 	}
 
@@ -731,8 +728,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final String tableName, final String columnName,
-	                             final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder notEqual(final String tableName, final String columnName,
+	                                  final String matchTable, final String matchColumn) {
 		return this.notEqual(Boolean.FALSE, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -751,8 +748,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final String tableName, final String columnName, final String functionName,
-	                             final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder notEqual(final String tableName, final String columnName, final String functionName,
+	                                  final AbstractParameter<?>... functionParams) {
 		return this.notEqual(Boolean.FALSE, tableName, columnName, functionName, functionParams);
 	}
 
@@ -769,7 +766,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder notEqual(final String tableName, final String columnName, final QueryData subQuery) {
 		return this.notEqual(Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -786,7 +783,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final String tableName, final String columnName, final Object matchValue) {
+	public BrainQueryBuilder notEqual(final String tableName, final String columnName, final Object matchValue) {
 		return this.notEqual(Boolean.FALSE, tableName, columnName, matchValue);
 	}
 
@@ -805,8 +802,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder inRanges(final String tableName, final String columnName,
-	                             final Object beginValue, final Object endValue) {
+	public BrainQueryBuilder inRanges(final String tableName, final String columnName,
+	                                  final Object beginValue, final Object endValue) {
 		return this.inRanges(Boolean.FALSE, tableName, columnName, beginValue, endValue);
 	}
 
@@ -825,8 +822,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notInRanges(final String tableName, final String columnName,
-	                                final Object beginValue, final Object endValue) {
+	public BrainQueryBuilder notInRanges(final String tableName, final String columnName,
+	                                     final Object beginValue, final Object endValue) {
 		return this.notInRanges(Boolean.FALSE, tableName, columnName, beginValue, endValue);
 	}
 
@@ -843,7 +840,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder like(final String tableName, final String columnName, final String matchRule) {
+	public BrainQueryBuilder like(final String tableName, final String columnName, final String matchRule) {
 		return this.like(Boolean.FALSE, tableName, columnName, matchRule);
 	}
 
@@ -860,7 +857,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notLike(final String tableName, final String columnName, final String matchRule) {
+	public BrainQueryBuilder notLike(final String tableName, final String columnName, final String matchRule) {
 		return this.notLike(Boolean.FALSE, tableName, columnName, matchRule);
 	}
 
@@ -875,7 +872,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder matchNull(final String tableName, final String columnName) {
+	public BrainQueryBuilder matchNull(final String tableName, final String columnName) {
 		return this.matchNull(Boolean.FALSE, tableName, columnName);
 	}
 
@@ -890,7 +887,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notNull(final String tableName, final String columnName) {
+	public BrainQueryBuilder notNull(final String tableName, final String columnName) {
 		return this.notNull(Boolean.FALSE, tableName, columnName);
 	}
 
@@ -907,7 +904,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder in(final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder in(final String tableName, final String columnName, final QueryData subQuery) {
 		return this.in(Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -924,7 +921,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder in(final String tableName, final String columnName, final Object... matchValues) {
+	public BrainQueryBuilder in(final String tableName, final String columnName, final Object... matchValues) {
 		return this.in(Boolean.FALSE, tableName, columnName, matchValues);
 	}
 
@@ -941,7 +938,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notIn(final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder notIn(final String tableName, final String columnName, final QueryData subQuery) {
 		return this.notIn(Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -958,7 +955,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notIn(final String tableName, final String columnName, final Object... matchValues) {
+	public BrainQueryBuilder notIn(final String tableName, final String columnName, final Object... matchValues) {
 		return this.notIn(Boolean.FALSE, tableName, columnName, matchValues);
 	}
 
@@ -975,7 +972,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder exists(final String tableName, final QueryData subQuery, final String functionName) {
+	public BrainQueryBuilder exists(final String tableName, final QueryData subQuery, final String functionName) {
 		return this.exists(Boolean.FALSE, tableName, subQuery, functionName);
 	}
 
@@ -992,7 +989,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notExists(final String tableName, final QueryData subQuery, final String functionName) {
+	public BrainQueryBuilder notExists(final String tableName, final QueryData subQuery, final String functionName) {
 		return this.notExists(Boolean.FALSE, tableName, subQuery, functionName);
 	}
 
@@ -1011,8 +1008,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final ConnectionCode connectionCode, final String tableName,
-	                            final String columnName, final Object matchValue) {
+	public BrainQueryBuilder greater(final ConnectionCode connectionCode, final String tableName,
+	                                 final String columnName, final Object matchValue) {
 		return this.greater(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchValue);
 	}
 
@@ -1033,9 +1030,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName,
-	                            final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder greater(final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName,
+	                                 final String matchTable, final String matchColumn) {
 		return this.greater(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName,
 				matchTable, matchColumn);
 	}
@@ -1057,9 +1054,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final ConnectionCode connectionCode, final String tableName,
-	                            final String columnName, final String functionName,
-	                            final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder greater(final ConnectionCode connectionCode, final String tableName,
+	                                 final String columnName, final String functionName,
+	                                 final AbstractParameter<?>... functionParams) {
 		return this.greater(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName,
 				functionName, functionParams);
 	}
@@ -1079,8 +1076,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final ConnectionCode connectionCode, final String tableName,
-	                            final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder greater(final ConnectionCode connectionCode, final String tableName,
+	                                 final String columnName, final QueryData subQuery) {
 		return this.greater(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, subQuery);
 	}
 
@@ -1101,9 +1098,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final ConnectionCode connectionCode,
-	                                 final String tableName, final String columnName,
-	                                 final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder greaterEqual(final ConnectionCode connectionCode,
+	                                      final String tableName, final String columnName,
+	                                      final String matchTable, final String matchColumn) {
 		return this.greaterEqual(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -1124,9 +1121,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final ConnectionCode connectionCode,
-	                                 final String tableName, final String columnName,
-	                                 final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder greaterEqual(final ConnectionCode connectionCode,
+	                                      final String tableName, final String columnName,
+	                                      final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.greaterEqual(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, functionName, functionParams);
 	}
 
@@ -1145,8 +1142,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final ConnectionCode connectionCode, final String tableName,
-	                                 final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder greaterEqual(final ConnectionCode connectionCode, final String tableName,
+	                                      final String columnName, final QueryData subQuery) {
 		return this.greaterEqual(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, subQuery);
 	}
 
@@ -1165,8 +1162,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final ConnectionCode connectionCode, final String tableName,
-	                                 final String columnName, final Object matchValue) {
+	public BrainQueryBuilder greaterEqual(final ConnectionCode connectionCode, final String tableName,
+	                                      final String columnName, final Object matchValue) {
 		return this.greaterEqual(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchValue);
 	}
 
@@ -1187,9 +1184,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final ConnectionCode connectionCode,
-	                         final String tableName, final String columnName,
-	                         final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder less(final ConnectionCode connectionCode,
+	                              final String tableName, final String columnName,
+	                              final String matchTable, final String matchColumn) {
 		return this.less(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -1210,9 +1207,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final ConnectionCode connectionCode,
-	                         final String tableName, final String columnName,
-	                         final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder less(final ConnectionCode connectionCode,
+	                              final String tableName, final String columnName,
+	                              final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.less(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, functionName, functionParams);
 	}
 
@@ -1231,8 +1228,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final ConnectionCode connectionCode, final String tableName,
-	                         final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder less(final ConnectionCode connectionCode, final String tableName,
+	                              final String columnName, final QueryData subQuery) {
 		return this.less(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, subQuery);
 	}
 
@@ -1251,8 +1248,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final ConnectionCode connectionCode, final String tableName,
-	                         final String columnName, final Object matchValue) {
+	public BrainQueryBuilder less(final ConnectionCode connectionCode, final String tableName,
+	                              final String columnName, final Object matchValue) {
 		return this.less(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchValue);
 	}
 
@@ -1273,9 +1270,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final ConnectionCode connectionCode,
-	                              final String tableName, final String columnName,
-	                              final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder lessEqual(final ConnectionCode connectionCode,
+	                                   final String tableName, final String columnName,
+	                                   final String matchTable, final String matchColumn) {
 		return this.lessEqual(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -1296,9 +1293,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final ConnectionCode connectionCode, final String tableName,
-	                              final String columnName, final String functionName,
-	                              final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder lessEqual(final ConnectionCode connectionCode, final String tableName,
+	                                   final String columnName, final String functionName,
+	                                   final AbstractParameter<?>... functionParams) {
 		return this.lessEqual(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, functionName, functionParams);
 	}
 
@@ -1317,8 +1314,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final ConnectionCode connectionCode, final String tableName,
-	                              final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder lessEqual(final ConnectionCode connectionCode, final String tableName,
+	                                   final String columnName, final QueryData subQuery) {
 		return this.lessEqual(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, subQuery);
 	}
 
@@ -1337,8 +1334,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final ConnectionCode connectionCode, final String tableName,
-	                              final String columnName, final Object matchValue) {
+	public BrainQueryBuilder lessEqual(final ConnectionCode connectionCode, final String tableName,
+	                                   final String columnName, final Object matchValue) {
 		return this.lessEqual(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchValue);
 	}
 
@@ -1359,9 +1356,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName,
-	                            final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder equalTo(final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName,
+	                                 final String matchTable, final String matchColumn) {
 		return this.equalTo(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -1382,9 +1379,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final ConnectionCode connectionCode, final String tableName,
-	                            final String columnName, final String functionName,
-	                            final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder equalTo(final ConnectionCode connectionCode, final String tableName,
+	                                 final String columnName, final String functionName,
+	                                 final AbstractParameter<?>... functionParams) {
 		return this.equalTo(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, functionName, functionParams);
 	}
 
@@ -1403,8 +1400,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final ConnectionCode connectionCode, final String tableName,
-	                            final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder equalTo(final ConnectionCode connectionCode, final String tableName,
+	                                 final String columnName, final QueryData subQuery) {
 		return this.equalTo(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, subQuery);
 	}
 
@@ -1423,9 +1420,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName,
-	                            final Object matchValue) {
+	public BrainQueryBuilder equalTo(final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName,
+	                                 final Object matchValue) {
 		return this.equalTo(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchValue);
 	}
 
@@ -1446,8 +1443,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final ConnectionCode connectionCode, final String tableName, final String columnName,
-	                             final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder notEqual(final ConnectionCode connectionCode, final String tableName, final String columnName,
+	                                  final String matchTable, final String matchColumn) {
 		return this.notEqual(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -1468,9 +1465,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final ConnectionCode connectionCode, final String tableName,
-	                             final String columnName, final String functionName,
-	                             final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder notEqual(final ConnectionCode connectionCode, final String tableName,
+	                                  final String columnName, final String functionName,
+	                                  final AbstractParameter<?>... functionParams) {
 		return this.notEqual(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, functionName, functionParams);
 	}
 
@@ -1489,8 +1486,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final ConnectionCode connectionCode, final String tableName,
-	                             final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder notEqual(final ConnectionCode connectionCode, final String tableName,
+	                                  final String columnName, final QueryData subQuery) {
 		return this.notEqual(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, subQuery);
 	}
 
@@ -1509,8 +1506,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final ConnectionCode connectionCode, final String tableName,
-	                             final String columnName, final Object matchValue) {
+	public BrainQueryBuilder notEqual(final ConnectionCode connectionCode, final String tableName,
+	                                  final String columnName, final Object matchValue) {
 		return this.notEqual(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchValue);
 	}
 
@@ -1531,9 +1528,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder inRanges(final ConnectionCode connectionCode,
-	                             final String tableName, final String columnName,
-	                             final Object beginValue, final Object endValue) {
+	public BrainQueryBuilder inRanges(final ConnectionCode connectionCode,
+	                                  final String tableName, final String columnName,
+	                                  final Object beginValue, final Object endValue) {
 		return this.inRanges(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, beginValue, endValue);
 	}
 
@@ -1554,9 +1551,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notInRanges(final ConnectionCode connectionCode,
-	                                final String tableName, final String columnName,
-	                                final Object beginValue, final Object endValue) {
+	public BrainQueryBuilder notInRanges(final ConnectionCode connectionCode,
+	                                     final String tableName, final String columnName,
+	                                     final Object beginValue, final Object endValue) {
 		return this.notInRanges(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, beginValue, endValue);
 	}
 
@@ -1575,8 +1572,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder like(final ConnectionCode connectionCode, final String tableName,
-	                         final String columnName, final String matchRule) {
+	public BrainQueryBuilder like(final ConnectionCode connectionCode, final String tableName,
+	                              final String columnName, final String matchRule) {
 		return this.like(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchRule);
 	}
 
@@ -1595,8 +1592,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notLike(final ConnectionCode connectionCode, final String tableName,
-	                            final String columnName, final String matchRule) {
+	public BrainQueryBuilder notLike(final ConnectionCode connectionCode, final String tableName,
+	                                 final String columnName, final String matchRule) {
 		return this.notLike(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchRule);
 	}
 
@@ -1613,8 +1610,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder matchNull(final ConnectionCode connectionCode, final String tableName,
-	                              final String columnName) {
+	public BrainQueryBuilder matchNull(final ConnectionCode connectionCode, final String tableName,
+	                                   final String columnName) {
 		return this.matchNull(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName);
 	}
 
@@ -1631,8 +1628,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notNull(final ConnectionCode connectionCode, final String tableName,
-	                            final String columnName) {
+	public BrainQueryBuilder notNull(final ConnectionCode connectionCode, final String tableName,
+	                                 final String columnName) {
 		return this.notNull(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName);
 	}
 
@@ -1651,8 +1648,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder in(final ConnectionCode connectionCode, final String tableName,
-	                       final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder in(final ConnectionCode connectionCode, final String tableName,
+	                            final String columnName, final QueryData subQuery) {
 		return this.in(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, subQuery);
 	}
 
@@ -1671,8 +1668,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder in(final ConnectionCode connectionCode, final String tableName,
-	                       final String columnName, final Object... matchValues) {
+	public BrainQueryBuilder in(final ConnectionCode connectionCode, final String tableName,
+	                            final String columnName, final Object... matchValues) {
 		return this.in(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchValues);
 	}
 
@@ -1691,8 +1688,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notIn(final ConnectionCode connectionCode, final String tableName,
-	                          final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder notIn(final ConnectionCode connectionCode, final String tableName,
+	                               final String columnName, final QueryData subQuery) {
 		return this.notIn(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, subQuery);
 	}
 
@@ -1711,8 +1708,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notIn(final ConnectionCode connectionCode, final String tableName,
-	                          final String columnName, final Object... matchValues) {
+	public BrainQueryBuilder notIn(final ConnectionCode connectionCode, final String tableName,
+	                               final String columnName, final Object... matchValues) {
 		return this.notIn(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, columnName, matchValues);
 	}
 
@@ -1731,8 +1728,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder exists(final ConnectionCode connectionCode, final String tableName,
-	                           final QueryData subQuery, final String functionName) {
+	public BrainQueryBuilder exists(final ConnectionCode connectionCode, final String tableName,
+	                                final QueryData subQuery, final String functionName) {
 		return this.exists(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, subQuery, functionName);
 	}
 
@@ -1751,8 +1748,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notExists(final ConnectionCode connectionCode, final String tableName,
-	                              final QueryData subQuery, final String functionName) {
+	public BrainQueryBuilder notExists(final ConnectionCode connectionCode, final String tableName,
+	                                   final QueryData subQuery, final String functionName) {
 		return this.notExists(Globals.DEFAULT_VALUE_INT, connectionCode, tableName, subQuery, functionName);
 	}
 
@@ -1771,8 +1768,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final boolean havingCondition, final String tableName, final String columnName,
-	                            final Object matchValue) {
+	public BrainQueryBuilder greater(final boolean havingCondition, final String tableName, final String columnName,
+	                                 final Object matchValue) {
 		return this.greater(ConnectionCode.AND, havingCondition, tableName, columnName, matchValue);
 	}
 
@@ -1793,8 +1790,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final boolean havingCondition, final String tableName, final String columnName,
-	                            final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder greater(final boolean havingCondition, final String tableName, final String columnName,
+	                                 final String matchTable, final String matchColumn) {
 		return this.greater(ConnectionCode.AND, havingCondition, tableName, columnName,
 				matchTable, matchColumn);
 	}
@@ -1816,8 +1813,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final boolean havingCondition, final String tableName, final String columnName,
-	                            final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder greater(final boolean havingCondition, final String tableName, final String columnName,
+	                                 final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.greater(ConnectionCode.AND, havingCondition, tableName, columnName,
 				functionName, functionParams);
 	}
@@ -1837,8 +1834,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final boolean havingCondition, final String tableName, final String columnName,
-	                            final QueryData subQuery) {
+	public BrainQueryBuilder greater(final boolean havingCondition, final String tableName, final String columnName,
+	                                 final QueryData subQuery) {
 		return this.greater(ConnectionCode.AND, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -1859,8 +1856,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final boolean havingCondition, final String tableName, final String columnName,
-	                                 final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder greaterEqual(final boolean havingCondition, final String tableName, final String columnName,
+	                                      final String matchTable, final String matchColumn) {
 		return this.greaterEqual(ConnectionCode.AND, havingCondition, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -1881,8 +1878,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final boolean havingCondition, final String tableName, final String columnName,
-	                                 final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder greaterEqual(final boolean havingCondition, final String tableName, final String columnName,
+	                                      final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.greaterEqual(ConnectionCode.AND, havingCondition, tableName, columnName, functionName, functionParams);
 	}
 
@@ -1901,8 +1898,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final boolean havingCondition, final String tableName, final String columnName,
-	                                 final QueryData subQuery) {
+	public BrainQueryBuilder greaterEqual(final boolean havingCondition, final String tableName, final String columnName,
+	                                      final QueryData subQuery) {
 		return this.greaterEqual(ConnectionCode.AND, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -1921,8 +1918,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final boolean havingCondition, final String tableName, final String columnName,
-	                                 final Object matchValue) {
+	public BrainQueryBuilder greaterEqual(final boolean havingCondition, final String tableName, final String columnName,
+	                                      final Object matchValue) {
 		return this.greaterEqual(ConnectionCode.AND, havingCondition, tableName, columnName, matchValue);
 	}
 
@@ -1943,8 +1940,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final boolean havingCondition, final String tableName, final String columnName,
-	                         final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder less(final boolean havingCondition, final String tableName, final String columnName,
+	                              final String matchTable, final String matchColumn) {
 		return this.less(ConnectionCode.AND, havingCondition, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -1965,8 +1962,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final boolean havingCondition, final String tableName, final String columnName,
-	                         final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder less(final boolean havingCondition, final String tableName, final String columnName,
+	                              final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.less(ConnectionCode.AND, havingCondition, tableName, columnName, functionName, functionParams);
 	}
 
@@ -1985,8 +1982,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final boolean havingCondition, final String tableName, final String columnName,
-	                         final QueryData subQuery) {
+	public BrainQueryBuilder less(final boolean havingCondition, final String tableName, final String columnName,
+	                              final QueryData subQuery) {
 		return this.less(ConnectionCode.AND, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -2005,8 +2002,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final boolean havingCondition, final String tableName, final String columnName,
-	                         final Object matchValue) {
+	public BrainQueryBuilder less(final boolean havingCondition, final String tableName, final String columnName,
+	                              final Object matchValue) {
 		return this.less(ConnectionCode.AND, havingCondition, tableName, columnName, matchValue);
 	}
 
@@ -2027,8 +2024,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final boolean havingCondition, final String tableName, final String columnName,
-	                              final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder lessEqual(final boolean havingCondition, final String tableName, final String columnName,
+	                                   final String matchTable, final String matchColumn) {
 		return this.lessEqual(ConnectionCode.AND, havingCondition, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -2049,8 +2046,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final boolean havingCondition, final String tableName, final String columnName,
-	                              final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder lessEqual(final boolean havingCondition, final String tableName, final String columnName,
+	                                   final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.lessEqual(ConnectionCode.AND, havingCondition, tableName, columnName, functionName, functionParams);
 	}
 
@@ -2069,8 +2066,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final boolean havingCondition, final String tableName, final String columnName,
-	                              final QueryData subQuery) {
+	public BrainQueryBuilder lessEqual(final boolean havingCondition, final String tableName, final String columnName,
+	                                   final QueryData subQuery) {
 		return this.lessEqual(ConnectionCode.AND, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -2089,8 +2086,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final boolean havingCondition, final String tableName, final String columnName,
-	                              final Object matchValue) {
+	public BrainQueryBuilder lessEqual(final boolean havingCondition, final String tableName, final String columnName,
+	                                   final Object matchValue) {
 		return this.lessEqual(ConnectionCode.AND, havingCondition, tableName, columnName, matchValue);
 	}
 
@@ -2111,8 +2108,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final boolean havingCondition, final String tableName, final String columnName,
-	                            final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder equalTo(final boolean havingCondition, final String tableName, final String columnName,
+	                                 final String matchTable, final String matchColumn) {
 		return this.equalTo(ConnectionCode.AND, havingCondition, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -2133,8 +2130,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final boolean havingCondition, final String tableName, final String columnName,
-	                            final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder equalTo(final boolean havingCondition, final String tableName, final String columnName,
+	                                 final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.equalTo(ConnectionCode.AND, havingCondition, tableName, columnName, functionName, functionParams);
 	}
 
@@ -2153,8 +2150,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final boolean havingCondition, final String tableName, final String columnName,
-	                            final QueryData subQuery) {
+	public BrainQueryBuilder equalTo(final boolean havingCondition, final String tableName, final String columnName,
+	                                 final QueryData subQuery) {
 		return this.equalTo(ConnectionCode.AND, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -2173,8 +2170,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final boolean havingCondition, final String tableName, final String columnName,
-	                            final Object matchValue) {
+	public BrainQueryBuilder equalTo(final boolean havingCondition, final String tableName, final String columnName,
+	                                 final Object matchValue) {
 		return this.equalTo(ConnectionCode.AND, havingCondition, tableName, columnName, matchValue);
 	}
 
@@ -2195,8 +2192,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final boolean havingCondition, final String tableName, final String columnName,
-	                             final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder notEqual(final boolean havingCondition, final String tableName, final String columnName,
+	                                  final String matchTable, final String matchColumn) {
 		return this.notEqual(ConnectionCode.AND, havingCondition, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -2217,8 +2214,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final boolean havingCondition, final String tableName, final String columnName,
-	                             final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder notEqual(final boolean havingCondition, final String tableName, final String columnName,
+	                                  final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.notEqual(ConnectionCode.AND, havingCondition, tableName, columnName, functionName, functionParams);
 	}
 
@@ -2237,8 +2234,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final boolean havingCondition, final String tableName, final String columnName,
-	                             final QueryData subQuery) {
+	public BrainQueryBuilder notEqual(final boolean havingCondition, final String tableName, final String columnName,
+	                                  final QueryData subQuery) {
 		return this.notEqual(ConnectionCode.AND, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -2257,8 +2254,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final boolean havingCondition, final String tableName,
-	                             final String columnName, final Object matchValue) {
+	public BrainQueryBuilder notEqual(final boolean havingCondition, final String tableName,
+	                                  final String columnName, final Object matchValue) {
 		return this.notEqual(ConnectionCode.AND, havingCondition, tableName, columnName, matchValue);
 	}
 
@@ -2279,8 +2276,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder inRanges(final boolean havingCondition, final String tableName, final String columnName,
-	                             final Object beginValue, final Object endValue) {
+	public BrainQueryBuilder inRanges(final boolean havingCondition, final String tableName, final String columnName,
+	                                  final Object beginValue, final Object endValue) {
 		return this.inRanges(ConnectionCode.AND, havingCondition, tableName, columnName, beginValue, endValue);
 	}
 
@@ -2301,8 +2298,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notInRanges(final boolean havingCondition, final String tableName, final String columnName,
-	                                final Object beginValue, final Object endValue) {
+	public BrainQueryBuilder notInRanges(final boolean havingCondition, final String tableName, final String columnName,
+	                                     final Object beginValue, final Object endValue) {
 		return this.notInRanges(ConnectionCode.AND, havingCondition, tableName, columnName, beginValue, endValue);
 	}
 
@@ -2321,8 +2318,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder like(final boolean havingCondition, final String tableName, final String columnName,
-	                         final String matchRule) {
+	public BrainQueryBuilder like(final boolean havingCondition, final String tableName, final String columnName,
+	                              final String matchRule) {
 		return this.like(ConnectionCode.AND, havingCondition, tableName, columnName, matchRule);
 	}
 
@@ -2341,8 +2338,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notLike(final boolean havingCondition, final String tableName, final String columnName,
-	                            final String matchRule) {
+	public BrainQueryBuilder notLike(final boolean havingCondition, final String tableName, final String columnName,
+	                                 final String matchRule) {
 		return this.notLike(ConnectionCode.AND, havingCondition, tableName, columnName, matchRule);
 	}
 
@@ -2359,7 +2356,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder matchNull(final boolean havingCondition, final String tableName, final String columnName) {
+	public BrainQueryBuilder matchNull(final boolean havingCondition, final String tableName, final String columnName) {
 		return this.matchNull(ConnectionCode.AND, havingCondition, tableName, columnName);
 	}
 
@@ -2376,7 +2373,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notNull(final boolean havingCondition, final String tableName, final String columnName) {
+	public BrainQueryBuilder notNull(final boolean havingCondition, final String tableName, final String columnName) {
 		return this.notNull(ConnectionCode.AND, havingCondition, tableName, columnName);
 	}
 
@@ -2395,8 +2392,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder in(final boolean havingCondition, final String tableName, final String columnName,
-	                       final QueryData subQuery) {
+	public BrainQueryBuilder in(final boolean havingCondition, final String tableName, final String columnName,
+	                            final QueryData subQuery) {
 		return this.in(ConnectionCode.AND, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -2415,8 +2412,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder in(final boolean havingCondition, final String tableName, final String columnName,
-	                       final Object... matchValues) {
+	public BrainQueryBuilder in(final boolean havingCondition, final String tableName, final String columnName,
+	                            final Object... matchValues) {
 		return this.in(ConnectionCode.AND, havingCondition, tableName, columnName, matchValues);
 	}
 
@@ -2435,8 +2432,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notIn(final boolean havingCondition, final String tableName, final String columnName,
-	                          final QueryData subQuery) {
+	public BrainQueryBuilder notIn(final boolean havingCondition, final String tableName, final String columnName,
+	                               final QueryData subQuery) {
 		return this.notIn(ConnectionCode.AND, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -2455,8 +2452,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notIn(final boolean havingCondition, final String tableName, final String columnName,
-	                          final Object... matchValues) {
+	public BrainQueryBuilder notIn(final boolean havingCondition, final String tableName, final String columnName,
+	                               final Object... matchValues) {
 		return this.notIn(ConnectionCode.AND, havingCondition, tableName, columnName, matchValues);
 	}
 
@@ -2475,8 +2472,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder exists(final boolean havingCondition, final String tableName, final QueryData subQuery,
-	                           final String functionName) {
+	public BrainQueryBuilder exists(final boolean havingCondition, final String tableName, final QueryData subQuery,
+	                                final String functionName) {
 		return this.exists(ConnectionCode.AND, havingCondition, tableName, subQuery, functionName);
 	}
 
@@ -2495,8 +2492,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notExists(final boolean havingCondition,
-	                              final String tableName, final QueryData subQuery, final String functionName) {
+	public BrainQueryBuilder notExists(final boolean havingCondition,
+	                                   final String tableName, final QueryData subQuery, final String functionName) {
 		return this.notExists(ConnectionCode.AND, havingCondition, tableName, subQuery, functionName);
 	}
 
@@ -2517,8 +2514,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName, final Object matchValue) {
+	public BrainQueryBuilder greater(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName, final Object matchValue) {
 		return this.greater(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchValue);
 	}
 
@@ -2541,9 +2538,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName,
-	                            final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder greater(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName,
+	                                 final String matchTable, final String matchColumn) {
 		return this.greater(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName,
 				matchTable, matchColumn);
 	}
@@ -2567,9 +2564,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName, final String functionName,
-	                            final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder greater(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName, final String functionName,
+	                                 final AbstractParameter<?>... functionParams) {
 		return this.greater(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName,
 				functionName, functionParams);
 	}
@@ -2591,8 +2588,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder greater(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName, final QueryData subQuery) {
 		return this.greater(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -2615,9 +2612,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final ConnectionCode connectionCode, final boolean havingCondition,
-	                                 final String tableName, final String columnName,
-	                                 final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder greaterEqual(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                      final String tableName, final String columnName,
+	                                      final String matchTable, final String matchColumn) {
 		return this.greaterEqual(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -2640,9 +2637,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final ConnectionCode connectionCode, final boolean havingCondition,
-	                                 final String tableName, final String columnName,
-	                                 final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder greaterEqual(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                      final String tableName, final String columnName,
+	                                      final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.greaterEqual(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, functionName, functionParams);
 	}
 
@@ -2663,8 +2660,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final ConnectionCode connectionCode, final boolean havingCondition,
-	                                 final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder greaterEqual(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                      final String tableName, final String columnName, final QueryData subQuery) {
 		return this.greaterEqual(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -2685,9 +2682,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final ConnectionCode connectionCode, final boolean havingCondition,
-	                                 final String tableName, final String columnName,
-	                                 final Object matchValue) {
+	public BrainQueryBuilder greaterEqual(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                      final String tableName, final String columnName,
+	                                      final Object matchValue) {
 		return this.greaterEqual(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchValue);
 	}
 
@@ -2710,9 +2707,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final ConnectionCode connectionCode, final boolean havingCondition,
-	                         final String tableName, final String columnName,
-	                         final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder less(final ConnectionCode connectionCode, final boolean havingCondition,
+	                              final String tableName, final String columnName,
+	                              final String matchTable, final String matchColumn) {
 		return this.less(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -2735,9 +2732,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final ConnectionCode connectionCode, final boolean havingCondition,
-	                         final String tableName, final String columnName,
-	                         final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder less(final ConnectionCode connectionCode, final boolean havingCondition,
+	                              final String tableName, final String columnName,
+	                              final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.less(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, functionName, functionParams);
 	}
 
@@ -2758,8 +2755,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final ConnectionCode connectionCode, final boolean havingCondition,
-	                         final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder less(final ConnectionCode connectionCode, final boolean havingCondition,
+	                              final String tableName, final String columnName, final QueryData subQuery) {
 		return this.less(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -2780,8 +2777,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final ConnectionCode connectionCode, final boolean havingCondition,
-	                         final String tableName, final String columnName, final Object matchValue) {
+	public BrainQueryBuilder less(final ConnectionCode connectionCode, final boolean havingCondition,
+	                              final String tableName, final String columnName, final Object matchValue) {
 		return this.less(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchValue);
 	}
 
@@ -2804,9 +2801,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final ConnectionCode connectionCode, final boolean havingCondition,
-	                              final String tableName, final String columnName,
-	                              final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder lessEqual(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                   final String tableName, final String columnName,
+	                                   final String matchTable, final String matchColumn) {
 		return this.lessEqual(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -2829,9 +2826,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final ConnectionCode connectionCode, final boolean havingCondition,
-	                              final String tableName, final String columnName, final String functionName,
-	                              final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder lessEqual(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                   final String tableName, final String columnName, final String functionName,
+	                                   final AbstractParameter<?>... functionParams) {
 		return this.lessEqual(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, functionName, functionParams);
 	}
 
@@ -2852,8 +2849,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final ConnectionCode connectionCode, final boolean havingCondition,
-	                              final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder lessEqual(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                   final String tableName, final String columnName, final QueryData subQuery) {
 		return this.lessEqual(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -2874,8 +2871,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final ConnectionCode connectionCode, final boolean havingCondition,
-	                              final String tableName, final String columnName, final Object matchValue) {
+	public BrainQueryBuilder lessEqual(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                   final String tableName, final String columnName, final Object matchValue) {
 		return this.lessEqual(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchValue);
 	}
 
@@ -2898,9 +2895,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName,
-	                            final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder equalTo(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName,
+	                                 final String matchTable, final String matchColumn) {
 		return this.equalTo(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -2923,9 +2920,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName, final String functionName,
-	                            final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder equalTo(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName, final String functionName,
+	                                 final AbstractParameter<?>... functionParams) {
 		return this.equalTo(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, functionName, functionParams);
 	}
 
@@ -2946,8 +2943,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder equalTo(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName, final QueryData subQuery) {
 		return this.equalTo(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -2968,9 +2965,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName,
-	                            final Object matchValue) {
+	public BrainQueryBuilder equalTo(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName,
+	                                 final Object matchValue) {
 		return this.equalTo(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchValue);
 	}
 
@@ -2993,9 +2990,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final ConnectionCode connectionCode, final boolean havingCondition,
-	                             final String tableName, final String columnName,
-	                             final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder notEqual(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                  final String tableName, final String columnName,
+	                                  final String matchTable, final String matchColumn) {
 		return this.notEqual(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -3018,9 +3015,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final ConnectionCode connectionCode, final boolean havingCondition,
-	                             final String tableName, final String columnName, final String functionName,
-	                             final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder notEqual(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                  final String tableName, final String columnName, final String functionName,
+	                                  final AbstractParameter<?>... functionParams) {
 		return this.notEqual(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, functionName, functionParams);
 	}
 
@@ -3041,8 +3038,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final ConnectionCode connectionCode, final boolean havingCondition,
-	                             final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder notEqual(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                  final String tableName, final String columnName, final QueryData subQuery) {
 		return this.notEqual(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -3063,8 +3060,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final ConnectionCode connectionCode, final boolean havingCondition,
-	                             final String tableName, final String columnName, final Object matchValue) {
+	public BrainQueryBuilder notEqual(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                  final String tableName, final String columnName, final Object matchValue) {
 		return this.notEqual(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchValue);
 	}
 
@@ -3087,9 +3084,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder inRanges(final ConnectionCode connectionCode, final boolean havingCondition,
-	                             final String tableName, final String columnName,
-	                             final Object beginValue, final Object endValue) {
+	public BrainQueryBuilder inRanges(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                  final String tableName, final String columnName,
+	                                  final Object beginValue, final Object endValue) {
 		return this.inRanges(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, beginValue, endValue);
 	}
 
@@ -3112,9 +3109,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notInRanges(final ConnectionCode connectionCode, final boolean havingCondition,
-	                                final String tableName, final String columnName,
-	                                final Object beginValue, final Object endValue) {
+	public BrainQueryBuilder notInRanges(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                     final String tableName, final String columnName,
+	                                     final Object beginValue, final Object endValue) {
 		return this.notInRanges(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, beginValue, endValue);
 	}
 
@@ -3135,8 +3132,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder like(final ConnectionCode connectionCode, final boolean havingCondition,
-	                         final String tableName, final String columnName, final String matchRule) {
+	public BrainQueryBuilder like(final ConnectionCode connectionCode, final boolean havingCondition,
+	                              final String tableName, final String columnName, final String matchRule) {
 		return this.like(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchRule);
 	}
 
@@ -3157,8 +3154,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notLike(final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName, final String matchRule) {
+	public BrainQueryBuilder notLike(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName, final String matchRule) {
 		return this.notLike(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchRule);
 	}
 
@@ -3177,8 +3174,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder matchNull(final ConnectionCode connectionCode, final boolean havingCondition,
-	                              final String tableName, final String columnName) {
+	public BrainQueryBuilder matchNull(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                   final String tableName, final String columnName) {
 		return this.matchNull(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName);
 	}
 
@@ -3197,8 +3194,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notNull(final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName) {
+	public BrainQueryBuilder notNull(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName) {
 		return this.notNull(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName);
 	}
 
@@ -3219,8 +3216,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder in(final ConnectionCode connectionCode, final boolean havingCondition,
-	                       final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder in(final ConnectionCode connectionCode, final boolean havingCondition,
+	                            final String tableName, final String columnName, final QueryData subQuery) {
 		return this.in(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -3241,8 +3238,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder in(final ConnectionCode connectionCode, final boolean havingCondition,
-	                       final String tableName, final String columnName, final Object... matchValues) {
+	public BrainQueryBuilder in(final ConnectionCode connectionCode, final boolean havingCondition,
+	                            final String tableName, final String columnName, final Object... matchValues) {
 		return this.in(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchValues);
 	}
 
@@ -3263,8 +3260,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notIn(final ConnectionCode connectionCode, final boolean havingCondition,
-	                          final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder notIn(final ConnectionCode connectionCode, final boolean havingCondition,
+	                               final String tableName, final String columnName, final QueryData subQuery) {
 		return this.notIn(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, subQuery);
 	}
 
@@ -3285,8 +3282,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notIn(final ConnectionCode connectionCode, final boolean havingCondition,
-	                          final String tableName, final String columnName, final Object... matchValues) {
+	public BrainQueryBuilder notIn(final ConnectionCode connectionCode, final boolean havingCondition,
+	                               final String tableName, final String columnName, final Object... matchValues) {
 		return this.notIn(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, columnName, matchValues);
 	}
 
@@ -3307,8 +3304,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder exists(final ConnectionCode connectionCode, final boolean havingCondition,
-	                           final String tableName, final QueryData subQuery, final String functionName) {
+	public BrainQueryBuilder exists(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                final String tableName, final QueryData subQuery, final String functionName) {
 		return this.exists(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, subQuery, functionName);
 	}
 
@@ -3329,8 +3326,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notExists(final ConnectionCode connectionCode, final boolean havingCondition,
-	                              final String tableName, final QueryData subQuery, final String functionName) {
+	public BrainQueryBuilder notExists(final ConnectionCode connectionCode, final boolean havingCondition,
+	                                   final String tableName, final QueryData subQuery, final String functionName) {
 		return this.notExists(Globals.DEFAULT_VALUE_INT, connectionCode, havingCondition, tableName, subQuery, functionName);
 	}
 
@@ -3351,9 +3348,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final int sortCode, final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName,
-	                            final Object matchValue) {
+	public BrainQueryBuilder greater(final int sortCode, final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName,
+	                                 final Object matchValue) {
 		return this.greater(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, matchValue);
 	}
 
@@ -3376,9 +3373,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final int sortCode, final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName,
-	                            final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder greater(final int sortCode, final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName,
+	                                 final String matchTable, final String matchColumn) {
 		return this.greater(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				matchTable, matchColumn);
 	}
@@ -3402,9 +3399,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final int sortCode, final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName,
-	                            final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder greater(final int sortCode, final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName,
+	                                 final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.greater(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				functionName, functionParams);
 	}
@@ -3426,8 +3423,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final int sortCode, final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder greater(final int sortCode, final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName, final QueryData subQuery) {
 		return this.greater(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -3450,9 +3447,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode,
-	                                 final String tableName, final String columnName,
-	                                 final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode,
+	                                      final String tableName, final String columnName,
+	                                      final String matchTable, final String matchColumn) {
 		return this.greaterEqual(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				matchTable, matchColumn);
 	}
@@ -3476,9 +3473,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode,
-	                                 final String tableName, final String columnName,
-	                                 final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode,
+	                                      final String tableName, final String columnName,
+	                                      final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.greaterEqual(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				functionName, functionParams);
 	}
@@ -3500,8 +3497,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode,
-	                                 final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode,
+	                                      final String tableName, final String columnName, final QueryData subQuery) {
 		return this.greaterEqual(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -3522,8 +3519,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode,
-	                                 final String tableName, final String columnName, final Object matchValue) {
+	public BrainQueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode,
+	                                      final String tableName, final String columnName, final Object matchValue) {
 		return this.greaterEqual(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, matchValue);
 	}
 
@@ -3546,9 +3543,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final int sortCode, final ConnectionCode connectionCode,
-	                         final String tableName, final String columnName,
-	                         final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder less(final int sortCode, final ConnectionCode connectionCode,
+	                              final String tableName, final String columnName,
+	                              final String matchTable, final String matchColumn) {
 		return this.less(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, matchTable, matchColumn);
 	}
 
@@ -3571,9 +3568,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final int sortCode, final ConnectionCode connectionCode,
-	                         final String tableName, final String columnName,
-	                         final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder less(final int sortCode, final ConnectionCode connectionCode,
+	                              final String tableName, final String columnName,
+	                              final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.less(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				functionName, functionParams);
 	}
@@ -3595,8 +3592,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final int sortCode, final ConnectionCode connectionCode,
-	                         final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder less(final int sortCode, final ConnectionCode connectionCode,
+	                              final String tableName, final String columnName, final QueryData subQuery) {
 		return this.less(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -3617,8 +3614,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final int sortCode, final ConnectionCode connectionCode,
-	                         final String tableName, final String columnName, final Object matchValue) {
+	public BrainQueryBuilder less(final int sortCode, final ConnectionCode connectionCode,
+	                              final String tableName, final String columnName, final Object matchValue) {
 		return this.less(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, matchValue);
 	}
 
@@ -3641,9 +3638,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode,
-	                              final String tableName, final String columnName,
-	                              final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode,
+	                                   final String tableName, final String columnName,
+	                                   final String matchTable, final String matchColumn) {
 		return this.lessEqual(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				matchTable, matchColumn);
 	}
@@ -3667,9 +3664,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode,
-	                              final String tableName, final String columnName,
-	                              final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode,
+	                                   final String tableName, final String columnName,
+	                                   final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.lessEqual(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				functionName, functionParams);
 	}
@@ -3691,8 +3688,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode,
-	                              final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode,
+	                                   final String tableName, final String columnName, final QueryData subQuery) {
 		return this.lessEqual(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -3713,9 +3710,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode,
-	                              final String tableName, final String columnName,
-	                              final Object matchValue) {
+	public BrainQueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode,
+	                                   final String tableName, final String columnName,
+	                                   final Object matchValue) {
 		return this.lessEqual(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, matchValue);
 	}
 
@@ -3738,9 +3735,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName,
-	                            final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName,
+	                                 final String matchTable, final String matchColumn) {
 		return this.equalTo(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				matchTable, matchColumn);
 	}
@@ -3764,9 +3761,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName,
-	                            final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName,
+	                                 final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.equalTo(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				functionName, functionParams);
 	}
@@ -3788,8 +3785,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName, final QueryData subQuery) {
 		return this.equalTo(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -3810,9 +3807,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName,
-	                            final Object matchValue) {
+	public BrainQueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName,
+	                                 final Object matchValue) {
 		return this.equalTo(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, matchValue);
 	}
 
@@ -3835,9 +3832,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode,
-	                             final String tableName, final String columnName,
-	                             final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode,
+	                                  final String tableName, final String columnName,
+	                                  final String matchTable, final String matchColumn) {
 		return this.notEqual(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				matchTable, matchColumn);
 	}
@@ -3861,9 +3858,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode,
-	                             final String tableName, final String columnName,
-	                             final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode,
+	                                  final String tableName, final String columnName,
+	                                  final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.notEqual(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				functionName, functionParams);
 	}
@@ -3885,8 +3882,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode,
-	                             final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode,
+	                                  final String tableName, final String columnName, final QueryData subQuery) {
 		return this.notEqual(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -3907,9 +3904,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode,
-	                             final String tableName, final String columnName,
-	                             final Object matchValue) {
+	public BrainQueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode,
+	                                  final String tableName, final String columnName,
+	                                  final Object matchValue) {
 		return this.notEqual(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, matchValue);
 	}
 
@@ -3932,9 +3929,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder inRanges(final int sortCode, final ConnectionCode connectionCode,
-	                             final String tableName, final String columnName,
-	                             final Object beginValue, final Object endValue) {
+	public BrainQueryBuilder inRanges(final int sortCode, final ConnectionCode connectionCode,
+	                                  final String tableName, final String columnName,
+	                                  final Object beginValue, final Object endValue) {
 		return this.inRanges(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				beginValue, endValue);
 	}
@@ -3958,9 +3955,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notInRanges(final int sortCode, final ConnectionCode connectionCode,
-	                                final String tableName, final String columnName,
-	                                final Object beginValue, final Object endValue) {
+	public BrainQueryBuilder notInRanges(final int sortCode, final ConnectionCode connectionCode,
+	                                     final String tableName, final String columnName,
+	                                     final Object beginValue, final Object endValue) {
 		return this.notInRanges(sortCode, connectionCode, Boolean.FALSE, tableName, columnName,
 				beginValue, endValue);
 	}
@@ -3982,8 +3979,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder like(final int sortCode, final ConnectionCode connectionCode,
-	                         final String tableName, final String columnName, final String matchRule) {
+	public BrainQueryBuilder like(final int sortCode, final ConnectionCode connectionCode,
+	                              final String tableName, final String columnName, final String matchRule) {
 		return this.like(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, matchRule);
 	}
 
@@ -4004,8 +4001,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notLike(final int sortCode, final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName, final String matchRule) {
+	public BrainQueryBuilder notLike(final int sortCode, final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName, final String matchRule) {
 		return this.notLike(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, matchRule);
 	}
 
@@ -4024,8 +4021,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder matchNull(final int sortCode, final ConnectionCode connectionCode,
-	                              final String tableName, final String columnName) {
+	public BrainQueryBuilder matchNull(final int sortCode, final ConnectionCode connectionCode,
+	                                   final String tableName, final String columnName) {
 		return this.matchNull(sortCode, connectionCode, Boolean.FALSE, tableName, columnName);
 	}
 
@@ -4044,8 +4041,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notNull(final int sortCode, final ConnectionCode connectionCode,
-	                            final String tableName, final String columnName) {
+	public BrainQueryBuilder notNull(final int sortCode, final ConnectionCode connectionCode,
+	                                 final String tableName, final String columnName) {
 		return this.notNull(sortCode, connectionCode, Boolean.FALSE, tableName, columnName);
 	}
 
@@ -4066,8 +4063,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder in(final int sortCode, final ConnectionCode connectionCode, final String tableName,
-	                       final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder in(final int sortCode, final ConnectionCode connectionCode, final String tableName,
+	                            final String columnName, final QueryData subQuery) {
 		return this.in(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -4088,8 +4085,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder in(final int sortCode, final ConnectionCode connectionCode,
-	                       final String tableName, final String columnName, final Object... matchValues) {
+	public BrainQueryBuilder in(final int sortCode, final ConnectionCode connectionCode,
+	                            final String tableName, final String columnName, final Object... matchValues) {
 		return this.in(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, matchValues);
 	}
 
@@ -4110,8 +4107,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notIn(final int sortCode, final ConnectionCode connectionCode, final String tableName,
-	                          final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder notIn(final int sortCode, final ConnectionCode connectionCode, final String tableName,
+	                               final String columnName, final QueryData subQuery) {
 		return this.notIn(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, subQuery);
 	}
 
@@ -4132,8 +4129,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notIn(final int sortCode, final ConnectionCode connectionCode,
-	                          final String tableName, final String columnName, final Object... matchValues) {
+	public BrainQueryBuilder notIn(final int sortCode, final ConnectionCode connectionCode,
+	                               final String tableName, final String columnName, final Object... matchValues) {
 		return this.notIn(sortCode, connectionCode, Boolean.FALSE, tableName, columnName, matchValues);
 	}
 
@@ -4154,8 +4151,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder exists(final int sortCode, final ConnectionCode connectionCode, final String tableName,
-	                           final QueryData subQuery, final String functionName) {
+	public BrainQueryBuilder exists(final int sortCode, final ConnectionCode connectionCode, final String tableName,
+	                                final QueryData subQuery, final String functionName) {
 		return this.exists(sortCode, connectionCode, Boolean.FALSE, tableName, subQuery, functionName);
 	}
 
@@ -4176,8 +4173,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notExists(final int sortCode, final ConnectionCode connectionCode, final String tableName,
-	                              final QueryData subQuery, final String functionName) {
+	public BrainQueryBuilder notExists(final int sortCode, final ConnectionCode connectionCode, final String tableName,
+	                                   final QueryData subQuery, final String functionName) {
 		return this.notExists(sortCode, connectionCode, Boolean.FALSE, tableName, subQuery, functionName);
 	}
 
@@ -4200,213 +4197,213 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder greater(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName,
-	                            final Object matchValue) {
-		return this.addCondition(
-				Condition.column(sortCode, connectionCode, ConditionCode.GREATER, tableName, columnName,
-						AbstractParameter.constant(matchValue)),
-				havingCondition);
-	}
-
-	/**
-	 * <h3 class="en-US">Add a query condition greater than a certain value</h3>
-	 * <h3 class="zh-CN">添加大于某值的查询条件</h3>
-	 *
-	 * @param sortCode        <span class="en-US">Sort code</span>
-	 *                        <span class="zh-CN">排序代码</span>
-	 * @param connectionCode  <span class="en-US">Query connection code</span>
-	 *                        <span class="zh-CN">查询条件连接代码</span>
-	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
-	 *                        <span class="zh-CN">Having字句的条件信息</span>
-	 * @param tableName       <span class="en-US">Data table name</span>
-	 *                        <span class="zh-CN">数据表名</span>
-	 * @param columnName      <span class="en-US">Data column name</span>
-	 *                        <span class="zh-CN">数据列名</span>
-	 * @param matchTable      <span class="en-US">Target data table name</span>
-	 *                        <span class="zh-CN">目标数据表名</span>
-	 * @param matchColumn     <span class="en-US">Target data column name</span>
-	 *                        <span class="zh-CN">目标数据列名</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public QueryBuilder greater(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName,
-	                            final String matchTable, final String matchColumn) {
-		return this.addCondition(
-				Condition.column(sortCode, connectionCode, ConditionCode.GREATER, tableName, columnName,
-						AbstractParameter.column(matchTable, matchColumn, Globals.DEFAULT_VALUE_STRING)),
-				havingCondition);
-	}
-
-	/**
-	 * <h3 class="en-US">Add a query condition greater than a certain value</h3>
-	 * <h3 class="zh-CN">添加大于某值的查询条件</h3>
-	 *
-	 * @param sortCode        <span class="en-US">Sort code</span>
-	 *                        <span class="zh-CN">排序代码</span>
-	 * @param connectionCode  <span class="en-US">Query connection code</span>
-	 *                        <span class="zh-CN">查询条件连接代码</span>
-	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
-	 *                        <span class="zh-CN">Having字句的条件信息</span>
-	 * @param tableName       <span class="en-US">Data table name</span>
-	 *                        <span class="zh-CN">数据表名</span>
-	 * @param columnName      <span class="en-US">Data column name</span>
-	 *                        <span class="zh-CN">数据列名</span>
-	 * @param functionName    <span class="en-US">Function name</span>
-	 *                        <span class="zh-CN">函数名称</span>
-	 * @param functionParams  <span class="en-US">Function parameter values</span>
-	 *                        <span class="zh-CN">函数参数值</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public QueryBuilder greater(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName,
-	                            final String functionName, final AbstractParameter<?>... functionParams) {
-		return this.addCondition(
-				Condition.column(sortCode, connectionCode, ConditionCode.GREATER, tableName, columnName,
-						AbstractParameter.function(functionName, functionParams)),
-				havingCondition);
-	}
-
-	/**
-	 * <h3 class="en-US">Add a query condition greater than a certain value</h3>
-	 * <h3 class="zh-CN">添加大于某值的查询条件</h3>
-	 *
-	 * @param sortCode        <span class="en-US">Sort code</span>
-	 *                        <span class="zh-CN">排序代码</span>
-	 * @param connectionCode  <span class="en-US">Query connection code</span>
-	 *                        <span class="zh-CN">查询条件连接代码</span>
-	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
-	 *                        <span class="zh-CN">Having字句的条件信息</span>
-	 * @param tableName       <span class="en-US">Data table name</span>
-	 *                        <span class="zh-CN">数据表名</span>
-	 * @param columnName      <span class="en-US">Data column name</span>
-	 *                        <span class="zh-CN">数据列名</span>
-	 * @param subQuery        <span class="en-US">Sub-query instance object</span>
-	 *                        <span class="zh-CN">子查询实例对象</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public QueryBuilder greater(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName, final QueryData subQuery) {
-		return this.addCondition(
-				Condition.column(sortCode, connectionCode, ConditionCode.GREATER, tableName, columnName,
-						AbstractParameter.subQuery(subQuery)),
-				havingCondition);
-	}
-
-	/**
-	 * <h3 class="en-US">Add a query condition greater than or equal to a certain value</h3>
-	 * <h3 class="zh-CN">添加大于等于某值的查询条件</h3>
-	 *
-	 * @param sortCode        <span class="en-US">Sort code</span>
-	 *                        <span class="zh-CN">排序代码</span>
-	 * @param connectionCode  <span class="en-US">Query connection code</span>
-	 *                        <span class="zh-CN">查询条件连接代码</span>
-	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
-	 *                        <span class="zh-CN">Having字句的条件信息</span>
-	 * @param tableName       <span class="en-US">Data table name</span>
-	 *                        <span class="zh-CN">数据表名</span>
-	 * @param columnName      <span class="en-US">Data column name</span>
-	 *                        <span class="zh-CN">数据列名</span>
-	 * @param matchTable      <span class="en-US">Target data table name</span>
-	 *                        <span class="zh-CN">目标数据表名</span>
-	 * @param matchColumn     <span class="en-US">Target data column name</span>
-	 *                        <span class="zh-CN">目标数据列名</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public QueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                                 final String tableName, final String columnName,
-	                                 final String matchTable, final String matchColumn) {
-		return this.addCondition(
-				Condition.column(sortCode, connectionCode, ConditionCode.GREATER_EQUAL, tableName, columnName,
-						AbstractParameter.column(matchTable, matchColumn, Globals.DEFAULT_VALUE_STRING)),
-				havingCondition);
-	}
-
-	/**
-	 * <h3 class="en-US">Add a query condition greater than or equal to a certain value</h3>
-	 * <h3 class="zh-CN">添加大于等于某值的查询条件</h3>
-	 *
-	 * @param sortCode        <span class="en-US">Sort code</span>
-	 *                        <span class="zh-CN">排序代码</span>
-	 * @param connectionCode  <span class="en-US">Query connection code</span>
-	 *                        <span class="zh-CN">查询条件连接代码</span>
-	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
-	 *                        <span class="zh-CN">Having字句的条件信息</span>
-	 * @param tableName       <span class="en-US">Data table name</span>
-	 *                        <span class="zh-CN">数据表名</span>
-	 * @param columnName      <span class="en-US">Data column name</span>
-	 *                        <span class="zh-CN">数据列名</span>
-	 * @param functionName    <span class="en-US">Function name</span>
-	 *                        <span class="zh-CN">函数名称</span>
-	 * @param functionParams  <span class="en-US">Function parameter values</span>
-	 *                        <span class="zh-CN">函数参数值</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public QueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                                 final String tableName, final String columnName,
-	                                 final String functionName, final AbstractParameter<?>... functionParams) {
-		return this.addCondition(
-				Condition.column(sortCode, connectionCode, ConditionCode.GREATER_EQUAL, tableName, columnName,
-						AbstractParameter.function(functionName, functionParams)),
-				havingCondition);
-	}
-
-	/**
-	 * <h3 class="en-US">Add a query condition greater than or equal to a certain value</h3>
-	 * <h3 class="zh-CN">添加大于等于某值的查询条件</h3>
-	 *
-	 * @param sortCode        <span class="en-US">Sort code</span>
-	 *                        <span class="zh-CN">排序代码</span>
-	 * @param connectionCode  <span class="en-US">Query connection code</span>
-	 *                        <span class="zh-CN">查询条件连接代码</span>
-	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
-	 *                        <span class="zh-CN">Having字句的条件信息</span>
-	 * @param tableName       <span class="en-US">Data table name</span>
-	 *                        <span class="zh-CN">数据表名</span>
-	 * @param columnName      <span class="en-US">Data column name</span>
-	 *                        <span class="zh-CN">数据列名</span>
-	 * @param subQuery        <span class="en-US">Sub-query instance object</span>
-	 *                        <span class="zh-CN">子查询实例对象</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public QueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                                 final String tableName, final String columnName,
-	                                 final QueryData subQuery) {
-		return this.addCondition(
-				Condition.column(sortCode, connectionCode, ConditionCode.GREATER_EQUAL, tableName, columnName,
-						AbstractParameter.subQuery(subQuery)),
-				havingCondition);
-	}
-
-	/**
-	 * <h3 class="en-US">Add a query condition greater than or equal to a certain value</h3>
-	 * <h3 class="zh-CN">添加大于等于某值的查询条件</h3>
-	 *
-	 * @param sortCode        <span class="en-US">Sort code</span>
-	 *                        <span class="zh-CN">排序代码</span>
-	 * @param connectionCode  <span class="en-US">Query connection code</span>
-	 *                        <span class="zh-CN">查询条件连接代码</span>
-	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
-	 *                        <span class="zh-CN">Having字句的条件信息</span>
-	 * @param tableName       <span class="en-US">Data table name</span>
-	 *                        <span class="zh-CN">数据表名</span>
-	 * @param columnName      <span class="en-US">Data column name</span>
-	 *                        <span class="zh-CN">数据列名</span>
-	 * @param matchValue      <span class="en-US">Match value</span>
-	 *                        <span class="zh-CN">匹配值</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public QueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	public BrainQueryBuilder greater(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
 	                                 final String tableName, final String columnName,
 	                                 final Object matchValue) {
 		return this.addCondition(
+				Condition.column(sortCode, connectionCode, ConditionCode.GREATER, tableName, columnName,
+						AbstractParameter.constant(matchValue)),
+				havingCondition);
+	}
+
+	/**
+	 * <h3 class="en-US">Add a query condition greater than a certain value</h3>
+	 * <h3 class="zh-CN">添加大于某值的查询条件</h3>
+	 *
+	 * @param sortCode        <span class="en-US">Sort code</span>
+	 *                        <span class="zh-CN">排序代码</span>
+	 * @param connectionCode  <span class="en-US">Query connection code</span>
+	 *                        <span class="zh-CN">查询条件连接代码</span>
+	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
+	 *                        <span class="zh-CN">Having字句的条件信息</span>
+	 * @param tableName       <span class="en-US">Data table name</span>
+	 *                        <span class="zh-CN">数据表名</span>
+	 * @param columnName      <span class="en-US">Data column name</span>
+	 *                        <span class="zh-CN">数据列名</span>
+	 * @param matchTable      <span class="en-US">Target data table name</span>
+	 *                        <span class="zh-CN">目标数据表名</span>
+	 * @param matchColumn     <span class="en-US">Target data column name</span>
+	 *                        <span class="zh-CN">目标数据列名</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder greater(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName,
+	                                 final String matchTable, final String matchColumn) {
+		return this.addCondition(
+				Condition.column(sortCode, connectionCode, ConditionCode.GREATER, tableName, columnName,
+						AbstractParameter.column(matchTable, matchColumn, Globals.DEFAULT_VALUE_STRING)),
+				havingCondition);
+	}
+
+	/**
+	 * <h3 class="en-US">Add a query condition greater than a certain value</h3>
+	 * <h3 class="zh-CN">添加大于某值的查询条件</h3>
+	 *
+	 * @param sortCode        <span class="en-US">Sort code</span>
+	 *                        <span class="zh-CN">排序代码</span>
+	 * @param connectionCode  <span class="en-US">Query connection code</span>
+	 *                        <span class="zh-CN">查询条件连接代码</span>
+	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
+	 *                        <span class="zh-CN">Having字句的条件信息</span>
+	 * @param tableName       <span class="en-US">Data table name</span>
+	 *                        <span class="zh-CN">数据表名</span>
+	 * @param columnName      <span class="en-US">Data column name</span>
+	 *                        <span class="zh-CN">数据列名</span>
+	 * @param functionName    <span class="en-US">Function name</span>
+	 *                        <span class="zh-CN">函数名称</span>
+	 * @param functionParams  <span class="en-US">Function parameter values</span>
+	 *                        <span class="zh-CN">函数参数值</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder greater(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName,
+	                                 final String functionName, final AbstractParameter<?>... functionParams) {
+		return this.addCondition(
+				Condition.column(sortCode, connectionCode, ConditionCode.GREATER, tableName, columnName,
+						AbstractParameter.function(functionName, functionParams)),
+				havingCondition);
+	}
+
+	/**
+	 * <h3 class="en-US">Add a query condition greater than a certain value</h3>
+	 * <h3 class="zh-CN">添加大于某值的查询条件</h3>
+	 *
+	 * @param sortCode        <span class="en-US">Sort code</span>
+	 *                        <span class="zh-CN">排序代码</span>
+	 * @param connectionCode  <span class="en-US">Query connection code</span>
+	 *                        <span class="zh-CN">查询条件连接代码</span>
+	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
+	 *                        <span class="zh-CN">Having字句的条件信息</span>
+	 * @param tableName       <span class="en-US">Data table name</span>
+	 *                        <span class="zh-CN">数据表名</span>
+	 * @param columnName      <span class="en-US">Data column name</span>
+	 *                        <span class="zh-CN">数据列名</span>
+	 * @param subQuery        <span class="en-US">Sub-query instance object</span>
+	 *                        <span class="zh-CN">子查询实例对象</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder greater(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName, final QueryData subQuery) {
+		return this.addCondition(
+				Condition.column(sortCode, connectionCode, ConditionCode.GREATER, tableName, columnName,
+						AbstractParameter.subQuery(subQuery)),
+				havingCondition);
+	}
+
+	/**
+	 * <h3 class="en-US">Add a query condition greater than or equal to a certain value</h3>
+	 * <h3 class="zh-CN">添加大于等于某值的查询条件</h3>
+	 *
+	 * @param sortCode        <span class="en-US">Sort code</span>
+	 *                        <span class="zh-CN">排序代码</span>
+	 * @param connectionCode  <span class="en-US">Query connection code</span>
+	 *                        <span class="zh-CN">查询条件连接代码</span>
+	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
+	 *                        <span class="zh-CN">Having字句的条件信息</span>
+	 * @param tableName       <span class="en-US">Data table name</span>
+	 *                        <span class="zh-CN">数据表名</span>
+	 * @param columnName      <span class="en-US">Data column name</span>
+	 *                        <span class="zh-CN">数据列名</span>
+	 * @param matchTable      <span class="en-US">Target data table name</span>
+	 *                        <span class="zh-CN">目标数据表名</span>
+	 * @param matchColumn     <span class="en-US">Target data column name</span>
+	 *                        <span class="zh-CN">目标数据列名</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                      final String tableName, final String columnName,
+	                                      final String matchTable, final String matchColumn) {
+		return this.addCondition(
+				Condition.column(sortCode, connectionCode, ConditionCode.GREATER_EQUAL, tableName, columnName,
+						AbstractParameter.column(matchTable, matchColumn, Globals.DEFAULT_VALUE_STRING)),
+				havingCondition);
+	}
+
+	/**
+	 * <h3 class="en-US">Add a query condition greater than or equal to a certain value</h3>
+	 * <h3 class="zh-CN">添加大于等于某值的查询条件</h3>
+	 *
+	 * @param sortCode        <span class="en-US">Sort code</span>
+	 *                        <span class="zh-CN">排序代码</span>
+	 * @param connectionCode  <span class="en-US">Query connection code</span>
+	 *                        <span class="zh-CN">查询条件连接代码</span>
+	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
+	 *                        <span class="zh-CN">Having字句的条件信息</span>
+	 * @param tableName       <span class="en-US">Data table name</span>
+	 *                        <span class="zh-CN">数据表名</span>
+	 * @param columnName      <span class="en-US">Data column name</span>
+	 *                        <span class="zh-CN">数据列名</span>
+	 * @param functionName    <span class="en-US">Function name</span>
+	 *                        <span class="zh-CN">函数名称</span>
+	 * @param functionParams  <span class="en-US">Function parameter values</span>
+	 *                        <span class="zh-CN">函数参数值</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                      final String tableName, final String columnName,
+	                                      final String functionName, final AbstractParameter<?>... functionParams) {
+		return this.addCondition(
+				Condition.column(sortCode, connectionCode, ConditionCode.GREATER_EQUAL, tableName, columnName,
+						AbstractParameter.function(functionName, functionParams)),
+				havingCondition);
+	}
+
+	/**
+	 * <h3 class="en-US">Add a query condition greater than or equal to a certain value</h3>
+	 * <h3 class="zh-CN">添加大于等于某值的查询条件</h3>
+	 *
+	 * @param sortCode        <span class="en-US">Sort code</span>
+	 *                        <span class="zh-CN">排序代码</span>
+	 * @param connectionCode  <span class="en-US">Query connection code</span>
+	 *                        <span class="zh-CN">查询条件连接代码</span>
+	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
+	 *                        <span class="zh-CN">Having字句的条件信息</span>
+	 * @param tableName       <span class="en-US">Data table name</span>
+	 *                        <span class="zh-CN">数据表名</span>
+	 * @param columnName      <span class="en-US">Data column name</span>
+	 *                        <span class="zh-CN">数据列名</span>
+	 * @param subQuery        <span class="en-US">Sub-query instance object</span>
+	 *                        <span class="zh-CN">子查询实例对象</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                      final String tableName, final String columnName,
+	                                      final QueryData subQuery) {
+		return this.addCondition(
+				Condition.column(sortCode, connectionCode, ConditionCode.GREATER_EQUAL, tableName, columnName,
+						AbstractParameter.subQuery(subQuery)),
+				havingCondition);
+	}
+
+	/**
+	 * <h3 class="en-US">Add a query condition greater than or equal to a certain value</h3>
+	 * <h3 class="zh-CN">添加大于等于某值的查询条件</h3>
+	 *
+	 * @param sortCode        <span class="en-US">Sort code</span>
+	 *                        <span class="zh-CN">排序代码</span>
+	 * @param connectionCode  <span class="en-US">Query connection code</span>
+	 *                        <span class="zh-CN">查询条件连接代码</span>
+	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
+	 *                        <span class="zh-CN">Having字句的条件信息</span>
+	 * @param tableName       <span class="en-US">Data table name</span>
+	 *                        <span class="zh-CN">数据表名</span>
+	 * @param columnName      <span class="en-US">Data column name</span>
+	 *                        <span class="zh-CN">数据列名</span>
+	 * @param matchValue      <span class="en-US">Match value</span>
+	 *                        <span class="zh-CN">匹配值</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder greaterEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                      final String tableName, final String columnName,
+	                                      final Object matchValue) {
+		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.GREATER_EQUAL, tableName, columnName,
 						AbstractParameter.constant(matchValue)),
 				havingCondition);
@@ -4433,124 +4430,124 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder less(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                         final String tableName, final String columnName,
-	                         final String matchTable, final String matchColumn) {
-		return this.addCondition(
-				Condition.column(sortCode, connectionCode, ConditionCode.LESS, tableName, columnName,
-						AbstractParameter.column(matchTable, matchColumn, Globals.DEFAULT_VALUE_STRING)),
-				havingCondition);
-	}
-
-	/**
-	 * <h3 class="en-US">Add a query condition less than a certain value</h3>
-	 * <h3 class="zh-CN">添加大于某值的查询条件</h3>
-	 *
-	 * @param sortCode        <span class="en-US">Sort code</span>
-	 *                        <span class="zh-CN">排序代码</span>
-	 * @param connectionCode  <span class="en-US">Query connection code</span>
-	 *                        <span class="zh-CN">查询条件连接代码</span>
-	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
-	 *                        <span class="zh-CN">Having字句的条件信息</span>
-	 * @param tableName       <span class="en-US">Data table name</span>
-	 *                        <span class="zh-CN">数据表名</span>
-	 * @param columnName      <span class="en-US">Data column name</span>
-	 *                        <span class="zh-CN">数据列名</span>
-	 * @param functionName    <span class="en-US">Function name</span>
-	 *                        <span class="zh-CN">函数名称</span>
-	 * @param functionParams  <span class="en-US">Function parameter values</span>
-	 *                        <span class="zh-CN">函数参数值</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public QueryBuilder less(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                         final String tableName, final String columnName,
-	                         final String functionName, final AbstractParameter<?>... functionParams) {
-		return this.addCondition(
-				Condition.column(sortCode, connectionCode, ConditionCode.LESS, tableName, columnName,
-						AbstractParameter.function(functionName, functionParams)),
-				havingCondition);
-	}
-
-	/**
-	 * <h3 class="en-US">Add a query condition less than a certain value</h3>
-	 * <h3 class="zh-CN">添加大于某值的查询条件</h3>
-	 *
-	 * @param sortCode        <span class="en-US">Sort code</span>
-	 *                        <span class="zh-CN">排序代码</span>
-	 * @param connectionCode  <span class="en-US">Query connection code</span>
-	 *                        <span class="zh-CN">查询条件连接代码</span>
-	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
-	 *                        <span class="zh-CN">Having字句的条件信息</span>
-	 * @param tableName       <span class="en-US">Data table name</span>
-	 *                        <span class="zh-CN">数据表名</span>
-	 * @param columnName      <span class="en-US">Data column name</span>
-	 *                        <span class="zh-CN">数据列名</span>
-	 * @param subQuery        <span class="en-US">Sub-query instance object</span>
-	 *                        <span class="zh-CN">子查询实例对象</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public QueryBuilder less(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                         final String tableName, final String columnName, final QueryData subQuery) {
-		return this.addCondition(
-				Condition.column(sortCode, connectionCode, ConditionCode.LESS, tableName, columnName,
-						AbstractParameter.subQuery(subQuery)),
-				havingCondition);
-	}
-
-	/**
-	 * <h3 class="en-US">Add a query condition less than a certain value</h3>
-	 * <h3 class="zh-CN">添加大于某值的查询条件</h3>
-	 *
-	 * @param sortCode        <span class="en-US">Sort code</span>
-	 *                        <span class="zh-CN">排序代码</span>
-	 * @param connectionCode  <span class="en-US">Query connection code</span>
-	 *                        <span class="zh-CN">查询条件连接代码</span>
-	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
-	 *                        <span class="zh-CN">Having字句的条件信息</span>
-	 * @param tableName       <span class="en-US">Data table name</span>
-	 *                        <span class="zh-CN">数据表名</span>
-	 * @param columnName      <span class="en-US">Data column name</span>
-	 *                        <span class="zh-CN">数据列名</span>
-	 * @param matchValue      <span class="en-US">Match value</span>
-	 *                        <span class="zh-CN">匹配值</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public QueryBuilder less(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                         final String tableName, final String columnName, final Object matchValue) {
-		return this.addCondition(
-				Condition.column(sortCode, connectionCode, ConditionCode.LESS, tableName, columnName,
-						AbstractParameter.constant(matchValue)),
-				havingCondition);
-	}
-
-	/**
-	 * <h3 class="en-US">Add a query condition less than or equal to a certain value</h3>
-	 * <h3 class="zh-CN">添加大于等于某值的查询条件</h3>
-	 *
-	 * @param sortCode        <span class="en-US">Sort code</span>
-	 *                        <span class="zh-CN">排序代码</span>
-	 * @param connectionCode  <span class="en-US">Query connection code</span>
-	 *                        <span class="zh-CN">查询条件连接代码</span>
-	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
-	 *                        <span class="zh-CN">Having字句的条件信息</span>
-	 * @param tableName       <span class="en-US">Data table name</span>
-	 *                        <span class="zh-CN">数据表名</span>
-	 * @param columnName      <span class="en-US">Data column name</span>
-	 *                        <span class="zh-CN">数据列名</span>
-	 * @param matchTable      <span class="en-US">Target data table name</span>
-	 *                        <span class="zh-CN">目标数据表名</span>
-	 * @param matchColumn     <span class="en-US">Target data column name</span>
-	 *                        <span class="zh-CN">目标数据列名</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public QueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	public BrainQueryBuilder less(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
 	                              final String tableName, final String columnName,
 	                              final String matchTable, final String matchColumn) {
 		return this.addCondition(
+				Condition.column(sortCode, connectionCode, ConditionCode.LESS, tableName, columnName,
+						AbstractParameter.column(matchTable, matchColumn, Globals.DEFAULT_VALUE_STRING)),
+				havingCondition);
+	}
+
+	/**
+	 * <h3 class="en-US">Add a query condition less than a certain value</h3>
+	 * <h3 class="zh-CN">添加大于某值的查询条件</h3>
+	 *
+	 * @param sortCode        <span class="en-US">Sort code</span>
+	 *                        <span class="zh-CN">排序代码</span>
+	 * @param connectionCode  <span class="en-US">Query connection code</span>
+	 *                        <span class="zh-CN">查询条件连接代码</span>
+	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
+	 *                        <span class="zh-CN">Having字句的条件信息</span>
+	 * @param tableName       <span class="en-US">Data table name</span>
+	 *                        <span class="zh-CN">数据表名</span>
+	 * @param columnName      <span class="en-US">Data column name</span>
+	 *                        <span class="zh-CN">数据列名</span>
+	 * @param functionName    <span class="en-US">Function name</span>
+	 *                        <span class="zh-CN">函数名称</span>
+	 * @param functionParams  <span class="en-US">Function parameter values</span>
+	 *                        <span class="zh-CN">函数参数值</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder less(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                              final String tableName, final String columnName,
+	                              final String functionName, final AbstractParameter<?>... functionParams) {
+		return this.addCondition(
+				Condition.column(sortCode, connectionCode, ConditionCode.LESS, tableName, columnName,
+						AbstractParameter.function(functionName, functionParams)),
+				havingCondition);
+	}
+
+	/**
+	 * <h3 class="en-US">Add a query condition less than a certain value</h3>
+	 * <h3 class="zh-CN">添加大于某值的查询条件</h3>
+	 *
+	 * @param sortCode        <span class="en-US">Sort code</span>
+	 *                        <span class="zh-CN">排序代码</span>
+	 * @param connectionCode  <span class="en-US">Query connection code</span>
+	 *                        <span class="zh-CN">查询条件连接代码</span>
+	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
+	 *                        <span class="zh-CN">Having字句的条件信息</span>
+	 * @param tableName       <span class="en-US">Data table name</span>
+	 *                        <span class="zh-CN">数据表名</span>
+	 * @param columnName      <span class="en-US">Data column name</span>
+	 *                        <span class="zh-CN">数据列名</span>
+	 * @param subQuery        <span class="en-US">Sub-query instance object</span>
+	 *                        <span class="zh-CN">子查询实例对象</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder less(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                              final String tableName, final String columnName, final QueryData subQuery) {
+		return this.addCondition(
+				Condition.column(sortCode, connectionCode, ConditionCode.LESS, tableName, columnName,
+						AbstractParameter.subQuery(subQuery)),
+				havingCondition);
+	}
+
+	/**
+	 * <h3 class="en-US">Add a query condition less than a certain value</h3>
+	 * <h3 class="zh-CN">添加大于某值的查询条件</h3>
+	 *
+	 * @param sortCode        <span class="en-US">Sort code</span>
+	 *                        <span class="zh-CN">排序代码</span>
+	 * @param connectionCode  <span class="en-US">Query connection code</span>
+	 *                        <span class="zh-CN">查询条件连接代码</span>
+	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
+	 *                        <span class="zh-CN">Having字句的条件信息</span>
+	 * @param tableName       <span class="en-US">Data table name</span>
+	 *                        <span class="zh-CN">数据表名</span>
+	 * @param columnName      <span class="en-US">Data column name</span>
+	 *                        <span class="zh-CN">数据列名</span>
+	 * @param matchValue      <span class="en-US">Match value</span>
+	 *                        <span class="zh-CN">匹配值</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder less(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                              final String tableName, final String columnName, final Object matchValue) {
+		return this.addCondition(
+				Condition.column(sortCode, connectionCode, ConditionCode.LESS, tableName, columnName,
+						AbstractParameter.constant(matchValue)),
+				havingCondition);
+	}
+
+	/**
+	 * <h3 class="en-US">Add a query condition less than or equal to a certain value</h3>
+	 * <h3 class="zh-CN">添加大于等于某值的查询条件</h3>
+	 *
+	 * @param sortCode        <span class="en-US">Sort code</span>
+	 *                        <span class="zh-CN">排序代码</span>
+	 * @param connectionCode  <span class="en-US">Query connection code</span>
+	 *                        <span class="zh-CN">查询条件连接代码</span>
+	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
+	 *                        <span class="zh-CN">Having字句的条件信息</span>
+	 * @param tableName       <span class="en-US">Data table name</span>
+	 *                        <span class="zh-CN">数据表名</span>
+	 * @param columnName      <span class="en-US">Data column name</span>
+	 *                        <span class="zh-CN">数据列名</span>
+	 * @param matchTable      <span class="en-US">Target data table name</span>
+	 *                        <span class="zh-CN">目标数据表名</span>
+	 * @param matchColumn     <span class="en-US">Target data column name</span>
+	 *                        <span class="zh-CN">目标数据列名</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                   final String tableName, final String columnName,
+	                                   final String matchTable, final String matchColumn) {
+		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.LESS_EQUAL, tableName, columnName,
 						AbstractParameter.column(matchTable, matchColumn, Globals.DEFAULT_VALUE_STRING)),
 				havingCondition);
@@ -4577,9 +4574,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                              final String tableName, final String columnName,
-	                              final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                   final String tableName, final String columnName,
+	                                   final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.LESS_EQUAL, tableName, columnName,
 						AbstractParameter.function(functionName, functionParams)),
@@ -4605,8 +4602,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                              final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                   final String tableName, final String columnName, final QueryData subQuery) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.LESS_EQUAL, tableName, columnName,
 						AbstractParameter.subQuery(subQuery)),
@@ -4632,9 +4629,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                              final String tableName, final String columnName,
-	                              final Object matchValue) {
+	public BrainQueryBuilder lessEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                   final String tableName, final String columnName,
+	                                   final Object matchValue) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.LESS_EQUAL, tableName, columnName,
 						AbstractParameter.constant(matchValue)),
@@ -4662,9 +4659,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName,
-	                            final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName,
+	                                 final String matchTable, final String matchColumn) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.EQUAL, tableName, columnName,
 						AbstractParameter.column(matchTable, matchColumn, Globals.DEFAULT_VALUE_STRING)),
@@ -4692,9 +4689,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName,
-	                            final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName,
+	                                 final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.EQUAL, tableName, columnName,
 						AbstractParameter.function(functionName, functionParams)),
@@ -4720,8 +4717,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName, final QueryData subQuery) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.EQUAL, tableName, columnName,
 						AbstractParameter.subQuery(subQuery)),
@@ -4747,9 +4744,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName,
-	                            final Object matchValue) {
+	public BrainQueryBuilder equalTo(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName,
+	                                 final Object matchValue) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.EQUAL, tableName, columnName,
 						AbstractParameter.constant(matchValue)),
@@ -4777,9 +4774,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                             final String tableName, final String columnName,
-	                             final String matchTable, final String matchColumn) {
+	public BrainQueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                  final String tableName, final String columnName,
+	                                  final String matchTable, final String matchColumn) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.NOT_EQUAL,
 						tableName, columnName,
@@ -4808,9 +4805,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                             final String tableName, final String columnName,
-	                             final String functionName, final AbstractParameter<?>... functionParams) {
+	public BrainQueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                  final String tableName, final String columnName,
+	                                  final String functionName, final AbstractParameter<?>... functionParams) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.NOT_EQUAL, tableName, columnName,
 						AbstractParameter.function(functionName, functionParams)),
@@ -4836,8 +4833,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                             final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                  final String tableName, final String columnName, final QueryData subQuery) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.NOT_EQUAL, tableName, columnName,
 						AbstractParameter.subQuery(subQuery)),
@@ -4863,9 +4860,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                             final String tableName, final String columnName,
-	                             final Object matchValue) {
+	public BrainQueryBuilder notEqual(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                  final String tableName, final String columnName,
+	                                  final Object matchValue) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.NOT_EQUAL, tableName, columnName,
 						AbstractParameter.constant(matchValue)),
@@ -4893,9 +4890,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder inRanges(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                             final String tableName, final String columnName,
-	                             final Object beginValue, final Object endValue) {
+	public BrainQueryBuilder inRanges(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                  final String tableName, final String columnName,
+	                                  final Object beginValue, final Object endValue) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.BETWEEN_AND,
 						tableName, columnName, AbstractParameter.ranges(beginValue, endValue)),
@@ -4923,9 +4920,9 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notInRanges(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                                final String tableName, final String columnName,
-	                                final Object beginValue, final Object endValue) {
+	public BrainQueryBuilder notInRanges(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                     final String tableName, final String columnName,
+	                                     final Object beginValue, final Object endValue) {
 		return this.addCondition(Condition.column(sortCode, connectionCode, ConditionCode.NOT_BETWEEN_AND,
 				tableName, columnName, AbstractParameter.ranges(beginValue, endValue)), havingCondition);
 	}
@@ -4949,8 +4946,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder like(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                         final String tableName, final String columnName, final String matchRule) {
+	public BrainQueryBuilder like(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                              final String tableName, final String columnName, final String matchRule) {
 		return this.addCondition(Condition.column(sortCode, connectionCode, ConditionCode.LIKE,
 				tableName, columnName, AbstractParameter.constant(matchRule)), havingCondition);
 	}
@@ -4974,8 +4971,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notLike(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName, final String matchRule) {
+	public BrainQueryBuilder notLike(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName, final String matchRule) {
 		return this.addCondition(Condition.column(sortCode, connectionCode, ConditionCode.NOT_LIKE,
 				tableName, columnName, AbstractParameter.constant(matchRule)), havingCondition);
 	}
@@ -4997,8 +4994,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder matchNull(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                              final String tableName, final String columnName) {
+	public BrainQueryBuilder matchNull(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                   final String tableName, final String columnName) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.IS_NULL,
 						tableName, columnName, null),
@@ -5022,8 +5019,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notNull(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                            final String tableName, final String columnName) {
+	public BrainQueryBuilder notNull(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                 final String tableName, final String columnName) {
 		return this.addCondition(
 				Condition.column(sortCode, connectionCode, ConditionCode.NOT_NULL, tableName,
 						columnName, null),
@@ -5049,8 +5046,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder in(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                       final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder in(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                            final String tableName, final String columnName, final QueryData subQuery) {
 		return this.addCondition(Condition.column(sortCode, connectionCode, ConditionCode.IN,
 				tableName, columnName, AbstractParameter.subQuery(subQuery)), havingCondition);
 	}
@@ -5074,8 +5071,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder in(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                       final String tableName, final String columnName, final Object... matchValues) {
+	public BrainQueryBuilder in(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                            final String tableName, final String columnName, final Object... matchValues) {
 		return this.addCondition(Condition.column(sortCode, connectionCode, ConditionCode.IN,
 				tableName, columnName, AbstractParameter.arrays(matchValues)), havingCondition);
 	}
@@ -5099,8 +5096,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notIn(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                          final String tableName, final String columnName, final QueryData subQuery) {
+	public BrainQueryBuilder notIn(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                               final String tableName, final String columnName, final QueryData subQuery) {
 		return this.addCondition(Condition.column(sortCode, connectionCode, ConditionCode.NOT_IN,
 				tableName, columnName, AbstractParameter.subQuery(subQuery)), havingCondition);
 	}
@@ -5124,8 +5121,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notIn(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                          final String tableName, final String columnName, final Object... matchValues) {
+	public BrainQueryBuilder notIn(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                               final String tableName, final String columnName, final Object... matchValues) {
 		return this.addCondition(Condition.column(sortCode, connectionCode, ConditionCode.NOT_IN,
 				tableName, columnName, AbstractParameter.arrays(matchValues)), havingCondition);
 	}
@@ -5149,8 +5146,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder exists(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                           final String tableName, final QueryData subQuery, final String functionName) {
+	public BrainQueryBuilder exists(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                final String tableName, final QueryData subQuery, final String functionName) {
 		return this.addCondition(Condition.column(sortCode, connectionCode, ConditionCode.EXISTS,
 				tableName, Globals.DEFAULT_VALUE_STRING,
 				AbstractParameter.subQuery(subQuery, functionName)), havingCondition);
@@ -5175,8 +5172,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder notExists(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
-	                              final String tableName, final QueryData subQuery, final String functionName) {
+	public BrainQueryBuilder notExists(final int sortCode, final ConnectionCode connectionCode, final boolean havingCondition,
+	                                   final String tableName, final QueryData subQuery, final String functionName) {
 		return this.addCondition(Condition.column(sortCode, connectionCode, ConditionCode.NOT_EXISTS,
 				tableName, Globals.DEFAULT_VALUE_STRING,
 				AbstractParameter.subQuery(subQuery, functionName)), havingCondition);
@@ -5195,8 +5192,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder group(final int sortCode, final ConnectionCode connectionCode,
-	                          @Nonnull final Condition... conditions) {
+	public BrainQueryBuilder group(final int sortCode, final ConnectionCode connectionCode,
+	                               @Nonnull final Condition... conditions) {
 		return this.addCondition(Condition.group(sortCode, connectionCode, conditions), Boolean.FALSE);
 	}
 
@@ -5215,8 +5212,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder group(final int sortCode, final ConnectionCode connectionCode,
-	                          final boolean havingCondition, @Nonnull final Condition... conditions) {
+	public BrainQueryBuilder group(final int sortCode, final ConnectionCode connectionCode,
+	                               final boolean havingCondition, @Nonnull final Condition... conditions) {
 		return this.addCondition(Condition.group(sortCode, connectionCode, conditions), havingCondition);
 	}
 
@@ -5233,7 +5230,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the sorting data column already exists</span>
 	 *                      <span class="zh-CN">如果排序数据列已经存在</span>
 	 */
-	public QueryBuilder addOrderBy(final String tableName, final String columnName) throws SQLException {
+	public BrainQueryBuilder addOrderBy(final String tableName, final String columnName) throws SQLException {
 		return this.addOrderBy(tableName, columnName, OrderType.DESC);
 	}
 
@@ -5252,7 +5249,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the sorting data column already exists</span>
 	 *                      <span class="zh-CN">如果排序数据列已经存在</span>
 	 */
-	public QueryBuilder addOrderBy(final String tableName, final String columnName, final OrderType orderType)
+	public BrainQueryBuilder addOrderBy(final String tableName, final String columnName, final OrderType orderType)
 			throws SQLException {
 		return this.addOrderBy(tableName, columnName, orderType, Globals.DEFAULT_VALUE_INT);
 	}
@@ -5274,8 +5271,8 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the sorting data column already exists</span>
 	 *                      <span class="zh-CN">如果排序数据列已经存在</span>
 	 */
-	public QueryBuilder addOrderBy(final String tableName, final String columnName,
-	                               final OrderType orderType, final int sortCode) throws SQLException {
+	public BrainQueryBuilder addOrderBy(final String tableName, final String columnName,
+	                                    final OrderType orderType, final int sortCode) throws SQLException {
 		if (this.orderByList.stream().anyMatch(orderBy -> orderBy.match(tableName, columnName))) {
 			throw new MultilingualSQLException(0x00DB00010017L, tableName, columnName);
 		}
@@ -5296,7 +5293,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the grouping data column already exists</span>
 	 *                      <span class="zh-CN">如果分组数据列已经存在</span>
 	 */
-	public QueryBuilder addGroupBy(final String tableName, final String columnName) throws SQLException {
+	public BrainQueryBuilder addGroupBy(final String tableName, final String columnName) throws SQLException {
 		return this.addGroupBy(tableName, columnName, Globals.DEFAULT_VALUE_INT);
 	}
 
@@ -5315,7 +5312,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the grouping data column already exists</span>
 	 *                      <span class="zh-CN">如果分组数据列已经存在</span>
 	 */
-	public QueryBuilder addGroupBy(final String tableName, final String columnName, final int sortCode)
+	public BrainQueryBuilder addGroupBy(final String tableName, final String columnName, final int sortCode)
 			throws SQLException {
 		if (this.groupByList.stream().anyMatch(groupBy -> groupBy.match(tableName, columnName))) {
 			throw new MultilingualSQLException(0x00DB00010018L, tableName, columnName);
@@ -5333,7 +5330,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public QueryBuilder useCache(final boolean cacheables) {
+	public BrainQueryBuilder useCache(final boolean cacheables) {
 		this.cacheables = cacheables;
 		return this;
 	}
@@ -5351,7 +5348,7 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the configuration information is invalid</span>
 	 *                      <span class="zh-CN">如果配置信息错误</span>
 	 */
-	public QueryBuilder configPager(final int pageNo, final int pageLimit) throws SQLException {
+	public BrainQueryBuilder configPager(final int pageNo, final int pageLimit) throws SQLException {
 		if (pageNo <= Globals.INITIALIZE_INT_VALUE || pageLimit <= Globals.INITIALIZE_INT_VALUE) {
 			throw new MultilingualSQLException(0x00DB00010013L, pageNo, pageLimit);
 		}
@@ -5364,37 +5361,29 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 	 * <h3 class="en-US">Fill query data column information</h3>
 	 * <h3 class="zh-CN">填充查询数据列信息</h3>
 	 *
-	 * @param dataSource <span class="en-US">Data source instance object</span>
-	 *                   <span class="zh-CN">数据源实例对象</span>
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public void itemList(@Nonnull final BrainDataSource dataSource) throws SQLException {
-		if (this.itemList.isEmpty()) {
-			for (String columnName : dataSource.queryColumns(this.tableName)) {
-				this.queryColumn(this.tableName, columnName);
+	public void itemList() throws SQLException {
+		if (this.itemListIsEmpty()) {
+			BrainDataSource dataSource = BrainDataSource.getInstance();
+			if (dataSource.isInitialized()) {
+				for (String columnName : dataSource.queryColumns(this.tableName)) {
+					this.queryColumn(this.tableName, columnName);
+				}
 			}
 		}
 	}
 
 	/**
-	 * <h3 class="en-US">Add data filters condition</h3>
-	 * <h3 class="zh-CN">添加数据筛选条件</h3>
+	 * <h3 class="en-US">Check if the current query item list is empty</h3>
+	 * <h3 class="zh-CN">检查当前的查询项目列表是否为空</h3>
 	 *
-	 * @param condition       <span class="en-US">Condition information</span>
-	 *                        <span class="zh-CN">条件信息</span>
-	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
-	 *                        <span class="zh-CN">Having字句的条件信息</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
 	 */
-	private QueryBuilder addCondition(@Nonnull final Condition condition, final boolean havingCondition) {
-		if (havingCondition) {
-			this.havingList.add(condition);
-		} else {
-			this.conditionList.add(condition);
-		}
-		return this;
+	public boolean itemListIsEmpty() {
+		return this.itemList.isEmpty();
 	}
 
 	@Override
@@ -5413,5 +5402,25 @@ public final class QueryBuilder implements Builder<QueryInfo> {
 		queryInfo.setPageNo(this.pageNo);
 		queryInfo.setPageLimit(this.pageLimit);
 		return queryInfo;
+	}
+
+	/**
+	 * <h3 class="en-US">Add data filters condition</h3>
+	 * <h3 class="zh-CN">添加数据筛选条件</h3>
+	 *
+	 * @param condition       <span class="en-US">Condition information</span>
+	 *                        <span class="zh-CN">条件信息</span>
+	 * @param havingCondition <span class="en-US">Condition information is having condition</span>
+	 *                        <span class="zh-CN">Having字句的条件信息</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	private BrainQueryBuilder addCondition(@Nonnull final Condition condition, final boolean havingCondition) {
+		if (havingCondition) {
+			this.havingList.add(condition);
+		} else {
+			this.conditionList.add(condition);
+		}
+		return this;
 	}
 }

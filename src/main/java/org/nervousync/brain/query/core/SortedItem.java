@@ -35,6 +35,7 @@ import java.util.Comparator;
  */
 @XmlTransient
 public abstract class SortedItem extends BeanObject {
+
     /**
      * <span class="en-US">Serial version UID</span>
      * <span class="zh-CN">序列化UID</span>

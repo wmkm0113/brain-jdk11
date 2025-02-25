@@ -18,7 +18,6 @@
 package org.nervousync.brain.source;
 
 import jakarta.annotation.Nonnull;
-import jakarta.persistence.LockModeType;
 import org.nervousync.annotations.jmx.Monitor;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.commons.DataUtils;
@@ -36,7 +35,6 @@ import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
-import org.nervousync.brain.query.builder.QueryBuilder;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.brain.schemas.distribute.DistributeSchema;
@@ -504,29 +502,15 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <h3 class="en-US">Execute query commands for data updates</h3>
 	 * <h3 class="zh-CN">执行用于数据更新的查询命令</h3>
 	 *
-	 * @param tableName <span class="en-US">Data table name</span>
-	 *                  <span class="zh-CN">数据表名称</span>
-	 * @param columns   <span class="en-US">Query column names</span>
-	 *                  <span class="zh-CN">查询数据列名</span>
-	 * @param filterMap <span class="en-US">Retrieve filter mapping</span>
-	 *                  <span class="zh-CN">查询条件映射表</span>
-	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
-	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
-	 * @throws Exception <span class="en-US">An error occurred during execution</span>
-	 *                   <span class="zh-CN">执行过程中出错</span>
+	 * @param queryInfo <span class="en-US">Query record information</span>
+	 *                  <span class="zh-CN">数据检索信息</span>
+	 * @return <span class="en-US">List of data mapping tables for queried records</span>
+	 * <span class="zh-CN">查询到记录的数据映射表列表</span>
+	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
+	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
-	public List<Map<String, Object>> query(@Nonnull final String tableName, final String columns,
-	                                       final Map<String, Object> filterMap)
-			throws Exception {
-		QueryBuilder queryBuilder = QueryBuilder.newBuilder(tableName);
-		for (String columnName : StringUtils.tokenizeToStringArray(columns, ",")) {
-			if (StringUtils.notBlank(columnName.trim())) {
-				queryBuilder.queryColumn(tableName, columnName.trim());
-			}
-		}
-		filterMap.forEach((columnName, matchValue) -> queryBuilder.equalTo(tableName, columnName, matchValue));
-		queryBuilder.itemList(this);
-		return this.query(queryBuilder.confirm());
+	public List<Map<String, Object>> queryForUpdate(@Nonnull final QueryInfo queryInfo) throws Exception {
+		return this.queryForUpdate(queryInfo.getTableName(), queryInfo.getConditionList());
 	}
 
 	/**
@@ -537,18 +521,16 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                      <span class="zh-CN">数据表名称</span>
 	 * @param conditionList <span class="en-US">Query condition instance list</span>
 	 *                      <span class="zh-CN">查询条件实例对象列表</span>
-	 * @param lockOption    <span class="en-US">Query record lock option</span>
-	 *                      <span class="zh-CN">查询记录锁定选项</span>
 	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
 	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public List<Map<String, Object>> queryForUpdate(@Nonnull final String tableName,
-	                                                final List<Condition> conditionList, final LockModeType lockOption)
+	                                                final List<Condition> conditionList)
 			throws Exception {
 		TableDefine tableDefine = this.checkRegister(tableName);
-		return this.retrieveSchema(tableDefine.getSchemaName()).queryForUpdate(tableDefine, conditionList, lockOption);
+		return this.retrieveSchema(tableDefine.getSchemaName()).queryForUpdate(tableDefine, conditionList);
 	}
 
 	/**
@@ -591,26 +573,6 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	public Long queryTotal(@Nonnull final QueryInfo queryInfo) throws Exception {
 		TableDefine tableDefine = this.checkRegister(queryInfo.getTableName());
 		return this.retrieveSchema(tableDefine.getSchemaName()).queryTotal(tableDefine, queryInfo);
-	}
-
-	/**
-	 * <h3 class="en-US">Query total record count</h3>
-	 * <h3 class="zh-CN">查询总记录数</h3>
-	 *
-	 * @param tableName <span class="en-US">Data table name</span>
-	 *                  <span class="zh-CN">数据表名称</span>
-	 * @param filterMap <span class="en-US">Retrieve filter mapping</span>
-	 *                  <span class="zh-CN">查询条件映射表</span>
-	 * @return <span class="en-US">Total record count</span>
-	 * <span class="zh-CN">总记录条数</span>
-	 * @throws Exception <span class="en-US">An error occurred during execution</span>
-	 *                   <span class="zh-CN">执行过程中出错</span>
-	 */
-	public Long queryTotal(@Nonnull final String tableName, final Map<String, Object> filterMap) throws Exception {
-		QueryBuilder queryBuilder = QueryBuilder.newBuilder(tableName);
-		filterMap.forEach((columnName, matchValue) -> queryBuilder.equalTo(tableName, columnName, matchValue));
-		queryBuilder.itemList(this);
-		return this.queryTotal(queryBuilder.confirm());
 	}
 
 	/**

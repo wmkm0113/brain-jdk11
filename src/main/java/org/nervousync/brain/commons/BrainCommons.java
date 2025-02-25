@@ -217,6 +217,18 @@ public final class BrainCommons {
 	public static final String OPERATOR_NOT_EXISTS = " NOT EXISTS ";
 
 	/**
+	 * <span class="en-US">Always TRUE where clause</span>
+	 * <span class="zh-CN">永远为真的匹配条件</span>
+	 */
+	public static final String CONSTANT_CLAUSE_TRUE = " 1 = 1 ";
+
+	/**
+	 * <span class="en-US">Always FALSE where clause</span>
+	 * <span class="zh-CN">永远为假的匹配条件</span>
+	 */
+	public static final String CONSTANT_CLAUSE_FALSE = " 1 <> 1 ";
+
+	/**
 	 * <span class="en-US">Default where clause</span>
 	 * <span class="zh-CN">默认的匹配条件</span>
 	 */

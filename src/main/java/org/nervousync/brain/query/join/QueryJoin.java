@@ -22,7 +22,6 @@ import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.JoinType;
 import org.nervousync.brain.query.core.SortedItem;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.ObjectUtils;
 import org.nervousync.utils.StringUtils;
 
 import java.util.ArrayList;
@@ -40,20 +39,18 @@ import java.util.List;
 @XmlAccessorType(XmlAccessType.NONE)
 public final class QueryJoin extends SortedItem {
 
+    /**
+     * <span class="en-US">Serial version UID</span>
+     * <span class="zh-CN">序列化UID</span>
+     */
 	private static final long serialVersionUID = 8868119078098035574L;
 
 	/**
-	 * <span class="en-US">Driver table name</span>
-	 * <span class="zh-CN">驱动表名</span>
+	 * <span class="en-US">Right table name</span>
+	 * <span class="zh-CN">右表名</span>
 	 */
-	@XmlElement(name = "driver_table")
-	private String driverTable;
-	/**
-	 * <span class="en-US">Join table name</span>
-	 * <span class="zh-CN">关联表名</span>
-	 */
-	@XmlElement(name = "join_table")
-	private String joinTable;
+	@XmlElement(name = "right_table")
+	private String rightTable;
 	/**
 	 * <span class="en-US">Join table alias name</span>
 	 * <span class="zh-CN">关联表别名</span>
@@ -86,69 +83,44 @@ public final class QueryJoin extends SortedItem {
 	 * <h3 class="en-US">Private constructor method for query join information define</h3>
 	 * <h3 class="zh-CN">查询关联信息定义的私有构造方法</h3>
 	 *
-	 * @param driverTable <span class="en-US">Driver table name</span>
-	 *                    <span class="zh-CN">驱动表名</span>
-	 * @param joinTable   <span class="en-US">Join table name</span>
-	 *                    <span class="zh-CN">关联表名</span>
-	 * @param aliasName   <span class="en-US">Join table alias name</span>
-	 *                    <span class="zh-CN">关联表别名</span>
-	 * @param joinType    <span class="en-US">Table join type</span>
-	 *                    <span class="zh-CN">数据表关联类型</span>
-	 * @param joinInfos   <span class="en-US">Join columns list</span>
-	 *                    <span class="zh-CN">关联列信息列表</span>
+	 * @param rightTable <span class="en-US">Right table name</span>
+	 *                   <span class="zh-CN">右表名</span>
+	 * @param aliasName  <span class="en-US">Join table alias name</span>
+	 *                   <span class="zh-CN">关联表别名</span>
+	 * @param joinType   <span class="en-US">Table join type</span>
+	 *                   <span class="zh-CN">数据表关联类型</span>
+	 * @param joinInfos  <span class="en-US">Join columns list</span>
+	 *                   <span class="zh-CN">关联列信息列表</span>
 	 */
-	public QueryJoin(@Nonnull final String driverTable, @Nonnull final String joinTable, final String aliasName,
+	public QueryJoin(@Nonnull final String rightTable, final String aliasName,
 	                 @Nonnull final JoinType joinType, @Nonnull final List<JoinInfo> joinInfos) {
 		this();
-		this.driverTable = driverTable;
-		this.joinTable = joinTable;
+		this.rightTable = rightTable;
 		this.aliasName = StringUtils.isEmpty(aliasName) ? Globals.DEFAULT_VALUE_STRING : aliasName;
 		this.joinType = joinType;
 		this.joinInfos.addAll(joinInfos);
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for driver table name</h3>
-	 * <h3 class="zh-CN">驱动表名的Getter方法</h3>
+	 * <h3 class="en-US">Getter method for right table name</h3>
+	 * <h3 class="zh-CN">右表名的Getter方法</h3>
 	 *
-	 * @return <span class="en-US">Driver table name</span>
-	 * <span class="zh-CN">驱动表名</span>
+	 * @return <span class="en-US">Right table name</span>
+	 * <span class="zh-CN">右表名</span>
 	 */
-	public String getDriverTable() {
-		return this.driverTable;
+	public String getRightTable() {
+		return this.rightTable;
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for driver table name</h3>
-	 * <h3 class="zh-CN">驱动表名的Setter方法</h3>
+	 * <h3 class="en-US">Setter method for right table name</h3>
+	 * <h3 class="zh-CN">右表名的Setter方法</h3>
 	 *
-	 * @param driverTable <span class="en-US">Driver table name</span>
-	 *                    <span class="zh-CN">驱动表名</span>
+	 * @param rightTable <span class="en-US">Right table name</span>
+	 *                   <span class="zh-CN">右表名</span>
 	 */
-	public void setDriverTable(final String driverTable) {
-		this.driverTable = driverTable;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for join table name</h3>
-	 * <h3 class="zh-CN">关联表名的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Join table name</span>
-	 * <span class="zh-CN">关联表名</span>
-	 */
-	public String getJoinTable() {
-		return this.joinTable;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for join table name</h3>
-	 * <h3 class="zh-CN">关联表名的Setter方法</h3>
-	 *
-	 * @param joinTable <span class="en-US">Join table name</span>
-	 *                  <span class="zh-CN">关联表名</span>
-	 */
-	public void setJoinTable(final String joinTable) {
-		this.joinTable = joinTable;
+	public void setRightTable(final String rightTable) {
+		this.rightTable = rightTable;
 	}
 
 	/**
@@ -215,21 +187,5 @@ public final class QueryJoin extends SortedItem {
 	 */
 	public void setJoinInfos(final List<JoinInfo> joinInfos) {
 		this.joinInfos = joinInfos;
-	}
-
-	/**
-	 * <h3 class="en-US">Match the given join table is same as current information</h3>
-	 * <h3 class="zh-CN">检查给定的关联表信息是否与当前信息一致</h3>
-	 *
-	 * @param driverTable <span class="en-US">Driver table name</span>
-	 *                    <span class="zh-CN">驱动表名</span>
-	 * @param joinTable   <span class="en-US">Join table name</span>
-	 *                    <span class="zh-CN">关联表名</span>
-	 * @return <span class="en-US">Match result</span>
-	 * <span class="zh-CN">匹配结果</span>
-	 */
-	public boolean match(@Nonnull final String driverTable, @Nonnull final String joinTable) {
-		return ObjectUtils.nullSafeEquals(driverTable, this.driverTable)
-				&& ObjectUtils.nullSafeEquals(joinTable, this.joinTable);
 	}
 }

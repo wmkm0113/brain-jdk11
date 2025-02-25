@@ -22,7 +22,7 @@ import org.junit.jupiter.api.*;
 import org.nervousync.brain.enumerations.query.ConditionCode;
 import org.nervousync.brain.enumerations.query.JoinType;
 import org.nervousync.brain.query.QueryInfo;
-import org.nervousync.brain.query.builder.QueryBuilder;
+import org.nervousync.brain.query.builder.BrainQueryBuilder;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.query.core.AbstractItem;
 import org.nervousync.brain.query.data.QueryData;
@@ -48,7 +48,7 @@ public final class QueryBuilderTest {
 	@Order(10)
 	public void simpleAndQuery() throws Exception {
 		QueryInfo queryInfo =
-				QueryBuilder.newBuilder("tableName")
+				BrainQueryBuilder.newBuilder("tableName")
 						.queryColumn("tableName", "columnName1")
 						.queryColumn("tableName", "columnName2", "aliasName2")
 						.queryColumn("tableName", "columnName3", "aliasName3")
@@ -78,7 +78,7 @@ public final class QueryBuilderTest {
 	@Order(15)
 	public void simpleOrQuery() throws Exception {
 		QueryInfo queryInfo =
-				QueryBuilder.newBuilder("tableName")
+				BrainQueryBuilder.newBuilder("tableName")
 						.queryColumn("tableName", "columnName1")
 						.queryColumn("tableName", "columnName2", "aliasName2")
 						.queryColumn("tableName", "columnName3", "aliasName3")
@@ -108,9 +108,9 @@ public final class QueryBuilderTest {
 	@Order(20)
 	public void joinAndQuery() throws Exception {
 		QueryInfo queryInfo =
-				QueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "tableName", "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+				BrainQueryBuilder.newBuilder("tableName")
+						.joinTable(JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
 						.queryColumn("tableName", "columnName1")
 						.queryColumn("tableName", "columnName2", "aliasName2")
 						.queryColumn("tableName", "columnName3", "aliasName3")
@@ -128,9 +128,9 @@ public final class QueryBuilderTest {
 	@Order(25)
 	public void joinOrQuery() throws Exception {
 		QueryInfo queryInfo =
-				QueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "tableName", "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+				BrainQueryBuilder.newBuilder("tableName")
+						.joinTable(JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
 						.queryColumn("tableName", "columnName1")
 						.queryColumn("tableName", "columnName2", "aliasName2")
 						.queryColumn("tableName", "columnName3", "aliasName3")
@@ -148,9 +148,9 @@ public final class QueryBuilderTest {
 	@Order(30)
 	public void functionAndQuery() throws Exception {
 		QueryInfo queryInfo =
-				QueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "tableName", "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+				BrainQueryBuilder.newBuilder("tableName")
+						.joinTable(JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
 						.queryColumn("tableName", "columnName1")
 						.queryColumn("tableName", "columnName2", "aliasName2")
 						.queryColumn("tableName", "columnName3", "aliasName3")
@@ -174,9 +174,9 @@ public final class QueryBuilderTest {
 	@Order(35)
 	public void functionOrQuery() throws Exception {
 		QueryInfo queryInfo =
-				QueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "tableName", "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+				BrainQueryBuilder.newBuilder("tableName")
+						.joinTable(JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
 						.queryColumn("tableName", "columnName1")
 						.queryColumn("tableName", "columnName2", "aliasName2")
 						.queryColumn("tableName", "columnName3", "aliasName3")
@@ -201,9 +201,9 @@ public final class QueryBuilderTest {
 	public void subQueryAndQuery() throws Exception {
 		QueryData subQuery = this.newData();
 		QueryInfo queryInfo =
-				QueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "tableName", "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+				BrainQueryBuilder.newBuilder("tableName")
+						.joinTable(JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
 						.queryColumn("tableName", "columnName1")
 						.queryColumn("tableName", "columnName2", "aliasName2")
 						.queryColumn("tableName", "columnName3", "aliasName3")
@@ -224,9 +224,9 @@ public final class QueryBuilderTest {
 	public void subQueryOrQuery() throws Exception {
 		QueryData subQuery = this.newData();
 		QueryInfo queryInfo =
-				QueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "tableName", "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+				BrainQueryBuilder.newBuilder("tableName")
+						.joinTable(JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
 						.queryColumn("tableName", "columnName1")
 						.queryColumn("tableName", "columnName2", "aliasName2")
 						.queryColumn("tableName", "columnName3", "aliasName3")
@@ -247,9 +247,9 @@ public final class QueryBuilderTest {
 	public void existQuery() throws Exception {
 		QueryData subQuery = this.newData();
 		QueryInfo queryInfo =
-				QueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "tableName", "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+				BrainQueryBuilder.newBuilder("tableName")
+						.joinTable(JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
 						.queryColumn("tableName", "columnName1")
 						.queryColumn("tableName", "columnName2", "aliasName2")
 						.queryColumn("tableName", "columnName3", "aliasName3")
@@ -264,9 +264,9 @@ public final class QueryBuilderTest {
 	public void notExistQuery() throws Exception {
 		QueryData subQuery = this.newData();
 		QueryInfo queryInfo =
-				QueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "tableName", "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+				BrainQueryBuilder.newBuilder("tableName")
+						.joinTable(JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
 						.queryColumn("tableName", "columnName1")
 						.queryColumn("tableName", "columnName2", "aliasName2")
 						.queryColumn("tableName", "columnName3", "aliasName3")

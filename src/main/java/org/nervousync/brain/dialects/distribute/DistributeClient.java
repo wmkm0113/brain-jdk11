@@ -269,15 +269,13 @@ public interface DistributeClient extends Closeable {
 	 *                         <span class="zh-CN">数据表定义信息</span>
 	 * @param conditionList    <span class="en-US">Query condition instance list</span>
 	 *                         <span class="zh-CN">查询条件实例对象列表</span>
-	 * @param lockOption       <span class="en-US">Query record lock option</span>
-	 *                         <span class="zh-CN">查询记录锁定选项</span>
 	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
 	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	List<Map<String, Object>> queryForUpdate(final String shardingDatabase, @Nonnull final TableDefine tableDefine,
-	                                         final List<Condition> conditionList, final LockModeType lockOption)
+	                                         final List<Condition> conditionList)
 			throws Exception;
 
 	/**
