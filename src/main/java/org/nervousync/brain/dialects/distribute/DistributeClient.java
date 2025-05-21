@@ -18,7 +18,6 @@
 package org.nervousync.brain.dialects.distribute;
 
 import jakarta.annotation.Nonnull;
-import jakarta.persistence.LockModeType;
 import org.jetbrains.annotations.NotNull;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.TableDefine;

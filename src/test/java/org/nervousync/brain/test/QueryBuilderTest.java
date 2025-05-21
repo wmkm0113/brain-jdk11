@@ -31,6 +31,7 @@ import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.commons.Globals;
 import org.nervousync.enumerations.core.ConnectionCode;
 import org.nervousync.utils.LoggerUtils;
+import org.nervousync.utils.StringUtils;
 
 import java.util.Collections;
 
@@ -49,9 +50,9 @@ public final class QueryBuilderTest {
 	public void simpleAndQuery() throws Exception {
 		QueryInfo queryInfo =
 				BrainQueryBuilder.newBuilder("tableName")
-						.queryColumn("tableName", "columnName1")
-						.queryColumn("tableName", "columnName2", "aliasName2")
-						.queryColumn("tableName", "columnName3", "aliasName3")
+						.columnItem("tableName", "columnName1")
+						.columnItem("tableName", "columnName2", "aliasName2")
+						.columnItem("tableName", "columnName3", "aliasName3")
 						.greater("tableName", "columnName1", 1)
 						.greaterEqual("tableName", "columnName1", 1)
 						.less("tableName", "columnName1", 1)
@@ -71,7 +72,7 @@ public final class QueryBuilderTest {
 						.useCache(Boolean.TRUE)
 						.configPager(1, 20)
 						.confirm();
-		this.logger.info("Generated_Result", queryInfo.toXML(Boolean.TRUE));
+		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
@@ -79,9 +80,9 @@ public final class QueryBuilderTest {
 	public void simpleOrQuery() throws Exception {
 		QueryInfo queryInfo =
 				BrainQueryBuilder.newBuilder("tableName")
-						.queryColumn("tableName", "columnName1")
-						.queryColumn("tableName", "columnName2", "aliasName2")
-						.queryColumn("tableName", "columnName3", "aliasName3")
+						.columnItem("tableName", "columnName1")
+						.columnItem("tableName", "columnName2", "aliasName2")
+						.columnItem("tableName", "columnName3", "aliasName3")
 						.greater(ConnectionCode.OR, "tableName", "columnName1", 1)
 						.greaterEqual(ConnectionCode.OR, "tableName", "columnName1", 1)
 						.less(ConnectionCode.OR, "tableName", "columnName1", 1)
@@ -101,7 +102,7 @@ public final class QueryBuilderTest {
 						.useCache(Boolean.TRUE)
 						.configPager(1, 20)
 						.confirm();
-		this.logger.info("Generated_Result", queryInfo.toXML(Boolean.TRUE));
+		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
@@ -109,11 +110,11 @@ public final class QueryBuilderTest {
 	public void joinAndQuery() throws Exception {
 		QueryInfo queryInfo =
 				BrainQueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
-						.queryColumn("tableName", "columnName1")
-						.queryColumn("tableName", "columnName2", "aliasName2")
-						.queryColumn("tableName", "columnName3", "aliasName3")
+						.joinTable("tableName", JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+						.columnItem("tableName", "columnName1")
+						.columnItem("tableName", "columnName2", "aliasName2")
+						.columnItem("tableName", "columnName3", "aliasName3")
 						.greater("tableName", "columnName1", "matchTable", "matchColumn")
 						.greaterEqual("tableName", "columnName1", "matchTable", "matchColumn")
 						.less("tableName", "columnName1", "matchTable", "matchColumn")
@@ -121,7 +122,7 @@ public final class QueryBuilderTest {
 						.equalTo("tableName", "columnName1", "matchTable", "matchColumn")
 						.notEqual("tableName", "columnName1", "matchTable", "matchColumn")
 						.confirm();
-		this.logger.info("Generated_Result", queryInfo.toXML(Boolean.TRUE));
+		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
@@ -129,11 +130,11 @@ public final class QueryBuilderTest {
 	public void joinOrQuery() throws Exception {
 		QueryInfo queryInfo =
 				BrainQueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
-						.queryColumn("tableName", "columnName1")
-						.queryColumn("tableName", "columnName2", "aliasName2")
-						.queryColumn("tableName", "columnName3", "aliasName3")
+						.joinTable("tableName", JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+						.columnItem("tableName", "columnName1")
+						.columnItem("tableName", "columnName2", "aliasName2")
+						.columnItem("tableName", "columnName3", "aliasName3")
 						.greater(ConnectionCode.OR, "tableName", "columnName1", "matchTable", "matchColumn")
 						.greaterEqual(ConnectionCode.OR, "tableName", "columnName1", "matchTable", "matchColumn")
 						.less(ConnectionCode.OR, "tableName", "columnName1", "matchTable", "matchColumn")
@@ -141,7 +142,7 @@ public final class QueryBuilderTest {
 						.equalTo(ConnectionCode.OR, "tableName", "columnName1", "matchTable", "matchColumn")
 						.notEqual(ConnectionCode.OR, "tableName", "columnName1", "matchTable", "matchColumn")
 						.confirm();
-		this.logger.info("Generated_Result", queryInfo.toXML(Boolean.TRUE));
+		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
@@ -149,11 +150,11 @@ public final class QueryBuilderTest {
 	public void functionAndQuery() throws Exception {
 		QueryInfo queryInfo =
 				BrainQueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
-						.queryColumn("tableName", "columnName1")
-						.queryColumn("tableName", "columnName2", "aliasName2")
-						.queryColumn("tableName", "columnName3", "aliasName3")
+						.joinTable("tableName", JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+						.columnItem("tableName", "columnName1")
+						.columnItem("tableName", "columnName2", "aliasName2")
+						.columnItem("tableName", "columnName3", "aliasName3")
 						.greater("tableName", "columnName1",
 								"COUNT", AbstractParameter.column("joinTable", "joinColumn"))
 						.greaterEqual("tableName", "columnName1",
@@ -167,7 +168,7 @@ public final class QueryBuilderTest {
 						.notEqual("tableName", "columnName1",
 								"COUNT", AbstractParameter.column("joinTable", "joinColumn"))
 						.confirm();
-		this.logger.info("Generated_Result", queryInfo.toXML(Boolean.TRUE));
+		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
@@ -175,11 +176,11 @@ public final class QueryBuilderTest {
 	public void functionOrQuery() throws Exception {
 		QueryInfo queryInfo =
 				BrainQueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
-						.queryColumn("tableName", "columnName1")
-						.queryColumn("tableName", "columnName2", "aliasName2")
-						.queryColumn("tableName", "columnName3", "aliasName3")
+						.joinTable("tableName", JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+						.columnItem("tableName", "columnName1")
+						.columnItem("tableName", "columnName2", "aliasName2")
+						.columnItem("tableName", "columnName3", "aliasName3")
 						.greater(ConnectionCode.OR, "tableName", "columnName1",
 								"COUNT", AbstractParameter.column("joinTable", "joinColumn"))
 						.greaterEqual(ConnectionCode.OR, "tableName", "columnName1",
@@ -193,7 +194,7 @@ public final class QueryBuilderTest {
 						.notEqual(ConnectionCode.OR, "tableName", "columnName1",
 								"COUNT", AbstractParameter.column("joinTable", "joinColumn"))
 						.confirm();
-		this.logger.info("Generated_Result", queryInfo.toXML(Boolean.TRUE));
+		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
@@ -202,11 +203,11 @@ public final class QueryBuilderTest {
 		QueryData subQuery = this.newData();
 		QueryInfo queryInfo =
 				BrainQueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
-						.queryColumn("tableName", "columnName1")
-						.queryColumn("tableName", "columnName2", "aliasName2")
-						.queryColumn("tableName", "columnName3", "aliasName3")
+						.joinTable("tableName", JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+						.columnItem("tableName", "columnName1")
+						.columnItem("tableName", "columnName2", "aliasName2")
+						.columnItem("tableName", "columnName3", "aliasName3")
 						.greater("tableName", "columnName1", subQuery)
 						.greaterEqual("tableName", "columnName1", subQuery)
 						.less("tableName", "columnName1", subQuery)
@@ -216,7 +217,7 @@ public final class QueryBuilderTest {
 						.in("tableName", "columnName2", subQuery)
 						.notIn("tableName", "columnName2", subQuery)
 						.confirm();
-		this.logger.info("Generated_Result", queryInfo.toXML(Boolean.TRUE));
+		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
@@ -225,11 +226,11 @@ public final class QueryBuilderTest {
 		QueryData subQuery = this.newData();
 		QueryInfo queryInfo =
 				BrainQueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
-						.queryColumn("tableName", "columnName1")
-						.queryColumn("tableName", "columnName2", "aliasName2")
-						.queryColumn("tableName", "columnName3", "aliasName3")
+						.joinTable("tableName", JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+						.columnItem("tableName", "columnName1")
+						.columnItem("tableName", "columnName2", "aliasName2")
+						.columnItem("tableName", "columnName3", "aliasName3")
 						.greater(ConnectionCode.OR, "tableName", "columnName1", subQuery)
 						.greaterEqual(ConnectionCode.OR, "tableName", "columnName1", subQuery)
 						.less(ConnectionCode.OR, "tableName", "columnName1", subQuery)
@@ -239,7 +240,7 @@ public final class QueryBuilderTest {
 						.in(ConnectionCode.OR, "tableName", "columnName2", subQuery)
 						.notIn(ConnectionCode.OR, "tableName", "columnName2", subQuery)
 						.confirm();
-		this.logger.info("Generated_Result", queryInfo.toXML(Boolean.TRUE));
+		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
@@ -248,15 +249,15 @@ public final class QueryBuilderTest {
 		QueryData subQuery = this.newData();
 		QueryInfo queryInfo =
 				BrainQueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
-						.queryColumn("tableName", "columnName1")
-						.queryColumn("tableName", "columnName2", "aliasName2")
-						.queryColumn("tableName", "columnName3", "aliasName3")
+						.joinTable("tableName", JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+						.columnItem("tableName", "columnName1")
+						.columnItem("tableName", "columnName2", "aliasName2")
+						.columnItem("tableName", "columnName3", "aliasName3")
 						.exists("tableName", subQuery, "FUNCTION")
 						.exists(ConnectionCode.OR, "joinTable", subQuery, "FUNCTION")
 						.confirm();
-		this.logger.info("Generated_Result", queryInfo.toXML(Boolean.TRUE));
+		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
@@ -265,15 +266,15 @@ public final class QueryBuilderTest {
 		QueryData subQuery = this.newData();
 		QueryInfo queryInfo =
 				BrainQueryBuilder.newBuilder("tableName")
-						.joinTable(JoinType.LEFT, "joinTable",
-								Collections.singletonList(JoinInfo.newInstance("tableName", "currentColumn", "joinColumn")))
-						.queryColumn("tableName", "columnName1")
-						.queryColumn("tableName", "columnName2", "aliasName2")
-						.queryColumn("tableName", "columnName3", "aliasName3")
+						.joinTable("tableName", JoinType.LEFT, "joinTable",
+								Collections.singletonList(JoinInfo.newInstance("currentColumn", "joinColumn")))
+						.columnItem("tableName", "columnName1")
+						.columnItem("tableName", "columnName2", "aliasName2")
+						.columnItem("tableName", "columnName3", "aliasName3")
 						.notExists("tableName", subQuery, "FUNCTION")
 						.notExists(ConnectionCode.OR, "joinTable", subQuery, "FUNCTION")
 						.confirm();
-		this.logger.info("Generated_Result", queryInfo.toXML(Boolean.TRUE));
+		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
 	}
 
 	private QueryData newData() {

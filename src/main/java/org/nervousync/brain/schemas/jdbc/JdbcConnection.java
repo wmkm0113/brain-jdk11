@@ -17,8 +17,8 @@
 
 package org.nervousync.brain.schemas.jdbc;
 
+import org.intellij.lang.annotations.MagicConstant;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
-import org.nervousync.commons.Globals;
 import org.nervousync.utils.*;
 
 import java.sql.*;
@@ -162,37 +162,41 @@ public class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public PreparedStatement prepareStatement(String sql) throws SQLException {
-		return this.obtainStatement(KeyType.SQL_ONLY, sql, Globals.DEFAULT_VALUE_INT,
-				Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT,
+	public PreparedStatement prepareStatement(final String sql) throws SQLException {
+		return this.obtainStatement(KeyType.SQL_ONLY, sql, ResultSet.TYPE_FORWARD_ONLY,
+				ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT, Statement.NO_GENERATED_KEYS,
 				new int[0], new String[0]).unwrap(PreparedStatement.class);
 	}
 
 	@Override
-	public CallableStatement prepareCall(String sql) throws SQLException {
-		return this.obtainStatement(KeyType.CALL_ONLY, sql, Globals.DEFAULT_VALUE_INT,
-				Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT,
+	public CallableStatement prepareCall(final String sql) throws SQLException {
+		return this.obtainStatement(KeyType.CALL_ONLY, sql, ResultSet.TYPE_FORWARD_ONLY,
+				ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT, Statement.NO_GENERATED_KEYS,
 				new int[0], new String[0]).unwrap(CallableStatement.class);
 	}
 
 	@Override
-	public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+	public Statement createStatement(final int resultSetType, final int resultSetConcurrency) throws SQLException {
 		return this.connection.createStatement(resultSetType, resultSetConcurrency);
 	}
 
 	@Override
-	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
+	public PreparedStatement prepareStatement(final String sql, final int resultSetType, final int resultSetConcurrency)
 			throws SQLException {
 		return this.obtainStatement(KeyType.SQL_CONCURRENCY, sql, resultSetType, resultSetConcurrency,
-				Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT,
+				ResultSet.CLOSE_CURSORS_AT_COMMIT, Statement.NO_GENERATED_KEYS,
 				new int[0], new String[0]).unwrap(PreparedStatement.class);
 	}
 
 	@Override
-	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
+	public CallableStatement prepareCall(final String sql,
+	                                     @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE})
+	                                     final int resultSetType,
+	                                     @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE})
+	                                     final int resultSetConcurrency)
 			throws SQLException {
 		return this.obtainStatement(KeyType.CALL_CONCURRENCY, sql, resultSetType, resultSetConcurrency,
-				Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT,
+				ResultSet.CLOSE_CURSORS_AT_COMMIT, Statement.NO_GENERATED_KEYS,
 				new int[0], new String[0]).unwrap(CallableStatement.class);
 	}
 
@@ -207,47 +211,52 @@ public class JdbcConnection implements Connection {
 	                                          int resultSetConcurrency, int resultSetHoldability)
 			throws SQLException {
 		return this.obtainStatement(KeyType.SQL_HOLDABILITY, sql, resultSetType,
-				resultSetConcurrency, resultSetHoldability, Globals.DEFAULT_VALUE_INT,
+				resultSetConcurrency, resultSetHoldability, Statement.NO_GENERATED_KEYS,
 				new int[0], new String[0]).unwrap(PreparedStatement.class);
 	}
 
 	@Override
-	public CallableStatement prepareCall(String sql, int resultSetType,
-	                                     int resultSetConcurrency, int resultSetHoldability)
+	public CallableStatement prepareCall(final String sql,
+	                                     @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE})
+	                                     final int resultSetType,
+	                                     @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE})
+	                                     final int resultSetConcurrency,
+	                                     @MagicConstant(intValues = {ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT})
+	                                     final int resultSetHoldability)
 			throws SQLException {
 		return this.obtainStatement(KeyType.CALL_HOLDABILITY, sql, resultSetType,
-				resultSetConcurrency, resultSetHoldability, Globals.DEFAULT_VALUE_INT,
+				resultSetConcurrency, resultSetHoldability, Statement.NO_GENERATED_KEYS,
 				new int[0], new String[0]).unwrap(CallableStatement.class);
 	}
 
 	@Override
-	public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
-		return this.obtainStatement(KeyType.SQL_AUTO_GENERATED_KEYS, sql, Globals.DEFAULT_VALUE_INT,
-				Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT, autoGeneratedKeys,
+	public PreparedStatement prepareStatement(final String sql, final int autoGeneratedKeys) throws SQLException {
+		return this.obtainStatement(KeyType.SQL_AUTO_GENERATED_KEYS, sql, ResultSet.TYPE_FORWARD_ONLY,
+				ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT, autoGeneratedKeys,
 				new int[0], new String[0]).unwrap(PreparedStatement.class);
 	}
 
 	@Override
-	public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
-		return this.obtainStatement(KeyType.SQL_COLUMN_INDEXES, sql, Globals.DEFAULT_VALUE_INT,
-				Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT,
+	public PreparedStatement prepareStatement(final String sql, final int[] columnIndexes) throws SQLException {
+		return this.obtainStatement(KeyType.SQL_COLUMN_INDEXES, sql, ResultSet.TYPE_FORWARD_ONLY,
+				ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT, Statement.NO_GENERATED_KEYS,
 				columnIndexes, new String[0]).unwrap(PreparedStatement.class);
 	}
 
 	@Override
-	public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
-		return this.obtainStatement(KeyType.SQL_COLUMN_NAMES, sql, Globals.DEFAULT_VALUE_INT,
-				Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT, Globals.DEFAULT_VALUE_INT,
+	public PreparedStatement prepareStatement(final String sql, final String[] columnNames) throws SQLException {
+		return this.obtainStatement(KeyType.SQL_COLUMN_NAMES, sql, ResultSet.TYPE_FORWARD_ONLY,
+				ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT, Statement.NO_GENERATED_KEYS,
 				new int[0], columnNames).unwrap(PreparedStatement.class);
 	}
 
 	@Override
-	public String nativeSQL(String sql) throws SQLException {
+	public String nativeSQL(final String sql) throws SQLException {
 		return this.connection.nativeSQL(sql);
 	}
 
 	@Override
-	public void setAutoCommit(boolean autoCommit) throws SQLException {
+	public void setAutoCommit(final boolean autoCommit) throws SQLException {
 		this.connection.setAutoCommit(autoCommit);
 	}
 
@@ -277,7 +286,7 @@ public class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public void setReadOnly(boolean readOnly) throws SQLException {
+	public void setReadOnly(final boolean readOnly) throws SQLException {
 		this.connection.setReadOnly(readOnly);
 	}
 
@@ -287,7 +296,7 @@ public class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public void setCatalog(String catalog) throws SQLException {
+	public void setCatalog(final String catalog) throws SQLException {
 		this.connection.setCatalog(catalog);
 	}
 
@@ -297,7 +306,7 @@ public class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public void setTransactionIsolation(int level) throws SQLException {
+	public void setTransactionIsolation(final int level) throws SQLException {
 		this.connection.setTransactionIsolation(level);
 	}
 
@@ -322,12 +331,12 @@ public class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
+	public void setTypeMap(final Map<String, Class<?>> map) throws SQLException {
 		this.connection.setTypeMap(map);
 	}
 
 	@Override
-	public void setHoldability(int holdability) throws SQLException {
+	public void setHoldability(final int holdability) throws SQLException {
 		this.connection.setHoldability(holdability);
 	}
 
@@ -342,17 +351,17 @@ public class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public Savepoint setSavepoint(String name) throws SQLException {
+	public Savepoint setSavepoint(final String name) throws SQLException {
 		return this.connection.setSavepoint(name);
 	}
 
 	@Override
-	public void rollback(Savepoint savepoint) throws SQLException {
+	public void rollback(final Savepoint savepoint) throws SQLException {
 		this.connection.rollback(savepoint);
 	}
 
 	@Override
-	public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+	public void releaseSavepoint(final Savepoint savepoint) throws SQLException {
 		this.connection.releaseSavepoint(savepoint);
 	}
 
@@ -377,12 +386,12 @@ public class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public boolean isValid(int timeout) throws SQLException {
+	public boolean isValid(final int timeout) throws SQLException {
 		return this.connection.isValid(timeout);
 	}
 
 	@Override
-	public void setClientInfo(String name, String value) throws SQLClientInfoException {
+	public void setClientInfo(final String name, final String value) throws SQLClientInfoException {
 		try {
 			this.connection.setClientInfo(name, value);
 		} catch (SQLException e) {
@@ -391,7 +400,7 @@ public class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public void setClientInfo(Properties properties) throws SQLClientInfoException {
+	public void setClientInfo(final Properties properties) throws SQLClientInfoException {
 		try {
 			this.connection.setClientInfo(properties);
 		} catch (SQLException e) {
@@ -400,7 +409,7 @@ public class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public String getClientInfo(String name) throws SQLException {
+	public String getClientInfo(final String name) throws SQLException {
 		return this.connection.getClientInfo(name);
 	}
 
@@ -410,17 +419,17 @@ public class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+	public Array createArrayOf(final String typeName, final Object[] elements) throws SQLException {
 		return this.connection.createArrayOf(typeName, elements);
 	}
 
 	@Override
-	public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+	public Struct createStruct(final String typeName, final Object[] attributes) throws SQLException {
 		return this.connection.createStruct(typeName, attributes);
 	}
 
 	@Override
-	public void setSchema(String schema) throws SQLException {
+	public void setSchema(final String schema) throws SQLException {
 		this.connection.setSchema(schema);
 	}
 
@@ -430,12 +439,12 @@ public class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public void abort(Executor executor) throws SQLException {
+	public void abort(final Executor executor) throws SQLException {
 		this.connection.abort(executor);
 	}
 
 	@Override
-	public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+	public void setNetworkTimeout(final Executor executor, final int milliseconds) throws SQLException {
 		this.connection.setNetworkTimeout(executor, milliseconds);
 	}
 
@@ -469,10 +478,17 @@ public class JdbcConnection implements Connection {
 	 * @throws SQLException <span class="en-US">This method is called if a database access error occurs or on a closed connection</span>
 	 *                      <span class="zh-CN">如果发生数据库访问错误，或者在关闭的连接上调用此方法</span>
 	 */
-	private StatementWrapper<?> obtainStatement(
-			final KeyType keyType, final String sql, final int resultSetType, final int resultSetConcurrency,
-			final int resultSetHoldability, final int autoGeneratedKeys, final int[] columnIndexes,
-			final String[] columnNames) throws SQLException {
+	private StatementWrapper<?> obtainStatement(final KeyType keyType, final String sql,
+												@MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE})
+	                                            final int resultSetType,
+												@MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE})
+	                                            final int resultSetConcurrency,
+												@MagicConstant(intValues = {ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT})
+	                                            final int resultSetHoldability,
+												@MagicConstant(intValues = {Statement.RETURN_GENERATED_KEYS, Statement.NO_GENERATED_KEYS})
+	                                            final int autoGeneratedKeys,
+	                                            final int[] columnIndexes, final String[] columnNames)
+			throws SQLException {
 		String cacheKey = cacheKey(keyType, sql, resultSetType, resultSetConcurrency,
 				resultSetHoldability, autoGeneratedKeys, columnIndexes, columnNames);
 		StatementWrapper<?> statementWrapper = null;

@@ -26,7 +26,6 @@ import jakarta.xml.bind.annotation.XmlType;
 import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.enumerations.dialect.DialectType;
-import org.nervousync.brain.exceptions.defines.TableDefineException;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.StringUtils;

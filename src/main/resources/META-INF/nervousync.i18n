@@ -165,6 +165,10 @@
     {
       "code": "0x00DB00000041",
       "key": "Record_Delete_Error"
+    },
+    {
+      "code": "0x00DB00000042",
+      "key": "Fill_Query_Item_Error"
     }
   ],
   "languages": [
@@ -439,6 +443,10 @@
         {
           "key": "Record_Delete_Error",
           "content": "Exception occurred while deleting data! Table name: {0}, filter map: {1}"
+        },
+        {
+          "key": "Fill_Query_Item_Error",
+          "content": "Fill query item information error! "
         },
         {
           "key": "Query_Cache_Key_Data",
@@ -725,6 +733,10 @@
         {
           "key": "Record_Delete_Error",
           "content": "从数据库删除记录出错！数据表名：{0}，过滤条件映射表：{1}"
+        },
+        {
+          "key": "Fill_Query_Item_Error",
+          "content": "填充查询数据列信息出错！"
         },
         {
           "key": "Query_Cache_Key_Data",

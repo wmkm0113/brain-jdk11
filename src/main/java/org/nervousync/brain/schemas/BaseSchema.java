@@ -18,8 +18,6 @@
 package org.nervousync.brain.schemas;
 
 import jakarta.annotation.Nonnull;
-import jakarta.persistence.LockModeType;
-import org.jetbrains.annotations.NotNull;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.auth.Authentication;
 import org.nervousync.brain.configs.schema.SchemaConfig;
@@ -654,7 +652,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public abstract List<Map<String, Object>> query(@NotNull final TableDefine tableDefine,
+	public abstract List<Map<String, Object>> query(@Nonnull final TableDefine tableDefine,
 	                                                @Nonnull final QueryInfo queryInfo) throws Exception;
 
 	/**
@@ -670,7 +668,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public final List<Map<String, Object>> queryForUpdate(@NotNull final TableDefine tableDefine,
+	public final List<Map<String, Object>> queryForUpdate(@Nonnull final TableDefine tableDefine,
 	                                                      @Nonnull final QueryInfo queryInfo) throws Exception {
 		return this.queryForUpdate(tableDefine, queryInfo.getConditionList());
 	}

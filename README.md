@@ -1,7 +1,7 @@
 # Brain DataSource
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.nervousync/brain-jdk11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.nervousync/brain-jdk11/)
-[![License](https://img.shields.io/github/license/wmkm0113/brain-jdk11.svg)](https://github.com/wmkm0113/brain-jdk11/blob/master/LICENSE)
+[![Maven Central](https://img.shields.io/maven-central/v/org.nervousync/brain-jdk11?color=green)](https://mvnrepository.com/artifact/org.nervousync/brain-jdk11)
+[![License](https://img.shields.io/github/license/wmkm0113/brain-jdk11)](https://github.com/wmkm0113/brain-jdk11/blob/mainline/LICENSE)
 ![Language](https://img.shields.io/badge/language-Java-green)
 [![Twitter:wmkm0113](https://img.shields.io/twitter/follow/wmkm0113?label=Follow)](https://twitter.com/wmkm0113)
 
@@ -27,6 +27,7 @@ transaction operations.
     + [Process schema](#4-process-schema)
     + [Advanced configuration](#5-advanced-configuration)
 * [Contributions and feedback](#contributions-and-feedback)
+* [Donations](#donations)
 * [Sponsorship and Thanks To](#sponsorship-and-thanks-to)
 
 ## JDK Version
@@ -469,6 +470,13 @@ The specific fee amount will be assessed based on the workload of the customized
 For customized special features, please send an email directly
 to [wmkm0113\@gmail.com](mailto:wmkm0113@gmail.com?subject=payment_features). At the same time, please try to indicate
 the budget amount of development cost you can afford in the email.
+
+## Donations
+To support this project, you can make a donation to:
+
+* Bitcoin address: bc1q0n05a5r7vyph40lv0kshxscxwptr3z4pwpq5nd
+* Ethereum address: 0xeA448C14f65657Fce8020955807345ae5Fb0722B
+* Solana address: CiBFDVETZLFGUYTN6izbofCZ7oVAdghoMDpFgaUyetPf
 
 ## Sponsorship and Thanks To
 

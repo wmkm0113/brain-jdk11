@@ -45,12 +45,6 @@ public final class JoinInfo extends BeanObject {
 	@XmlElement(name = "connection_code")
 	private ConnectionCode connectionCode;
 	/**
-	 * <span class="en-US">Left table name</span>
-	 * <span class="zh-CN">左表名</span>
-	 */
-	@XmlElement(name = "left_table")
-	private String leftTable;
-	/**
 	 * <span class="en-US">Left table data column identify code</span>
 	 * <span class="zh-CN">左表数据列识别代码</span>
 	 */
@@ -74,8 +68,6 @@ public final class JoinInfo extends BeanObject {
 	 * <h3 class="en-US">Static method is used to generate join column information instance objects</h3>
 	 * <h3 class="zh-CN">静态方法用于生成关联列信息实例对象</h3>
 	 *
-	 * @param leftTable <span class="en-US">Left table name</span>
-	 *                  <span class="zh-CN">左表名</span>
 	 * @param leftKey   <span class="en-US">Left table data column identify code</span>
 	 *                  <span class="zh-CN">左表数据列识别代码</span>
 	 * @param rightKey  <span class="en-US">Right table data column identify code</span>
@@ -87,8 +79,8 @@ public final class JoinInfo extends BeanObject {
 	 * </span>
 	 * <span class="zh-CN">生成的关联列信息实例对象，如果数据列识别代码不能找到对应的数据列定义则返回<code>null</code></span>
 	 */
-	public static JoinInfo newInstance(final String leftTable, final String leftKey, final String rightKey) {
-		return newInstance(ConnectionCode.AND, leftTable, leftKey, rightKey);
+	public static JoinInfo newInstance(final String leftKey, final String rightKey) {
+		return newInstance(ConnectionCode.AND, leftKey, rightKey);
 	}
 
 	/**
@@ -97,8 +89,6 @@ public final class JoinInfo extends BeanObject {
 	 *
 	 * @param connectionCode <span class="en-US">Query connection code</span>
 	 *                       <span class="zh-CN">查询条件连接代码</span>
-	 * @param leftTable      <span class="en-US">Left table name</span>
-	 *                       <span class="zh-CN">左表名</span>
 	 * @param leftKey        <span class="en-US">Left table data column identify code</span>
 	 *                       <span class="zh-CN">左表数据列识别代码</span>
 	 * @param rightKey       <span class="en-US">Right table data column identify code</span>
@@ -111,12 +101,11 @@ public final class JoinInfo extends BeanObject {
 	 * <span class="zh-CN">生成的关联列信息实例对象，如果数据列识别代码不能找到对应的数据列定义则返回<code>null</code></span>
 	 */
 	public static JoinInfo newInstance(final ConnectionCode connectionCode,
-	                                   final String leftTable, final String leftKey, final String rightKey) {
+	                                   final String leftKey, final String rightKey) {
 		JoinInfo joinInfo = null;
-		if (StringUtils.notBlank(leftTable) && StringUtils.notBlank(leftKey) && StringUtils.notBlank(rightKey)) {
+		if (StringUtils.notBlank(leftKey) && StringUtils.notBlank(rightKey)) {
 			joinInfo = new JoinInfo();
 			joinInfo.setConnectionCode(connectionCode);
-			joinInfo.setLeftTable(leftTable);
 			joinInfo.setLeftKey(leftKey);
 			joinInfo.setRightKey(rightKey);
 		}
@@ -143,28 +132,6 @@ public final class JoinInfo extends BeanObject {
 	 */
 	public void setConnectionCode(ConnectionCode connectionCode) {
 		this.connectionCode = connectionCode;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for the left table name</h3>
-	 * <h3 class="zh-CN">左表名的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Driven table name</span>
-	 * <span class="zh-CN">左表名</span>
-	 */
-	public String getLeftTable() {
-		return this.leftTable;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for the left table name</h3>
-	 * <h3 class="zh-CN">左表名的Setter方法</h3>
-	 *
-	 * @param leftTable <span class="en-US">Left table name</span>
-	 *                  <span class="zh-CN">左表名</span>
-	 */
-	public void setLeftTable(final String leftTable) {
-		this.leftTable = leftTable;
 	}
 
 	/**

@@ -18,11 +18,8 @@
 package org.nervousync.brain.query.param.impl;
 
 import jakarta.xml.bind.annotation.*;
-import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.nervousync.brain.enumerations.query.ItemType;
 import org.nervousync.brain.query.param.AbstractParameter;
-
-import java.io.Serializable;
 
 /**
  * <h2 class="en-US">Constant value parameter information define</h2>

@@ -44,7 +44,7 @@ public final class BrainConfigureTest {
 
 	@Test
 	@Order(0)
-	public void storageConfig() throws Exception {
+	public void storageConfig() {
 		BrainConfigure configure = this.newBuilder(null)
 				.storageConfig()
 				.basePath("BasePath")
@@ -52,16 +52,16 @@ public final class BrainConfigureTest {
 				.provider("StorageProvider")
 				.confirmParent(BrainConfigureBuilder.class)
 				.confirm();
-		System.out.println(configure.toXML(Boolean.TRUE));
+		System.out.println(configure.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
 	@Order(10)
-	public void distributeConfig() throws Exception {
+	public void distributeConfig() {
 		BrainConfigure configure =
 				this.distribute(this.newBuilder(null).distributeConfig("Distribute"))
 						.confirm();
-		System.out.println(configure.toXML(Boolean.TRUE));
+		System.out.println(configure.toString(StringUtils.StringType.XML));
 		configure = this.newBuilder(configure)
 				.distributeConfig("Distribute")
 				.removeServer("localhost", 2271)
@@ -70,7 +70,7 @@ public final class BrainConfigureTest {
 				.confirmParent(SchemaConfigBuilder.DistributeConfigBuilder.class)
 				.confirmParent(BrainConfigureBuilder.class)
 				.confirm();
-		System.out.println(configure.toXML(Boolean.TRUE));
+		System.out.println(configure.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
@@ -78,7 +78,7 @@ public final class BrainConfigureTest {
 	public void jdbcConfig() throws Exception {
 		BrainConfigure configure =
 				this.jdbc(this.newBuilder(null).jdbcConfig("Jdbc"), Boolean.FALSE).confirm();
-		System.out.println(configure.toXML(Boolean.TRUE));
+		System.out.println(configure.toString(StringUtils.StringType.XML));
 		configure = this.newBuilder(configure)
 				.jdbcConfig("Jdbc")
 				.removeServer("localhost", 2271)
@@ -88,7 +88,7 @@ public final class BrainConfigureTest {
 				.testConnection(Boolean.TRUE, Boolean.TRUE)
 				.confirmParent(BrainConfigureBuilder.class)
 				.confirm();
-		System.out.println(configure.toXML(Boolean.TRUE));
+		System.out.println(configure.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
@@ -96,7 +96,7 @@ public final class BrainConfigureTest {
 	public void remoteConfig() throws Exception {
 		BrainConfigure configure =
 				this.remote(this.newBuilder(null).remoteConfig("Remote")).confirm();
-		System.out.println(configure.toXML(Boolean.TRUE));
+		System.out.println(configure.toString(StringUtils.StringType.XML));
 		configure = this.newBuilder(configure)
 				.disableLazyInit()
 				.disableJmxMonitor()
@@ -116,7 +116,7 @@ public final class BrainConfigureTest {
 				.type(RemoteType.SOAP)
 				.confirmParent(BrainConfigureBuilder.class)
 				.confirm();
-		System.out.println(configure.toXML(Boolean.TRUE));
+		System.out.println(configure.toString(StringUtils.StringType.XML));
 	}
 
 	@Test
@@ -128,20 +128,19 @@ public final class BrainConfigureTest {
 		brainConfigureBuilder = this.remote(brainConfigureBuilder.remoteConfig("Remote"));
 		brainConfigureBuilder = this.cache(brainConfigureBuilder.cacheConfig());
 		BrainConfigure configure = brainConfigureBuilder.defaultSchema("Jdbc").confirm();
-		String xml = configure.toXML(Boolean.TRUE);
+		String xml = configure.toString(StringUtils.StringType.XML);
 		configure = StringUtils.stringToObject(xml, BrainConfigure.class, "https://nervousync.org/schemas/brain");
-		System.out.println(configure.toXML(Boolean.TRUE));
+		System.out.println(configure.toString(StringUtils.StringType.XML));
 		configure = this.newBuilder(configure)
 				.remoteConfig("Remote")
 				.type(RemoteType.SOAP)
 				.confirmParent(BrainConfigureBuilder.class)
 				.defaultSchema("Remote")
 				.confirm();
-		System.out.println(configure.toXML(Boolean.TRUE));
+		System.out.println(configure.toString(StringUtils.StringType.XML));
 	}
 
-	private BrainConfigureBuilder distribute(final SchemaConfigBuilder.DistributeConfigBuilder configBuilder)
-			throws Exception {
+	private BrainConfigureBuilder distribute(final SchemaConfigBuilder.DistributeConfigBuilder configBuilder) {
 		return configBuilder.dialect("DistributeDialect")
 				.addServer("datacenter1", "localhost", 2270, 10)
 				.addServer("datacenter2", "localhost", 2271, 20)
@@ -200,7 +199,7 @@ public final class BrainConfigureTest {
 				.confirmParent(BrainConfigureBuilder.class);
 	}
 
-	private BrainConfigureBuilder cache(final CacheConfigBuilder cacheConfigBuilder) throws Exception {
+	private BrainConfigureBuilder cache(final CacheConfigBuilder cacheConfigBuilder) {
 		Properties properties = PropertiesUtils.loadProperties("src/test/resources/authorization.xml");
 		if (!properties.isEmpty()) {
 			cacheConfigBuilder.providerName("JedisProvider")

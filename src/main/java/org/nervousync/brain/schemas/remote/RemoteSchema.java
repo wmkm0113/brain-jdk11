@@ -391,7 +391,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	@Override
 	public List<Map<String, Object>> query(@NotNull final TableDefine tableDefine,
 	                                       @NotNull final QueryInfo queryInfo) throws SQLException {
-		return this.parseResponse(this.operatorThreadLocal.get().query(queryInfo.toFormattedJson()));
+		return this.parseResponse(this.operatorThreadLocal.get().query(queryInfo.toString(StringUtils.StringType.JSON)));
 	}
 
 	@Override

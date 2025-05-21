@@ -159,7 +159,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 			try {
 				this.register(schemaConfig);
 			} catch (Exception e) {
-				LOGGER.error("Register_Schema_Config_Error", schemaConfig.toFormattedJson());
+				LOGGER.error("Register_Schema_Config_Error", schemaConfig.toString(StringUtils.StringType.JSON));
 				if (LOGGER.isDebugEnabled()) {
 					LOGGER.debug("Stack_Message_Error", e);
 				}
@@ -671,7 +671,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 		} else if (schemaConfig instanceof RemoteSchemaConfig) {
 			schema = new RemoteSchema((RemoteSchemaConfig) schemaConfig);
 		} else {
-			throw new MultilingualSQLException(0x00DB00000031L, schemaConfig.toFormattedJson());
+			throw new MultilingualSQLException(0x00DB00000031L, schemaConfig.toString(StringUtils.StringType.JSON));
 		}
 		this.registeredSchemas.put(schemaConfig.getSchemaName(), schema);
 		if (schemaConfig.isDefaultSchema()) {

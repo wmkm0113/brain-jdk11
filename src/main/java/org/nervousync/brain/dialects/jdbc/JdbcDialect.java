@@ -46,9 +46,7 @@ import org.nervousync.brain.query.data.QueryData;
 import org.nervousync.brain.query.data.RangesData;
 import org.nervousync.brain.query.filter.GroupBy;
 import org.nervousync.brain.query.filter.OrderBy;
-import org.nervousync.brain.query.item.ColumnItem;
-import org.nervousync.brain.query.item.FunctionItem;
-import org.nervousync.brain.query.item.QueryItem;
+import org.nervousync.brain.query.item.*;
 import org.nervousync.brain.query.join.JoinInfo;
 import org.nervousync.brain.query.join.QueryJoin;
 import org.nervousync.brain.query.param.AbstractParameter;
@@ -1198,7 +1196,7 @@ public abstract class JdbcDialect extends BaseDialect {
 		List<Object> values = new ArrayList<>();
 		StringBuilder itemBuilder = new StringBuilder();
 		for (AbstractItem abstractItem : queryInfo.getItemList()) {
-			Optional.of(this.queryItem(aliasMap, abstractItem, values))
+			Optional.of(this.queryItem(aliasMap, abstractItem, values, Boolean.FALSE))
 					.filter(StringUtils::notBlank)
 					.ifPresent(item -> {
 						if (itemBuilder.length() > 0) {
@@ -1394,7 +1392,7 @@ public abstract class JdbcDialect extends BaseDialect {
 						.append(joinInfo.getConnectionCode())
 						.append(BrainCommons.WHITE_SPACE);
 			}
-			columnBuilder.append(this.columnName(aliasMap, joinInfo.getLeftTable(), joinInfo.getLeftKey()))
+			columnBuilder.append(this.columnName(aliasMap, queryJoin.getLeftTable(), joinInfo.getLeftKey()))
 					.append(BrainCommons.OPERATOR_EQUAL)
 					.append(this.columnName(aliasMap, queryJoin.getRightTable(), joinInfo.getRightKey()));
 		}
@@ -1472,7 +1470,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	                        final List<Object> values) throws SQLException {
 		Map<String, String> subAliasMap = Map.of(queryData.getTableName(), "t_" + aliasMap.size());
 		StringBuilder sqlBuilder = new StringBuilder(SELECT_COMMAND)
-				.append(this.queryItem(subAliasMap, queryData.getQueryItem(), values))
+				.append(this.queryItem(subAliasMap, queryData.getQueryItem(), values, Boolean.FALSE))
 				.append(FROM_COMMAND)
 				.append(this.nameCase(queryData.getTableName()));
 		String whereClause = this.whereClause(subAliasMap, queryData.getConditions(), values);
@@ -1586,7 +1584,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
 	private String queryItem(final Map<String, String> aliasMap, final AbstractItem abstractItem,
-	                         final List<Object> values) throws SQLException {
+	                         final List<Object> values, final boolean calculateParam) throws SQLException {
 		StringBuilder sqlBuilder = new StringBuilder();
 		switch (abstractItem.getItemType()) {
 			case FUNCTION:
@@ -1626,6 +1624,57 @@ public abstract class JdbcDialect extends BaseDialect {
 							.append(BrainCommons.WHITE_SPACE);
 				}
 				break;
+			case CONSTANT:
+				ConstantItem constantItem = abstractItem.unwrap(ConstantItem.class);
+				if (calculateParam) {
+					sqlBuilder.append(constantItem.getConstantValue());
+				} else {
+					sqlBuilder.append("'").append(constantItem.getConstantValue()).append("'");
+				}
+				if (StringUtils.notBlank(abstractItem.getAliasName())) {
+					sqlBuilder.append(this.aliasCommand())
+							.append(BrainCommons.WHITE_SPACE)
+							.append(abstractItem.getAliasName());
+				}
+				break;
+			case CALCULATE:
+				CalculateItem calculateItem = abstractItem.unwrap(CalculateItem.class);
+				final String operator;
+				switch (calculateItem.getCalculateCode()) {
+					case ADD:
+						operator = " + ";
+						break;
+					case SUBTRACT:
+						operator = " - ";
+						break;
+					case MULTIPLY:
+						operator = " * ";
+						break;
+					case DIVIDE:
+						operator = " / ";
+						break;
+					case REMAINDER:
+						operator = " % ";
+						break;
+					case AND:
+						operator = " & ";
+						break;
+					case OR:
+						operator = " | ";
+						break;
+					case XOR:
+						operator = " ^ ";
+						break;
+					default:
+						throw new MultilingualSQLException(-1L);
+				}
+				for (AbstractItem paramItem : calculateItem.getCalculateItems()) {
+					if (sqlBuilder.length() > 0) {
+						sqlBuilder.append(operator);
+					}
+					sqlBuilder.append(this.queryItem(aliasMap, paramItem, values, Boolean.TRUE));
+				}
+				break;
 			default:
 				throw new MultilingualSQLException(0x00DB00000016L, abstractItem.getItemType());
 		}
@@ -1640,7 +1689,7 @@ public abstract class JdbcDialect extends BaseDialect {
 		switch (abstractParameter.getItemType()) {
 			case COLUMN:
 				ColumnItem columnItem = abstractParameter.unwrap(ColumnParameter.class).getItemValue();
-				sqlBuilder.append(this.queryItem(aliasMap, columnItem, values));
+				sqlBuilder.append(this.queryItem(aliasMap, columnItem, values, Boolean.FALSE));
 				break;
 			case ARRAY:
 				ArrayData arrayData = abstractParameter.unwrap(ArraysParameter.class).getItemValue();
@@ -1684,7 +1733,7 @@ public abstract class JdbcDialect extends BaseDialect {
 				break;
 			case FUNCTION:
 				FunctionItem functionItem = abstractParameter.unwrap(FunctionParameter.class).getItemValue();
-				sqlBuilder.append(this.queryItem(aliasMap, functionItem, values));
+				sqlBuilder.append(this.queryItem(aliasMap, functionItem, values, Boolean.FALSE));
 				break;
 		}
 		return sqlBuilder.toString();

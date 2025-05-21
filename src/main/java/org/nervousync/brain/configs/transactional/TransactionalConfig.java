@@ -21,7 +21,6 @@ import org.intellij.lang.annotations.MagicConstant;
 import org.nervousync.utils.ClassUtils;
 import org.nervousync.utils.IDUtils;
 
-import java.io.Serializable;
 import java.sql.Connection;
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -33,12 +32,7 @@ import java.util.stream.Stream;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Mar 30, 2016 16:07:44 $
  */
-public final class TransactionalConfig implements Serializable {
-    /**
-     * <span class="en-US">Serial version UID</span>
-     * <span class="zh-CN">序列化UID</span>
-     */
-    private static final long serialVersionUID = 5195470765056859725L;
+public final class TransactionalConfig {
     /**
      * <span class="en-US">Transactional identify code</span>
      * <span class="zh-CN">事务识别代码</span>

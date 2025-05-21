@@ -30,6 +30,7 @@ import org.nervousync.brain.query.data.QueryData;
 import org.nervousync.brain.query.filter.GroupBy;
 import org.nervousync.brain.query.filter.OrderBy;
 import org.nervousync.brain.query.item.ColumnItem;
+import org.nervousync.brain.query.item.ConstantItem;
 import org.nervousync.brain.query.join.JoinInfo;
 import org.nervousync.brain.query.join.QueryJoin;
 import org.nervousync.brain.query.param.AbstractParameter;
@@ -37,7 +38,9 @@ import org.nervousync.brain.source.BrainDataSource;
 import org.nervousync.builder.Builder;
 import org.nervousync.commons.Globals;
 import org.nervousync.enumerations.core.ConnectionCode;
+import org.nervousync.exceptions.builder.BuilderException;
 import org.nervousync.utils.ObjectUtils;
+import org.nervousync.utils.StringUtils;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -116,8 +119,13 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	 *                  <span class="zh-CN">数据表名</span>
 	 * @param aliasName <span class="en-US">Data table alias name</span>
 	 *                  <span class="zh-CN">数据表别名</span>
+	 * @throws SQLException <span class="en-US">If the query table name is null or empty string</span>
+	 *                      <span class="zh-CN">如果查询表名为空字符串</span>
 	 */
-	private BrainQueryBuilder(final String tableName, final String aliasName) {
+	private BrainQueryBuilder(@Nonnull final String tableName, final String aliasName) throws SQLException {
+		if (StringUtils.isEmpty(tableName)) {
+			throw new MultilingualSQLException(0x00DB00000034L);
+		}
 		this.tableName = tableName;
 		this.aliasName = aliasName;
 		this.queryJoins = new ArrayList<>();
@@ -136,8 +144,10 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	 *                  <span class="zh-CN">数据表名</span>
 	 * @return <span class="en-US">Query builder instance object</span>
 	 * <span class="zh-CN">查询构建器实例对象</span>
+	 * @throws SQLException <span class="en-US">If the query table name is null or empty string</span>
+	 *                      <span class="zh-CN">如果查询表名为空字符串</span>
 	 */
-	public static BrainQueryBuilder newBuilder(final String tableName) {
+	public static BrainQueryBuilder newBuilder(@Nonnull final String tableName) throws SQLException {
 		return newBuilder(tableName, Globals.DEFAULT_VALUE_STRING);
 	}
 
@@ -151,56 +161,97 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	 *                  <span class="zh-CN">数据表别名</span>
 	 * @return <span class="en-US">Query builder instance object</span>
 	 * <span class="zh-CN">查询构建器实例对象</span>
+	 * @throws SQLException <span class="en-US">If the query table name is null or empty string</span>
+	 *                      <span class="zh-CN">如果查询表名为空字符串</span>
 	 */
-	public static BrainQueryBuilder newBuilder(final String tableName, final String aliasName) {
+	public static BrainQueryBuilder newBuilder(@Nonnull final String tableName, final String aliasName)
+			throws SQLException {
 		return new BrainQueryBuilder(tableName, aliasName);
 	}
 
 	/**
-	 * <h3 class="en-US">Add data table join information</h3>
-	 * <h3 class="zh-CN">添加数据表关联信息</h3>
+	 * <h3 class="en-US">Check if the given data table name is included in the current query</h3>
+	 * <h3 class="zh-CN">检查给定的数据表名是否包含在当前查询中</h3>
 	 *
-	 * @param joinType    <span class="en-US">Join type</span>
-	 *                    <span class="zh-CN">关联类型</span>
-	 * @param joinTable   <span class="en-US">Join table name</span>
-	 *                    <span class="zh-CN">关联数据表名</span>
-	 * @param joinInfos   <span class="en-US">Join column information list</span>
-	 *                    <span class="zh-CN">关联列信息列表</span>
+	 * @param tableName <span class="en-US">Data table name</span>
+	 *                  <span class="zh-CN">数据表名</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
+	 */
+	public boolean containsTable(@Nonnull final String tableName) {
+		return this.tableName.equalsIgnoreCase(tableName)
+				|| this.queryJoins.stream().anyMatch(queryJoin -> queryJoin.getRightTable().equalsIgnoreCase(tableName));
+	}
+
+	/**
+	 * <h3 class="en-US">Add data table join information (Default type: inner join)</h3>
+	 * <h3 class="zh-CN">添加数据表关联信息（默认为内连接）</h3>
+	 *
+	 * @param leftTable <span class="en-US">Left table name</span>
+	 *                  <span class="zh-CN">左表名</span>
+	 * @param joinTable <span class="en-US">Join table name</span>
+	 *                  <span class="zh-CN">关联数据表名</span>
+	 * @param joinInfos <span class="en-US">Join column information list</span>
+	 *                  <span class="zh-CN">关联列信息列表</span>
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 * @throws SQLException <span class="en-US">If the query join information already exists</span>
 	 *                      <span class="zh-CN">如果关联信息已存在</span>
 	 */
-	public BrainQueryBuilder joinTable(final JoinType joinType, final String joinTable, final List<JoinInfo> joinInfos)
-			throws SQLException {
-		return this.joinTable(joinType, joinTable, Globals.DEFAULT_VALUE_STRING, joinInfos);
+	public BrainQueryBuilder joinTable(@Nonnull final String leftTable, final String joinTable,
+	                                   final List<JoinInfo> joinInfos) throws SQLException {
+		return this.joinTable(leftTable, JoinType.INNER, joinTable, joinInfos);
 	}
 
 	/**
 	 * <h3 class="en-US">Add data table join information</h3>
 	 * <h3 class="zh-CN">添加数据表关联信息</h3>
 	 *
-	 * @param joinType    <span class="en-US">Join type</span>
-	 *                    <span class="zh-CN">关联类型</span>
-	 * @param joinTable   <span class="en-US">Join table name</span>
-	 *                    <span class="zh-CN">关联数据表名</span>
-	 * @param aliasName   <span class="en-US">Join table alias name</span>
-	 *                    <span class="zh-CN">关联数据表别名</span>
-	 * @param joinInfos   <span class="en-US">Join column information list</span>
-	 *                    <span class="zh-CN">关联列信息列表</span>
+	 * @param leftTable <span class="en-US">Left table name</span>
+	 *                  <span class="zh-CN">左表名</span>
+	 * @param joinType  <span class="en-US">Join type</span>
+	 *                  <span class="zh-CN">关联类型</span>
+	 * @param joinTable <span class="en-US">Join table name</span>
+	 *                  <span class="zh-CN">关联数据表名</span>
+	 * @param joinInfos <span class="en-US">Join column information list</span>
+	 *                  <span class="zh-CN">关联列信息列表</span>
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 * @throws SQLException <span class="en-US">If the query join information already exists</span>
 	 *                      <span class="zh-CN">如果关联信息已存在</span>
 	 */
-	public BrainQueryBuilder joinTable(final JoinType joinType, final String joinTable, final String aliasName,
-	                                   final List<JoinInfo> joinInfos)
+	public BrainQueryBuilder joinTable(@Nonnull final String leftTable, final JoinType joinType, final String joinTable,
+	                                   final List<JoinInfo> joinInfos) throws SQLException {
+		return this.joinTable(leftTable, joinType, joinTable, Globals.DEFAULT_VALUE_STRING, joinInfos);
+	}
+
+	/**
+	 * <h3 class="en-US">Add data table join information</h3>
+	 * <h3 class="zh-CN">添加数据表关联信息</h3>
+	 *
+	 * @param leftTable <span class="en-US">Left table name</span>
+	 *                  <span class="zh-CN">左表名</span>
+	 * @param joinType  <span class="en-US">Join type</span>
+	 *                  <span class="zh-CN">关联类型</span>
+	 * @param joinTable <span class="en-US">Join table name</span>
+	 *                  <span class="zh-CN">关联数据表名</span>
+	 * @param aliasName <span class="en-US">Join table alias name</span>
+	 *                  <span class="zh-CN">关联数据表别名</span>
+	 * @param joinInfos <span class="en-US">Join column information list</span>
+	 *                  <span class="zh-CN">关联列信息列表</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 * @throws SQLException <span class="en-US">If the query join information already exists</span>
+	 *                      <span class="zh-CN">如果关联信息已存在</span>
+	 */
+	public BrainQueryBuilder joinTable(@Nonnull final String leftTable, final JoinType joinType, final String joinTable,
+	                                   final String aliasName, final List<JoinInfo> joinInfos)
 			throws SQLException {
 		if (this.queryJoins.stream().anyMatch(queryJoin ->
 				ObjectUtils.nullSafeEquals(queryJoin.getRightTable(), joinTable))) {
 			throw new MultilingualSQLException(0x00DB00010014L, joinTable);
 		}
-		this.queryJoins.add(new QueryJoin(joinTable, aliasName, joinType, joinInfos));
+		this.queryJoins.add(new QueryJoin(leftTable, joinTable, aliasName, joinType, joinInfos));
 		return this;
 	}
 
@@ -217,8 +268,8 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public BrainQueryBuilder queryColumn(final String tableName, final String columnName) throws SQLException {
-		return this.queryColumn(tableName, columnName, Boolean.FALSE);
+	public BrainQueryBuilder columnItem(final String tableName, final String columnName) throws SQLException {
+		return this.columnItem(tableName, columnName, Boolean.FALSE);
 	}
 
 	/**
@@ -236,9 +287,9 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public BrainQueryBuilder queryColumn(final String tableName, final String columnName, final String aliasName)
+	public BrainQueryBuilder columnItem(final String tableName, final String columnName, final String aliasName)
 			throws SQLException {
-		return this.queryColumn(tableName, columnName, aliasName, Globals.DEFAULT_VALUE_INT);
+		return this.columnItem(tableName, columnName, aliasName, Globals.DEFAULT_VALUE_INT);
 	}
 
 	/**
@@ -258,9 +309,9 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public BrainQueryBuilder queryColumn(final String tableName, final String columnName,
-	                                     final String aliasName, final int sortCode) throws SQLException {
-		return this.queryColumn(tableName, columnName, Boolean.FALSE, aliasName, sortCode);
+	public BrainQueryBuilder columnItem(final String tableName, final String columnName,
+	                                    final String aliasName, final int sortCode) throws SQLException {
+		return this.columnItem(tableName, columnName, Boolean.FALSE, aliasName, sortCode);
 	}
 
 	/**
@@ -278,9 +329,9 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public BrainQueryBuilder queryColumn(final String tableName, final String columnName, final boolean distinct)
+	public BrainQueryBuilder columnItem(final String tableName, final String columnName, final boolean distinct)
 			throws SQLException {
-		return this.queryColumn(tableName, columnName, distinct, Globals.DEFAULT_VALUE_INT);
+		return this.columnItem(tableName, columnName, distinct, Globals.DEFAULT_VALUE_INT);
 	}
 
 	/**
@@ -300,9 +351,9 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public BrainQueryBuilder queryColumn(final String tableName, final String columnName,
-	                                     final boolean distinct, final int sortCode) throws SQLException {
-		return this.queryColumn(tableName, columnName, distinct, Globals.DEFAULT_VALUE_STRING, sortCode);
+	public BrainQueryBuilder columnItem(final String tableName, final String columnName,
+	                                    final boolean distinct, final int sortCode) throws SQLException {
+		return this.columnItem(tableName, columnName, distinct, Globals.DEFAULT_VALUE_STRING, sortCode);
 	}
 
 	/**
@@ -324,8 +375,8 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public BrainQueryBuilder queryColumn(final String tableName, final String columnName,
-	                                     final boolean distinct, final String aliasName, final int sortCode)
+	public BrainQueryBuilder columnItem(final String tableName, final String columnName,
+	                                    final boolean distinct, final String aliasName, final int sortCode)
 			throws SQLException {
 		for (AbstractItem item : this.itemList) {
 			if (ItemType.COLUMN.equals(item.getItemType())) {
@@ -337,6 +388,123 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 			}
 		}
 		this.itemList.add(AbstractItem.column(tableName, columnName, distinct, aliasName, sortCode));
+		return this;
+	}
+
+	/**
+	 * <h3 class="en-US">Add query constant value</h3>
+	 * <h3 class="zh-CN">添加查询常量值</h3>
+	 *
+	 * @param constantValue <span class="en-US">Constant value</span>
+	 *                      <span class="zh-CN">常量值</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
+	 *                      <span class="zh-CN">如果查询数据列已存在</span>
+	 */
+	public BrainQueryBuilder constantItem(final String constantValue) throws SQLException {
+		return this.constantItem(constantValue, Globals.DEFAULT_VALUE_INT);
+	}
+
+	/**
+	 * <h3 class="en-US">Add query constant value</h3>
+	 * <h3 class="zh-CN">添加查询常量值</h3>
+	 *
+	 * @param constantValue <span class="en-US">Constant value</span>
+	 *                      <span class="zh-CN">常量值</span>
+	 * @param aliasName     <span class="en-US">Item alias name</span>
+	 *                      <span class="zh-CN">查询项别名</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
+	 *                      <span class="zh-CN">如果查询数据列已存在</span>
+	 */
+	public BrainQueryBuilder constantItem(final String constantValue, final String aliasName) throws SQLException {
+		return this.constantItem(constantValue, aliasName, Globals.DEFAULT_VALUE_INT);
+	}
+
+	/**
+	 * <h3 class="en-US">Add query constant value</h3>
+	 * <h3 class="zh-CN">添加查询常量值</h3>
+	 *
+	 * @param constantValue <span class="en-US">Constant value</span>
+	 *                      <span class="zh-CN">常量值</span>
+	 * @param sortCode      <span class="en-US">Sort code</span>
+	 *                      <span class="zh-CN">排序代码</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
+	 *                      <span class="zh-CN">如果查询数据列已存在</span>
+	 */
+	public BrainQueryBuilder constantItem(final String constantValue, final int sortCode) throws SQLException {
+		return this.constantItem(constantValue, Globals.DEFAULT_VALUE_STRING, sortCode);
+	}
+
+	/**
+	 * <h3 class="en-US">Add query constant value</h3>
+	 * <h3 class="zh-CN">添加查询常量值</h3>
+	 *
+	 * @param constantValue <span class="en-US">Constant value</span>
+	 *                      <span class="zh-CN">常量值</span>
+	 * @param aliasName     <span class="en-US">Item alias name</span>
+	 *                      <span class="zh-CN">查询项别名</span>
+	 * @param sortCode      <span class="en-US">Sort code</span>
+	 *                      <span class="zh-CN">排序代码</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
+	 *                      <span class="zh-CN">如果查询数据列已存在</span>
+	 */
+	public BrainQueryBuilder constantItem(final String constantValue, final String aliasName, final int sortCode)
+			throws SQLException {
+		for (AbstractItem item : this.itemList) {
+			if (ItemType.CONSTANT.equals(item.getItemType())) {
+				ConstantItem constantItem = item.unwrap(ConstantItem.class);
+				if (ObjectUtils.nullSafeEquals(constantItem.getConstantValue(), constantValue)) {
+					throw new MultilingualSQLException(-1L, constantValue);
+				}
+			}
+		}
+		this.itemList.add(AbstractItem.constant(constantValue, aliasName, sortCode));
+		return this;
+	}
+
+	/**
+	 * <h3 class="en-US">Add sub-query information</h3>
+	 * <h3 class="zh-CN">添加子查询</h3>
+	 *
+	 * @param aliasName <span class="en-US">Item alias name</span>
+	 *                  <span class="zh-CN">查询项别名</span>
+	 * @param sortCode  <span class="en-US">Sort code</span>
+	 *                  <span class="zh-CN">排序代码</span>
+	 * @param queryData <span class="en-US">Sub-query information</span>
+	 *                  <span class="zh-CN">子查询信息</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder queryItem(final String aliasName, final int sortCode, final QueryData queryData) {
+		this.itemList.add(AbstractItem.query(aliasName, sortCode, queryData));
+		return this;
+	}
+
+	/**
+	 * <h3 class="en-US">Add function query information</h3>
+	 * <h3 class="zh-CN">添加函数查询</h3>
+	 *
+	 * @param aliasName      <span class="en-US">Item alias name</span>
+	 *                       <span class="zh-CN">查询项别名</span>
+	 * @param sortCode       <span class="en-US">Sort code</span>
+	 *                       <span class="zh-CN">排序代码</span>
+	 * @param sqlFunction    <span class="en-US">Function name</span>
+	 *                       <span class="zh-CN">函数名</span>
+	 * @param functionParams <span class="en-US">Function arguments array</span>
+	 *                       <span class="zh-CN">函数参数数组</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainQueryBuilder functionItem(final String aliasName, final int sortCode, final String sqlFunction,
+	                                      final AbstractParameter<?>... functionParams) {
+		this.itemList.add(AbstractItem.function(aliasName, sortCode, sqlFunction, functionParams));
 		return this;
 	}
 
@@ -5358,36 +5526,35 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	}
 
 	/**
-	 * <h3 class="en-US">Fill query data column information</h3>
+	 * <h3 class="en-US">Fill query item information</h3>
 	 * <h3 class="zh-CN">填充查询数据列信息</h3>
 	 *
 	 * @throws SQLException <span class="en-US">If the query data column already exists</span>
 	 *                      <span class="zh-CN">如果查询数据列已存在</span>
 	 */
-	public void itemList() throws SQLException {
-		if (this.itemListIsEmpty()) {
+	private void fillEmptyItems() throws SQLException {
+		if (this.itemList.isEmpty()) {
 			BrainDataSource dataSource = BrainDataSource.getInstance();
 			if (dataSource.isInitialized()) {
 				for (String columnName : dataSource.queryColumns(this.tableName)) {
-					this.queryColumn(this.tableName, columnName);
+					this.columnItem(this.tableName, columnName);
+				}
+				for (QueryJoin queryJoin : this.queryJoins) {
+					for (String columnName : dataSource.queryColumns(queryJoin.getRightTable())) {
+						this.columnItem(queryJoin.getRightTable(), columnName);
+					}
 				}
 			}
 		}
 	}
 
-	/**
-	 * <h3 class="en-US">Check if the current query item list is empty</h3>
-	 * <h3 class="zh-CN">检查当前的查询项目列表是否为空</h3>
-	 *
-	 * @return <span class="en-US">Check result</span>
-	 * <span class="zh-CN">检查结果</span>
-	 */
-	public boolean itemListIsEmpty() {
-		return this.itemList.isEmpty();
-	}
-
 	@Override
-	public QueryInfo confirm() {
+	public QueryInfo confirm() throws BuilderException {
+		try {
+			this.fillEmptyItems();
+		} catch (SQLException e) {
+			throw new BuilderException(0x00DB00000042L, e);
+		}
 		QueryInfo queryInfo = new QueryInfo();
 		queryInfo.setTableName(this.tableName);
 		queryInfo.setAliasName(this.aliasName);

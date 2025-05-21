@@ -31,6 +31,7 @@ import org.nervousync.brain.query.core.AbstractItem;
 @XmlRootElement(name = "column_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
 public final class ColumnItem extends AbstractItem {
+
 	/**
 	 * <span class="en-US">Serial version UID</span>
 	 * <span class="zh-CN">序列化UID</span>

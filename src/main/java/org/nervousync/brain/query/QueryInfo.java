@@ -26,9 +26,7 @@ import org.nervousync.brain.query.core.AbstractItem;
 import org.nervousync.brain.query.core.SortedItem;
 import org.nervousync.brain.query.filter.GroupBy;
 import org.nervousync.brain.query.filter.OrderBy;
-import org.nervousync.brain.query.item.ColumnItem;
-import org.nervousync.brain.query.item.FunctionItem;
-import org.nervousync.brain.query.item.QueryItem;
+import org.nervousync.brain.query.item.*;
 import org.nervousync.brain.query.join.QueryJoin;
 import org.nervousync.commons.Globals;
 
@@ -77,7 +75,9 @@ public final class QueryInfo extends BeanObject {
 	 * <span class="zh-CN">查询项目实例对象列表</span>
 	 */
 	@XmlElements({
+			@XmlElement(name = "calculate_item", type = CalculateItem.class),
 			@XmlElement(name = "column_item", type = ColumnItem.class),
+			@XmlElement(name = "constant_item", type = ConstantItem.class),
 			@XmlElement(name = "function_item", type = FunctionItem.class),
 			@XmlElement(name = "query_item", type = QueryItem.class)
 	})

@@ -1,7 +1,7 @@
 # 資料庫通用介面
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.nervousync/brain-jdk11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.nervousync/brain-jdk11/)
-[![License](https://img.shields.io/github/license/wmkm0113/brain-jdk11.svg)](https://github.com/wmkm0113/brain-jdk11/blob/master/LICENSE)
+[![Maven Central](https://img.shields.io/maven-central/v/org.nervousync/brain-jdk11?color=green)](https://mvnrepository.com/artifact/org.nervousync/brain-jdk11)
+[![License](https://img.shields.io/github/license/wmkm0113/brain-jdk11)](https://github.com/wmkm0113/brain-jdk11/blob/mainline/LICENSE)
 ![Language](https://img.shields.io/badge/language-Java-green)
 [![Twitter:wmkm0113](https://img.shields.io/twitter/follow/wmkm0113?label=Follow)](https://twitter.com/wmkm0113)
 
@@ -24,6 +24,7 @@
     + [操作資料來源](#4操作資料來源)
     + [進階配置](#5進階配置)
 * [貢獻與回饋](#貢獻與回饋)
+* [捐款](#捐款)
 * [贊助與鳴謝](#贊助與鳴謝)
 
 ## JDK版本：
@@ -447,6 +448,13 @@ Throws: Exception if an error occurred during execution
 如果您需要添加的是定制化的特殊需求，我將收取一定的定制開發費用，具體費用金額根據定制化的特殊需求的工作量進行評估。   
 定制化特殊需求請直接發送電子郵件到[wmkm0113\@gmail.com](mailto:wmkm0113@gmail.com?subject=payment_features)
 ，同時請儘量在郵件中寫明您可以負擔的開發費用預算金額。
+
+## 捐款
+為了支持此項目，您可以向以下地址捐款：
+
+* 比特幣地址：bc1q0n05a5r7vyph40lv0kshxscxwptr3z4pwpq5nd
+* 以太坊地址：0xeA448C14f65657Fce8020955807345ae5Fb0722B
+* Solana 地址：CiBFDVETZLFGUYTN6izbofCZ7oVAdghoMDpFgaUyetPf
 
 ## 贊助與鳴謝
 

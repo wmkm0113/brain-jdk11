@@ -545,6 +545,7 @@
                                 <xsd:enumeration value="COLUMN"/>
                                 <xsd:enumeration value="FUNCTION"/>
                                 <xsd:enumeration value="QUERY"/>
+                                <xsd:enumeration value="CONSTANT"/>
                             </xsd:restriction>
                         </xsd:simpleType>
                     </xsd:element>
@@ -552,6 +553,39 @@
                         <xsd:annotation>
                             <xsd:documentation>Item alias name</xsd:documentation>
                         </xsd:annotation>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="calculate_item">
+        <xsd:complexContent>
+            <xsd:extension base="abstract_item">
+                <xsd:sequence>
+                    <xsd:element name="calculate_code">
+                        <xsd:annotation>
+                            <xsd:documentation>Enumeration value of calculate code</xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:simpleType>
+                            <xsd:restriction base="xsd:string">
+                                <xsd:enumeration value="ADD" />
+                                <xsd:enumeration value="SUBTRACT" />
+                                <xsd:enumeration value="MULTIPLY" />
+                                <xsd:enumeration value="DIVIDE" />
+                                <xsd:enumeration value="REMAINDER" />
+                                <xsd:enumeration value="AND" />
+                                <xsd:enumeration value="OR" />
+                                <xsd:enumeration value="XOR" />
+                            </xsd:restriction>
+                        </xsd:simpleType>
+                    </xsd:element>
+                    <xsd:element name="calculate_item_list">
+                        <xsd:annotation>
+                            <xsd:documentation>List of query items participating in the calculation</xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:complexType>
+                            <xsd:group ref="calculate_item_group" minOccurs="2" maxOccurs="unbounded" />
+                        </xsd:complexType>
                     </xsd:element>
                 </xsd:sequence>
             </xsd:extension>
@@ -584,7 +618,7 @@
         <xsd:complexContent>
             <xsd:extension base="abstract_item">
                 <xsd:sequence>
-                    <xsd:element name="function_name">
+                    <xsd:element name="function_name" type="xsd:string" minOccurs="0">
                         <xsd:annotation>
                             <xsd:documentation>Function name</xsd:documentation>
                         </xsd:annotation>
@@ -613,11 +647,33 @@
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
+    <xsd:complexType name="constant_item">
+        <xsd:complexContent>
+            <xsd:extension base="abstract_item">
+                <xsd:sequence>
+                    <xsd:annotation>
+                        <xsd:documentation>Constant value information</xsd:documentation>
+                    </xsd:annotation>
+                    <xsd:element name="constant_value" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
     <xsd:group name="item_group">
         <xsd:choice>
-            <xsd:element name="column_item" type="column_item"/>
-            <xsd:element name="function_item" type="function_item"/>
-            <xsd:element name="query_item" type="query_item"/>
+            <xsd:element name="column_item" type="column_item" />
+            <xsd:element name="function_item" type="function_item" />
+            <xsd:element name="query_item" type="query_item" />
+            <xsd:element name="constant_item" type="constant_item" />
+            <xsd:element name="calculate_item" type="calculate_item" />
+        </xsd:choice>
+    </xsd:group>
+    <xsd:group name="calculate_item_group">
+        <xsd:choice>
+            <xsd:element name="column_item" type="column_item" />
+            <xsd:element name="function_item" type="function_item" />
+            <xsd:element name="constant_item" type="constant_item" />
+            <xsd:element name="calculate_item" type="calculate_item" />
         </xsd:choice>
     </xsd:group>
     <xsd:complexType name="abstract_parameter" abstract="true">
@@ -801,14 +857,14 @@
                     </xsd:restriction>
                 </xsd:simpleType>
             </xsd:element>
-            <xsd:element name="join_key" type="xsd:string">
+            <xsd:element name="left_key" type="xsd:string">
                 <xsd:annotation>
-                    <xsd:documentation>Join column identify key</xsd:documentation>
+                    <xsd:documentation>Left table data column identify key</xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="reference_key" type="xsd:string">
+            <xsd:element name="right_key" type="xsd:string">
                 <xsd:annotation>
-                    <xsd:documentation>Reference column identify key</xsd:documentation>
+                    <xsd:documentation>Right table data column identify key</xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
         </xsd:sequence>
@@ -817,14 +873,14 @@
         <xsd:complexContent>
             <xsd:extension base="sorted_item">
                 <xsd:sequence>
-                    <xsd:element name="main_entity" type="xsd:string">
+                    <xsd:element name="left_table" type="xsd:string">
                         <xsd:annotation>
-                            <xsd:documentation>Main entity class name</xsd:documentation>
+                            <xsd:documentation>Left table identify name</xsd:documentation>
                         </xsd:annotation>
                     </xsd:element>
-                    <xsd:element name="join_entity" type="xsd:string">
+                    <xsd:element name="right_table" type="xsd:string">
                         <xsd:annotation>
-                            <xsd:documentation>Join entity class name</xsd:documentation>
+                            <xsd:documentation>Right table identify name</xsd:documentation>
                         </xsd:annotation>
                     </xsd:element>
                     <xsd:element name="join_type">

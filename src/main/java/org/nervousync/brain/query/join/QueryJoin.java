@@ -46,6 +46,12 @@ public final class QueryJoin extends SortedItem {
 	private static final long serialVersionUID = 8868119078098035574L;
 
 	/**
+	 * <span class="en-US">Left table name</span>
+	 * <span class="zh-CN">左表名</span>
+	 */
+	@XmlElement(name = "left_table")
+	private String leftTable;
+	/**
 	 * <span class="en-US">Right table name</span>
 	 * <span class="zh-CN">右表名</span>
 	 */
@@ -83,6 +89,8 @@ public final class QueryJoin extends SortedItem {
 	 * <h3 class="en-US">Private constructor method for query join information define</h3>
 	 * <h3 class="zh-CN">查询关联信息定义的私有构造方法</h3>
 	 *
+	 * @param leftTable <span class="en-US">Left table name</span>
+	 *                  <span class="zh-CN">左表名</span>
 	 * @param rightTable <span class="en-US">Right table name</span>
 	 *                   <span class="zh-CN">右表名</span>
 	 * @param aliasName  <span class="en-US">Join table alias name</span>
@@ -92,13 +100,35 @@ public final class QueryJoin extends SortedItem {
 	 * @param joinInfos  <span class="en-US">Join columns list</span>
 	 *                   <span class="zh-CN">关联列信息列表</span>
 	 */
-	public QueryJoin(@Nonnull final String rightTable, final String aliasName,
+	public QueryJoin(@Nonnull final String leftTable, @Nonnull final String rightTable, final String aliasName,
 	                 @Nonnull final JoinType joinType, @Nonnull final List<JoinInfo> joinInfos) {
 		this();
 		this.rightTable = rightTable;
 		this.aliasName = StringUtils.isEmpty(aliasName) ? Globals.DEFAULT_VALUE_STRING : aliasName;
 		this.joinType = joinType;
 		this.joinInfos.addAll(joinInfos);
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the left table name</h3>
+	 * <h3 class="zh-CN">左表名的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Driven table name</span>
+	 * <span class="zh-CN">左表名</span>
+	 */
+	public String getLeftTable() {
+		return this.leftTable;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the left table name</h3>
+	 * <h3 class="zh-CN">左表名的Setter方法</h3>
+	 *
+	 * @param leftTable <span class="en-US">Left table name</span>
+	 *                  <span class="zh-CN">左表名</span>
+	 */
+	public void setLeftTable(final String leftTable) {
+		this.leftTable = leftTable;
 	}
 
 	/**

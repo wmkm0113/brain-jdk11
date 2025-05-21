@@ -21,11 +21,10 @@ import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlSeeAlso;
 import jakarta.xml.bind.annotation.XmlTransient;
+import org.nervousync.brain.enumerations.query.CalculateCode;
 import org.nervousync.brain.enumerations.query.ItemType;
 import org.nervousync.brain.query.data.QueryData;
-import org.nervousync.brain.query.item.ColumnItem;
-import org.nervousync.brain.query.item.FunctionItem;
-import org.nervousync.brain.query.item.QueryItem;
+import org.nervousync.brain.query.item.*;
 import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.ClassUtils;
@@ -74,6 +73,88 @@ public abstract class AbstractItem extends SortedItem implements Wrapper {
 	 */
 	protected AbstractItem(final ItemType itemType) {
 		this.itemType = itemType;
+	}
+
+	/**
+	 * <h3 class="en-US">Static method for generate calculate item information instance</h3>
+	 * <h3 class="zh-CN">静态方法用于生成计算结果值对象实例</h3>
+	 *
+	 * @param calculateCode  <span class="en-US">Enumeration value of calculate code</span>
+	 *                       <span class="zh-CN">计算代码的枚举值</span>
+	 * @param calculateItems <span class="en-US">Array of query items participating in the calculation</span>
+	 *                       <span class="zh-CN">参与计算的查询项信息数组</span>
+	 * @return <span class="en-US">Generated object instance</span>
+	 * <span class="zh-CN">生成的对象实例</span>
+	 */
+	public static CalculateItem calculate(final CalculateCode calculateCode, final AbstractItem... calculateItems) {
+		CalculateItem calculateItem = new CalculateItem();
+		calculateItem.setCalculateCode(calculateCode);
+		calculateItem.setCalculateItems(Arrays.asList(calculateItems));
+		return calculateItem;
+	}
+
+	/**
+	 * <h3 class="en-US">Static method for generate constant information instance</h3>
+	 * <h3 class="zh-CN">静态方法用于生成常量值查询对象实例</h3>
+	 *
+	 * @param constantValue <span class="en-US">Constant value</span>
+	 *                      <span class="zh-CN">常量值</span>
+	 * @return <span class="en-US">Generated object instance</span>
+	 * <span class="zh-CN">生成的对象实例</span>
+	 */
+	public static ConstantItem constant(@Nonnull final String constantValue) {
+		return constant(constantValue, Globals.DEFAULT_VALUE_INT);
+	}
+
+	/**
+	 * <h3 class="en-US">Static method for generate constant information instance</h3>
+	 * <h3 class="zh-CN">静态方法用于生成常量值查询对象实例</h3>
+	 *
+	 * @param constantValue <span class="en-US">Constant value</span>
+	 *                      <span class="zh-CN">常量值</span>
+	 * @param sortCode      <span class="en-US">Sort code</span>
+	 *                      <span class="zh-CN">排序代码</span>
+	 * @return <span class="en-US">Generated object instance</span>
+	 * <span class="zh-CN">生成的对象实例</span>
+	 */
+	public static ConstantItem constant(@Nonnull final String constantValue, final int sortCode) {
+		return constant(constantValue, Globals.DEFAULT_VALUE_STRING, sortCode);
+	}
+
+	/**
+	 * <h3 class="en-US">Static method for generate constant information instance</h3>
+	 * <h3 class="zh-CN">静态方法用于生成常量值查询对象实例</h3>
+	 *
+	 * @param constantValue <span class="en-US">Constant value</span>
+	 *                      <span class="zh-CN">常量值</span>
+	 * @param aliasName     <span class="en-US">Item alias name</span>
+	 *                      <span class="zh-CN">查询项别名</span>
+	 * @return <span class="en-US">Generated object instance</span>
+	 * <span class="zh-CN">生成的对象实例</span>
+	 */
+	public static ConstantItem constant(@Nonnull final String constantValue, final String aliasName) {
+		return constant(constantValue, aliasName, Globals.DEFAULT_VALUE_INT);
+	}
+
+	/**
+	 * <h3 class="en-US">Static method for generate constant information instance</h3>
+	 * <h3 class="zh-CN">静态方法用于生成常量值查询对象实例</h3>
+	 *
+	 * @param constantValue <span class="en-US">Constant value</span>
+	 *                      <span class="zh-CN">常量值</span>
+	 * @param aliasName     <span class="en-US">Item alias name</span>
+	 *                      <span class="zh-CN">查询项别名</span>
+	 * @param sortCode      <span class="en-US">Sort code</span>
+	 *                      <span class="zh-CN">排序代码</span>
+	 * @return <span class="en-US">Generated object instance</span>
+	 * <span class="zh-CN">生成的对象实例</span>
+	 */
+	public static ConstantItem constant(@Nonnull final String constantValue, final String aliasName, final int sortCode) {
+		ConstantItem constantItem = new ConstantItem();
+		constantItem.setConstantValue(constantValue);
+		constantItem.setAliasName(aliasName);
+		constantItem.setSortCode(sortCode);
+		return constantItem;
 	}
 
 	/**
@@ -197,34 +278,6 @@ public abstract class AbstractItem extends SortedItem implements Wrapper {
 		queryFunction.setSortCode(sortCode);
 		queryFunction.setFunctionParams(Arrays.asList(functionParams));
 		return queryFunction;
-	}
-
-	/**
-	 * <h3 class="en-US">Static method for generate sub-query information instance</h3>
-	 * <h3 class="zh-CN">静态方法用于生成子查询对象实例</h3>
-	 *
-	 * @param queryData <span class="en-US">Sub-query information</span>
-	 *                  <span class="zh-CN">子查询信息</span>
-	 * @return <span class="en-US">Generated object instance</span>
-	 * <span class="zh-CN">生成的对象实例</span>
-	 */
-	public static QueryItem query(final QueryData queryData) {
-		return query(Globals.DEFAULT_VALUE_STRING, queryData);
-	}
-
-	/**
-	 * <h3 class="en-US">Static method for generate sub-query information instance</h3>
-	 * <h3 class="zh-CN">静态方法用于生成子查询对象实例</h3>
-	 *
-	 * @param aliasName <span class="en-US">Item alias name</span>
-	 *                  <span class="zh-CN">查询项别名</span>
-	 * @param queryData <span class="en-US">Sub-query information</span>
-	 *                  <span class="zh-CN">子查询信息</span>
-	 * @return <span class="en-US">Generated object instance</span>
-	 * <span class="zh-CN">生成的对象实例</span>
-	 */
-	public static QueryItem query(final String aliasName, final QueryData queryData) {
-		return query(aliasName, Globals.DEFAULT_VALUE_INT, queryData);
 	}
 
 	/**
