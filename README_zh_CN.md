@@ -1,6 +1,7 @@
 # 大脑数据源
 
 [![Maven Central](https://img.shields.io/maven-central/v/org.nervousync/brain-jdk11?color=green)](https://mvnrepository.com/artifact/org.nervousync/brain-jdk11)
+![Maven Snapshot](https://img.shields.io/nexus/s/org.nervousync/brain-jdk11?label=Snapshot&server=https://oss.sonatype.org)
 [![License](https://img.shields.io/github/license/wmkm0113/brain-jdk11)](https://github.com/wmkm0113/brain-jdk11/blob/mainline/LICENSE)
 ![Language](https://img.shields.io/badge/language-Java-green)
 [![Twitter:wmkm0113](https://img.shields.io/twitter/follow/wmkm0113?label=Follow)](https://twitter.com/wmkm0113)
