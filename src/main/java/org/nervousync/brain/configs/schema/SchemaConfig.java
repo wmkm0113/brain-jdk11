@@ -18,6 +18,7 @@
 package org.nervousync.brain.configs.schema;
 
 import jakarta.xml.bind.annotation.*;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.auth.Authentication;
@@ -30,17 +31,19 @@ import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
 import org.nervousync.brain.configs.secure.TrustStore;
 import org.nervousync.commons.Globals;
+import org.nervousync.utils.StringUtils;
 
 /**
  * <h2 class="en-US">Data source configuration information abstract class</h2>
  * <h2 class="zh-CN">数据源配置信息抽象类</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
- * @version $Revision : 1.0.0 $ $Date: Jul 12, 2020 16:15:09 $
+ * @version $Revision: 1.0.0 $ $Date: Jul 12, 2020 16:15:09 $
  */
 @XmlType(namespace = "https://nervousync.org/schemas/brain")
 @XmlSeeAlso({DistributeSchemaConfig.class, JdbcSchemaConfig.class, RemoteSchemaConfig.class})
 @XmlAccessorType(XmlAccessType.NONE)
+@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
 public abstract class SchemaConfig extends BeanObject {
 
 	/**
@@ -102,18 +105,6 @@ public abstract class SchemaConfig extends BeanObject {
 	 */
 	@XmlElement(name = "connect_timeout")
 	private int connectTimeout = Globals.DEFAULT_VALUE_INT;
-	/**
-	 * <span class="en-US">Data source support sharding</span>
-	 * <span class="zh-CN">数据源是否支持分片</span>
-	 */
-	@XmlElement
-	private boolean sharding = Boolean.FALSE;
-	/**
-	 * <span class="en-US">Default database sharding value</span>
-	 * <span class="zh-CN">默认数据库分片值</span>
-	 */
-	@XmlElement(name = "sharding_default")
-	private String shardingDefault = Globals.DEFAULT_VALUE_STRING;
 	/**
 	 * <span class="en-US">Data source allows connection pooling</span>
 	 * <span class="zh-CN">数据源允许连接池</span>
@@ -316,51 +307,7 @@ public abstract class SchemaConfig extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for data source support sharding</h3>
-	 * <h3 class="zh-CN">数据源是否支持分片的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Data source support sharding</span>
-	 * <span class="zh-CN">数据源是否支持分片</span>
-	 */
-	public boolean isSharding() {
-		return this.sharding;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for data source support sharding</h3>
-	 * <h3 class="zh-CN">数据源是否支持分片的Setter方法</h3>
-	 *
-	 * @param sharding <span class="en-US">Data source support sharding</span>
-	 *                 <span class="zh-CN">数据源是否支持分片</span>
-	 */
-	public void setSharding(final boolean sharding) {
-		this.sharding = sharding;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for default database sharding value</h3>
-	 * <h3 class="zh-CN">默认数据库分片值的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Default database sharding value</span>
-	 * <span class="zh-CN">默认数据库分片值</span>
-	 */
-	public String getShardingDefault() {
-		return this.shardingDefault;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for default database sharding value</h3>
-	 * <h3 class="zh-CN">默认数据库分片值的Setter方法</h3>
-	 *
-	 * @param shardingDefault <span class="en-US">Default database sharding value</span>
-	 *                        <span class="zh-CN">默认数据库分片值</span>
-	 */
-	public void setShardingDefault(final String shardingDefault) {
-		this.shardingDefault = shardingDefault;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for data source allows connection pooling</h3>
+	 * <h3 class="en-US">Getter method for the data source allows connection pooling</h3>
 	 * <h3 class="zh-CN">数据源允许连接池的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Data source allows connection pooling</span>
@@ -371,7 +318,7 @@ public abstract class SchemaConfig extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for data source allows connection pooling</h3>
+	 * <h3 class="en-US">Setter method for the data source allows connection pooling</h3>
 	 * <h3 class="zh-CN">数据源允许连接池的Setter方法</h3>
 	 *
 	 * @param pooled <span class="en-US">Data source allows connection pooling</span>

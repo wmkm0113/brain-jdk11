@@ -19,18 +19,18 @@ package org.nervousync.brain.defines;
 
 import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.dialects.core.BaseDialect;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.ObjectUtils;
+import org.nervousync.utils.StringUtils;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -42,7 +42,14 @@ import java.util.List;
  */
 @XmlType(name = "column_define", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "column_define", namespace = "https://nervousync.org/schemas/brain")
+@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
 public final class ColumnDefine extends BeanObject {
+
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = 2331213134511329133L;
 
 	/**
 	 * <span class="en-US">Data column name</span>
@@ -93,42 +100,11 @@ public final class ColumnDefine extends BeanObject {
 	@XmlElement(name = "primary_key")
 	private boolean primaryKey;
 	/**
-	 * <span class="en-US">Data column is lazy load</span>
-	 * <span class="zh-CN">数据列懒加载</span>
-	 */
-	@XmlElement(name = "lazy_load")
-	private boolean lazyLoad;
-	/**
-	 * <span class="en-US">Data column is optimistic version column</span>
-	 * <span class="zh-CN">数据列为乐观锁版本列</span>
-	 */
-	@XmlElement(name = "optimistic_version")
-	private boolean version;
-	/**
-	 * <span class="en-US">Column name histories</span>
-	 * <span class="zh-CN">历史列名</span>
-	 */
-	@XmlElement(name = "history_name")
-	@XmlElementWrapper(name = "name_histories")
-	private List<String> nameHistories = new ArrayList<>();
-	/**
 	 * <span class="en-US">Data column is unique</span>
 	 * <span class="zh-CN">数据列是否唯一约束</span>
 	 */
 	@XmlElement
 	private boolean unique;
-	/**
-	 * <span class="en-US">Data column can update</span>
-	 * <span class="zh-CN">数据列允许更新</span>
-	 */
-	@XmlElement
-	private boolean updatable;
-	/**
-	 * <span class="en-US">Column value generator configure</span>
-	 * <span class="zh-CN">数据生成器配置</span>
-	 */
-	@XmlElement(name = "generator_define", namespace = "https://nervousync.org/schemas/brain")
-	private GeneratorDefine generatorDefine;
 
 	/**
 	 * <h3 class="en-US">Constructor method for data column define</h3>
@@ -367,85 +343,6 @@ public final class ColumnDefine extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for data column is lazy load</h3>
-	 * <h3 class="zh-CN">数据列懒加载的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Data column is lazy load</span>
-	 * <span class="zh-CN">数据列懒加载</span>
-	 */
-	public boolean isLazyLoad() {
-		return this.lazyLoad;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for data column is lazy load</h3>
-	 * <h3 class="zh-CN">数据列懒加载的Setter方法</h3>
-	 *
-	 * @param lazyLoad <span class="en-US">Data column is lazy load</span>
-	 *                 <span class="zh-CN">数据列懒加载</span>
-	 */
-	public void setLazyLoad(final boolean lazyLoad) {
-		this.lazyLoad = lazyLoad;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for data column is optimistic version column</h3>
-	 * <h3 class="zh-CN">数据列为乐观锁版本列的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Data column is optimistic version column</span>
-	 * <span class="zh-CN">数据列为乐观锁版本列</span>
-	 */
-	public boolean isVersion() {
-		return this.version;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for data column is optimistic version column</h3>
-	 * <h3 class="zh-CN">数据列为乐观锁版本列的Setter方法</h3>
-	 *
-	 * @param version <span class="en-US">Data column is optimistic version column</span>
-	 *                <span class="zh-CN">数据列为乐观锁版本列</span>
-	 */
-	public void setVersion(final boolean version) {
-		this.version = version;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for column name histories</h3>
-	 * <h3 class="zh-CN">历史列名的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Column name histories</span>
-	 * <span class="zh-CN">历史列名</span>
-	 */
-	public List<String> getNameHistories() {
-		return this.nameHistories;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for column name histories</h3>
-	 * <h3 class="zh-CN">历史列名的Setter方法</h3>
-	 *
-	 * @param nameHistories <span class="en-US">Column name histories</span>
-	 *                      <span class="zh-CN">历史列名</span>
-	 */
-	public void setNameHistories(final List<String> nameHistories) {
-		this.nameHistories = nameHistories;
-	}
-
-	/**
-	 * <h3 class="en-US">Add column name history</h3>
-	 * <h3 class="zh-CN">添加历史列名</h3>
-	 *
-	 * @param columnName <span class="en-US">History column name</span>
-	 *                   <span class="zh-CN">历史列名</span>
-	 */
-	public void addNameHistory(final String columnName) {
-		if (!this.nameHistories.contains(columnName)) {
-			this.nameHistories.add(columnName);
-		}
-	}
-
-	/**
 	 * <h3 class="en-US">Getter method for data column is unique</h3>
 	 * <h3 class="zh-CN">数据列是否唯一约束的Getter方法</h3>
 	 *
@@ -465,50 +362,6 @@ public final class ColumnDefine extends BeanObject {
 	 */
 	public void setUnique(final boolean unique) {
 		this.unique = unique;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for data column can update</h3>
-	 * <h3 class="zh-CN">数据列允许更新的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Data column can update</span>
-	 * <span class="zh-CN">数据列允许更新</span>
-	 */
-	public boolean isUpdatable() {
-		return this.updatable;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for data column can update</h3>
-	 * <h3 class="zh-CN">数据列允许更新的Setter方法</h3>
-	 *
-	 * @param updatable <span class="en-US">Data column can update</span>
-	 *                  <span class="zh-CN">数据列允许更新</span>
-	 */
-	public void setUpdatable(final boolean updatable) {
-		this.updatable = updatable;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for column value generator configure</h3>
-	 * <h3 class="zh-CN">数据生成器配置的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Column value generator configure</span>
-	 * <span class="zh-CN">数据生成器配置</span>
-	 */
-	public GeneratorDefine getGeneratorDefine() {
-		return this.generatorDefine;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for column value generator configure</h3>
-	 * <h3 class="zh-CN">数据生成器配置的Setter方法</h3>
-	 *
-	 * @param generatorDefine <span class="en-US">Column value generator configure</span>
-	 *                        <span class="zh-CN">数据生成器配置</span>
-	 */
-	public void setGeneratorDefine(final GeneratorDefine generatorDefine) {
-		this.generatorDefine = generatorDefine;
 	}
 
 	/**

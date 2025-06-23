@@ -18,6 +18,7 @@
 package org.nervousync.brain.source;
 
 import jakarta.annotation.Nonnull;
+import jakarta.persistence.LockModeType;
 import org.nervousync.annotations.jmx.Monitor;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.commons.DataUtils;
@@ -28,12 +29,14 @@ import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
 import org.nervousync.brain.configs.storage.StorageConfig;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
-import org.nervousync.brain.defines.ShardingDefine;
+import org.nervousync.brain.defines.InitOption;
+import org.nervousync.brain.defines.StrategyDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
+import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.schemas.BaseSchema;
@@ -55,7 +58,7 @@ import java.util.*;
  * <h2 class="zh-CN">Nervousync 大脑数据源</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
- * @version $Revision : 1.0.0 $ $Date: Nov 12, 2020 12:20:49 $
+ * @version $Revision: 1.0.0 $ $Date: Nov 12, 2020 12:20:49 $
  */
 @Monitor(domain = "org.nervousync", type = "DataSource", name = "Brain")
 public final class BrainDataSource implements BrainDataSourceMBean {
@@ -114,7 +117,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	private long lastModified = Globals.DEFAULT_VALUE_LONG;
 
 	/**
-	 * <h3 class="en-US">Default constructor method for data source</h3>
+	 * <h3 class="en-US">Default constructor method for the data source</h3>
 	 * <h3 class="zh-CN">数据源的默认构造方法</h3>
 	 */
 	BrainDataSource() {
@@ -240,18 +243,22 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <h3 class="en-US">Initialize data table</h3>
 	 * <h3 class="zh-CN">初始化数据表</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table defines information</span>
-	 *                    <span class="zh-CN">数据表定义信息</span>
-	 * @param database    <span class="en-US">Database sharding configuration information</span>
-	 *                    <span class="zh-CN">数据库分片配置信息</span>
-	 * @param table       <span class="en-US">Data table sharding configuration information</span>
-	 *                    <span class="zh-CN">数据表分片配置信息</span>
+	 * @param tableDefine      <span class="en-US">Table defines information</span>
+	 *                         <span class="zh-CN">数据表定义信息</span>
+	 * @param databaseStrategy <span class="en-US">Database strategy defines information</span>
+	 *                         <span class="zh-CN">数据库分片规则定义信息</span>
+	 * @param tableStrategy    <span class="en-US">Data table strategy defines information</span>
+	 *                         <span class="zh-CN">数据表分片规则定义信息</span>
+     * @param initOptionsMap   <span class="en-US">Data column initialize option</span>
+     *                         <span class="zh-CN">数据列初始化选项</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public void initTable(@Nonnull final TableDefine tableDefine, final ShardingDefine<?> database,
-	                      final ShardingDefine<?> table) throws Exception {
-		this.retrieveSchema(tableDefine.getSchemaName()).initTable(this.ddlType, tableDefine, database, table);
+	public void initTable(@Nonnull final TableDefine tableDefine,
+	                      final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy,
+	                      @Nonnull final Map<String, InitOption> initOptionsMap) throws Exception {
+		this.retrieveSchema(tableDefine.getSchemaName())
+				.initTable(this.ddlType, tableDefine, databaseStrategy, tableStrategy, initOptionsMap);
 		this.registeredTables.put(tableDefine.getTableName(), tableDefine);
 		this.identifyCodeMapping.put(BrainCommons.identifyCode(tableDefine.getTableName()), tableDefine.getTableName());
 	}
@@ -313,6 +320,38 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	}
 
 	/**
+	 * <h3 class="en-US">Checks whether two tables are in the same database, according to the given query conditions</h3>
+	 * <h3 class="zh-CN">根据给定的查询条件检查两个数据表是否在同一数据库中</h3>
+	 *
+	 * @param leftTable     <span class="en-US">Left table name</span>
+	 *                      <span class="zh-CN">左表名</span>
+	 * @param rightTable    <span class="en-US">Right table name</span>
+	 *                      <span class="zh-CN">右表名</span>
+	 * @param conditionList <span class="en-US">Query condition instance list</span>
+	 *                      <span class="zh-CN">查询条件实例对象列表</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
+	 * @throws SQLException <span class="en-US">The data source or data table is not registered</span>
+	 *                      <span class="zh-CN">数据源或数据表未注册</span>
+	 */
+	public boolean sameCatalog(@Nonnull final String leftTable, @Nonnull final String rightTable,
+	                           @Nonnull final List<Condition> conditionList)
+			throws SQLException {
+		TableDefine leftDefine = this.checkRegister(leftTable);
+		TableDefine rightDefine = this.checkRegister(rightTable);
+
+		if (!ObjectUtils.nullSafeEquals(leftDefine.getSchemaName(), rightDefine.getSchemaName())
+				|| !ObjectUtils.nullSafeEquals(leftDefine.getCatalog(), rightDefine.getCatalog())) {
+			return Boolean.FALSE;
+		}
+		return Optional.of(this.retrieveSchema(leftDefine.getSchemaName()))
+				.filter(schema -> schema instanceof JdbcSchema)
+				.map(schema -> (JdbcSchema) schema)
+				.map(jdbcSchema -> jdbcSchema.sameCatalog(leftTable, rightTable, conditionList))
+				.orElse(Boolean.TRUE);
+	}
+
+	/**
 	 * <h3 class="en-US">Truncate all data tables</h3>
 	 * <h3 class="zh-CN">清空所有数据表</h3>
 	 *
@@ -334,8 +373,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public void truncateTable(@Nonnull final String tableName)
-			throws Exception {
+	public void truncateTable(@Nonnull final String tableName) throws Exception {
 		TableDefine tableDefine = this.checkRegister(tableName);
 		this.retrieveSchema(tableDefine.getSchemaName()).truncateTable(tableDefine);
 	}
@@ -375,19 +413,21 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <h3 class="en-US">Execute lock record command</h3>
 	 * <h3 class="zh-CN">执行数据锁定命令</h3>
 	 *
-	 * @param tableName <span class="en-US">Data table name</span>
-	 *                  <span class="zh-CN">数据表名称</span>
-	 * @param filterMap <span class="en-US">Filter data mapping</span>
-	 *                  <span class="zh-CN">查询数据映射表</span>
+	 * @param tableName  <span class="en-US">Data table name</span>
+	 *                   <span class="zh-CN">数据表名称</span>
+	 * @param filterMap  <span class="en-US">Filter data mapping</span>
+	 *                   <span class="zh-CN">查询数据映射表</span>
+	 * @param lockOption <span class="en-US">Lock option</span>
+	 *                   <span class="zh-CN">数据锁选项</span>
 	 * @return <span class="en-US">Primary key value mapping table generated by database</span>
 	 * <span class="zh-CN">数据库生成的主键值映射表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public boolean lockRecord(@Nonnull final String tableName, @Nonnull final Map<String, Object> filterMap)
-			throws Exception {
+	public boolean lockRecord(@Nonnull final String tableName, @Nonnull final Map<String, Object> filterMap,
+	                          final LockModeType lockOption) throws Exception {
 		TableDefine tableDefine = this.checkRegister(tableName);
-		return this.retrieveSchema(tableDefine.getSchemaName()).lockRecord(tableDefine, filterMap);
+		return this.retrieveSchema(tableDefine.getSchemaName()).lockRecord(tableDefine, filterMap, lockOption);
 	}
 
 	/**
@@ -413,24 +453,26 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <h3 class="en-US">Execute retrieve record command</h3>
 	 * <h3 class="zh-CN">执行数据唯一检索命令</h3>
 	 *
-	 * @param tableName <span class="en-US">Data table name</span>
-	 *                  <span class="zh-CN">数据表名称</span>
-	 * @param columns   <span class="en-US">Query column names</span>
-	 *                  <span class="zh-CN">查询数据列名</span>
-	 * @param filterMap <span class="en-US">Retrieve filter mapping</span>
-	 *                  <span class="zh-CN">查询条件映射表</span>
-	 * @param forUpdate <span class="en-US">Retrieve result using for update record</span>
-	 *                  <span class="zh-CN">检索结果用于更新记录</span>
+	 * @param tableName  <span class="en-US">Data table name</span>
+	 *                   <span class="zh-CN">数据表名称</span>
+	 * @param columns    <span class="en-US">Query column names</span>
+	 *                   <span class="zh-CN">查询数据列名</span>
+	 * @param filterMap  <span class="en-US">Retrieve filter mapping</span>
+	 *                   <span class="zh-CN">查询条件映射表</span>
+	 * @param forUpdate  <span class="en-US">Retrieve result using for update record</span>
+	 *                   <span class="zh-CN">检索结果用于更新记录</span>
+	 * @param lockOption <span class="en-US">Lock option</span>
+	 *                   <span class="zh-CN">数据锁选项</span>
 	 * @return <span class="en-US">Data mapping table of retrieved records</span>
 	 * <span class="zh-CN">检索到记录的数据映射表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public Map<String, Object> retrieve(@Nonnull final String tableName, final String columns,
-	                                    @Nonnull final Map<String, Object> filterMap, final boolean forUpdate)
-			throws Exception {
+	                                    @Nonnull final Map<String, Object> filterMap, final boolean forUpdate,
+	                                    final LockModeType lockOption) throws Exception {
 		TableDefine tableDefine = this.checkRegister(tableName);
-		return this.retrieveSchema(tableDefine.getSchemaName()).retrieve(tableDefine, columns, filterMap, forUpdate);
+		return this.retrieveSchema(tableDefine.getSchemaName()).retrieve(tableDefine, columns, filterMap, forUpdate, lockOption);
 	}
 
 	/**
@@ -483,7 +525,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
-	public List<Map<String, Object>> query(@Nonnull final QueryInfo queryInfo) throws Exception {
+	public PartialCollection query(@Nonnull final QueryInfo queryInfo) throws Exception {
 		String tableName = this.identifyCodeMapping.get(BrainCommons.identifyCode(queryInfo.getTableName()));
 		if (StringUtils.isEmpty(tableName)) {
 			throw new MultilingualSQLException(0x00DB00000034L, queryInfo.getTableName());
@@ -502,15 +544,19 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <h3 class="en-US">Execute query commands for data updates</h3>
 	 * <h3 class="zh-CN">执行用于数据更新的查询命令</h3>
 	 *
-	 * @param queryInfo <span class="en-US">Query record information</span>
-	 *                  <span class="zh-CN">数据检索信息</span>
+	 * @param queryInfo  <span class="en-US">Query record information</span>
+	 *                   <span class="zh-CN">数据检索信息</span>
+	 * @param lockOption <span class="en-US">Lock option</span>
+	 *                   <span class="zh-CN">数据锁选项</span>
 	 * @return <span class="en-US">List of data mapping tables for queried records</span>
 	 * <span class="zh-CN">查询到记录的数据映射表列表</span>
 	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
-	public List<Map<String, Object>> queryForUpdate(@Nonnull final QueryInfo queryInfo) throws Exception {
-		return this.queryForUpdate(queryInfo.getTableName(), queryInfo.getConditionList());
+	public PartialCollection queryForUpdate(@Nonnull final QueryInfo queryInfo, final LockModeType lockOption)
+			throws Exception {
+		TableDefine tableDefine = this.checkRegister(queryInfo.getTableName());
+		return this.retrieveSchema(tableDefine.getSchemaName()).queryForUpdate(tableDefine, queryInfo, lockOption);
 	}
 
 	/**
@@ -521,16 +567,18 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                      <span class="zh-CN">数据表名称</span>
 	 * @param conditionList <span class="en-US">Query condition instance list</span>
 	 *                      <span class="zh-CN">查询条件实例对象列表</span>
+	 * @param lockOption    <span class="en-US">Lock option</span>
+	 *                      <span class="zh-CN">数据锁选项</span>
 	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
 	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public List<Map<String, Object>> queryForUpdate(@Nonnull final String tableName,
-	                                                final List<Condition> conditionList)
+	public PartialCollection queryForUpdate(@Nonnull final String tableName, final List<Condition> conditionList,
+	                                        final LockModeType lockOption)
 			throws Exception {
 		TableDefine tableDefine = this.checkRegister(tableName);
-		return this.retrieveSchema(tableDefine.getSchemaName()).queryForUpdate(tableDefine, conditionList);
+		return this.retrieveSchema(tableDefine.getSchemaName()).queryForUpdate(tableDefine, conditionList, lockOption);
 	}
 
 	/**
@@ -546,15 +594,12 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	private BaseSchema<?> retrieveSchema(final String schemaName) throws SQLException {
 		this.initialize();
-		BaseSchema<?> baseSchema = StringUtils.isEmpty(schemaName)
-				? this.registeredSchemas.get(this.defaultName)
-				: this.registeredSchemas.get(schemaName);
+		BaseSchema<?> baseSchema = null;
+		if (StringUtils.notBlank(schemaName) && this.registeredSchemas.containsKey(schemaName)) {
+			baseSchema = this.registeredSchemas.get(schemaName);
+		}
 		if (baseSchema == null) {
 			throw new MultilingualSQLException(0x00DB00000032L, schemaName);
-		}
-
-		if (!baseSchema.isInitialized()) {
-			baseSchema.initialize();
 		}
 		return baseSchema;
 	}
@@ -589,10 +634,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	public List<String> queryColumns(final String tableName) throws SQLException {
 		TableDefine tableDefine = this.checkRegister(tableName);
 		List<String> columnList = new ArrayList<>();
-		tableDefine.getColumnDefines()
-				.stream()
-				.filter(columnDefine -> !columnDefine.isLazyLoad())
-				.forEach(columnDefine -> columnList.add(columnDefine.getColumnName()));
+		tableDefine.getColumnDefines().forEach(columnDefine -> columnList.add(columnDefine.getColumnName()));
 		return columnList;
 	}
 
@@ -648,7 +690,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *
 	 * @param schemaConfig <span class="en-US">Data source configure information</span>
 	 *                     <span class="zh-CN">数据源配置信息</span>
-	 * @throws Exception <span class="en-US">Database server information not found or sharding configuration error</span>
+	 * @throws Exception <span class="en-US">Database server information hasn't found or sharding configuration error</span>
 	 *                   <span class="zh-CN">数据库服务器信息未找到或分片配置出错</span>
 	 */
 	private void register(@Nonnull final SchemaConfig schemaConfig) throws Exception {

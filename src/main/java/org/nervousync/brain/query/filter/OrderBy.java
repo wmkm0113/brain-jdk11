@@ -59,14 +59,14 @@ public final class OrderBy extends SortedItem {
 	private OrderType orderType;
 
 	/**
-	 * <h3 class="en-US">Constructor method for query order by column define</h3>
+	 * <h3 class="en-US">Constructor method for query order by column definition</h3>
 	 * <h3 class="zh-CN">查询排序列信息定义的构造方法</h3>
 	 */
 	public OrderBy() {
 	}
 
 	/**
-	 * <h3 class="en-US">Constructor method for query order by column define</h3>
+	 * <h3 class="en-US">Constructor method for query order by column definition</h3>
 	 * <h3 class="zh-CN">查询排序列信息定义的构造方法</h3>
 	 *
 	 * @param tableName  <span class="en-US">Data table name</span>
@@ -131,7 +131,7 @@ public final class OrderBy extends SortedItem {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for query order type</h3>
+	 * <h3 class="en-US">Getter method for the query order type</h3>
 	 * <h3 class="zh-CN">查询结果集排序类型的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Query order type</span>
@@ -142,7 +142,7 @@ public final class OrderBy extends SortedItem {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for query order type</h3>
+	 * <h3 class="en-US">Setter method for the query order type</h3>
 	 * <h3 class="zh-CN">查询结果集排序类型的Setter方法</h3>
 	 *
 	 * @param orderType <span class="en-US">Query order type</span>

@@ -54,7 +54,7 @@ public final class ConstantCondition extends Condition {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for match result</h3>
+	 * <h3 class="en-US">Getter method for the match result</h3>
 	 * <h3 class="zh-CN">匹配结果的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Match result</span>

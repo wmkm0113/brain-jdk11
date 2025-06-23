@@ -16,7 +16,7 @@
  */
 
 /**
- * <h2 class="en-US">Using for annotation the namespace of query define</h2>
+ * <h2 class="en-US">Using for the annotation namespace of the query defines</h2>
  * <h2 class="zh-CN">用于查询定义的命名空间声明</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>

@@ -17,12 +17,9 @@
 
 package org.nervousync.brain.dialects;
 
-import org.nervousync.brain.configs.auth.Authentication;
-import org.nervousync.brain.configs.secure.TrustStore;
 import org.nervousync.brain.enumerations.dialect.DialectType;
 
 import java.sql.Wrapper;
-import java.util.Properties;
 
 /**
  * <h2 class="en-US">Database dialect interface, used to load implementation classes in SPI mode</h2>
@@ -52,17 +49,4 @@ public interface Dialect extends Wrapper {
 	 * <span class="zh-CN">处理后的名称字符串</span>
 	 */
 	String nameCase(final String name);
-
-	/**
-	 * <h3 class="en-US">Generate parameter information required for connection</h3>
-	 * <h3 class="zh-CN">生成连接需要使用的参数信息</h3>
-	 *
-	 * @param trustStore     <span class="en-US">Trust certificate store configure information</span>
-	 *                       <span class="zh-CN">信任证书库配置信息</span>
-	 * @param authentication <span class="en-US">Authentication information</span>
-	 *                       <span class="zh-CN">身份认证信息</span>
-	 * @return <span class="en-US">Connect properties instance object</span>
-	 * <span class="zh-CN">连接属性值</span>
-	 */
-	Properties properties(final TrustStore trustStore, final Authentication authentication);
 }

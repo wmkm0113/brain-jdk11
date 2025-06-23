@@ -31,7 +31,7 @@ import java.util.List;
  * <h2 class="zh-CN">分布式数据源配置信息</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
- * @version $Revision : 1.0.0 $ $Date: Jul 12, 2020 16:55:07 $
+ * @version $Revision: 1.0.0 $ $Date: Jul 12, 2020 16:55:07 $
  */
 @XmlType(name = "distribute_schema", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "distribute_schema", namespace = "https://nervousync.org/schemas/brain")
@@ -172,7 +172,7 @@ public final class DistributeSchemaConfig extends SchemaConfig {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for maximum size of prepared statement</h3>
+	 * <h3 class="en-US">Getter method for maximum size of the prepared statement</h3>
 	 * <h3 class="zh-CN">查询分析器的最大缓存结果的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Maximum size of prepared statement</span>
@@ -183,7 +183,7 @@ public final class DistributeSchemaConfig extends SchemaConfig {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for maximum size of prepared statement</h3>
+	 * <h3 class="en-US">Setter method for maximum size of the prepared statement</h3>
 	 * <h3 class="zh-CN">查询分析器的最大缓存结果的Setter方法</h3>
 	 *
 	 * @param cachedLimitSize <span class="en-US">Maximum size of prepared statement</span>

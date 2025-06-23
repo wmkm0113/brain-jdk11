@@ -18,11 +18,11 @@
 package org.nervousync.brain.defines;
 
 import jakarta.annotation.Nonnull;
-import jakarta.persistence.LockModeType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.enumerations.dialect.DialectType;
@@ -33,7 +33,6 @@ import org.nervousync.utils.StringUtils;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * <h2 class="en-US">Data table define</h2>
@@ -44,6 +43,7 @@ import java.util.Optional;
  */
 @XmlType(name = "table_define", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "table_define", namespace = "https://nervousync.org/schemas/brain")
+@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
 public final class TableDefine extends BeanObject {
 
 	/**
@@ -56,6 +56,11 @@ public final class TableDefine extends BeanObject {
 	 * <span class="zh-CN">数据源方言类型枚举值</span>
 	 */
 	private DialectType dialectType = DialectType.Default;
+	/**
+	 * <span class="en-US">Database strategy name</span>
+	 * <span class="zh-CN">数据库分片名称</span>
+	 */
+	private String catalog = Globals.DEFAULT_VALUE_STRING;
 	/**
 	 * <span class="en-US">Data table name</span>
 	 * <span class="zh-CN">数据表名称</span>
@@ -76,12 +81,6 @@ public final class TableDefine extends BeanObject {
 	@XmlElement(name = "index_define", namespace = "https://nervousync.org/schemas/brain")
 	@XmlElementWrapper(name = "index_list")
 	private List<IndexDefine> indexDefines = new ArrayList<>();
-	/**
-	 * <span class="en-US">Lock option</span>
-	 * <span class="zh-CN">数据锁选项</span>
-	 */
-	@XmlElement(name = "lock_option")
-	private LockModeType lockOption = LockModeType.NONE;
 
 	/**
 	 * <h3 class="en-US">Constructor method for data table define</h3>
@@ -132,6 +131,28 @@ public final class TableDefine extends BeanObject {
 	 */
 	public void setDialectType(final DialectType dialectType) {
 		this.dialectType = dialectType;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for database strategy name</h3>
+	 * <h3 class="zh-CN">数据库分片名称的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Database strategy name</span>
+	 * <span class="zh-CN">数据库分片名称</span>
+	 */
+	public String getCatalog() {
+		return this.catalog;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for database strategy name</h3>
+	 * <h3 class="zh-CN">数据库分片名称的Setter方法</h3>
+	 *
+	 * @param catalog <span class="en-US">Database strategy name</span>
+	 *                <span class="zh-CN">数据库分片名称</span>
+	 */
+	public void setCatalog(final String catalog) {
+		this.catalog = catalog;
 	}
 
 	/**
@@ -198,46 +219,6 @@ public final class TableDefine extends BeanObject {
 	 */
 	public void setIndexDefines(final List<IndexDefine> indexDefines) {
 		this.indexDefines = indexDefines;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for lock option</h3>
-	 * <h3 class="zh-CN">数据锁选项的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Lock option</span>
-	 * <span class="zh-CN">数据锁选项</span>
-	 */
-	public LockModeType getLockOption() {
-		return this.lockOption;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for lock option</h3>
-	 * <h3 class="zh-CN">数据锁选项的Setter方法</h3>
-	 *
-	 * @param lockOption <span class="en-US">Lock option</span>
-	 *                   <span class="zh-CN">数据锁选项</span>
-	 */
-	public void setLockOption(final LockModeType lockOption) {
-		this.lockOption = lockOption;
-	}
-
-	/**
-	 * <h3 class="en-US">Get data generation definition</h3>
-	 * <h3 class="zh-CN">获取数据生成定义</h3>
-	 *
-	 * @param columnName <span class="en-US">Data column name</span>
-	 *                   <span class="zh-CN">数据列名</span>
-	 * @return <span class="en-US">Define information</span>
-	 * <span class="zh-CN">定义信息</span>
-	 */
-	public GeneratorDefine generatorDefine(final String columnName) {
-		if (StringUtils.isEmpty(columnName)) {
-			return null;
-		}
-		return Optional.ofNullable(this.column(columnName))
-				.map(ColumnDefine::getGeneratorDefine)
-				.orElse(null);
 	}
 
 	/**

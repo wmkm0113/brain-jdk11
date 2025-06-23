@@ -86,7 +86,7 @@ public final class ExportTask extends AbstractTask {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for query information list for data export tasks</h3>
+	 * <h3 class="en-US">Getter method for the query information list for data export tasks</h3>
 	 * <h3 class="zh-CN">数据导出任务的查询信息列表的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Query information list for data export tasks</span>
@@ -97,7 +97,7 @@ public final class ExportTask extends AbstractTask {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for query information list for data export tasks</h3>
+	 * <h3 class="en-US">Setter method for the query information list for data export tasks</h3>
 	 * <h3 class="zh-CN">数据导出任务的查询信息列表的Setter方法</h3>
 	 *
 	 * @param databaseQueryList <span class="en-US">Query information list for data export tasks</span>

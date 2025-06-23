@@ -30,6 +30,9 @@ import org.nervousync.utils.ClassUtils;
 import org.nervousync.utils.LoggerUtils;
 import org.nervousync.utils.StringUtils;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Hashtable;
@@ -68,6 +71,11 @@ public abstract class BaseDialect implements Dialect {
 	 */
 	private final boolean connectionPool;
 	/**
+	 * <span class="en-US">Support dynamic database switching</span>
+	 * <span class="zh-CN">支持数据库动态切换</span>
+	 */
+	private final boolean databaseSharding;
+	/**
 	 * <span class="en-US">Connection verification query command</span>
 	 * <span class="zh-CN">连接验证查询命令</span>
 	 */
@@ -94,6 +102,11 @@ public abstract class BaseDialect implements Dialect {
 		String className = this.getClass().getName();
 		this.supportJoin = schemaDialect.supportJoin();
 		this.connectionPool = schemaDialect.connectionPool();
+		if (DialectType.Relational.equals(this.dialectType)) {
+			this.databaseSharding = schemaDialect.sharding();
+		} else {
+			this.databaseSharding = Boolean.FALSE;
+		}
 		this.validationQuery = schemaDialect.validationQuery();
 		if (schemaDialect.types().length == 0) {
 			this.logger.warn("Dialect_Type_None", className);
@@ -128,8 +141,10 @@ public abstract class BaseDialect implements Dialect {
 	 * @return <span class="en-US">Default value string</span>
 	 * <span class="zh-CN">默认值字符串</span>
 	 */
-	public abstract String defaultValue(final int jdbcType, final int length, final int precision, final int scale,
-	                                    final Object object);
+	public String defaultValue(final int jdbcType, final int length, final int precision, final int scale,
+	                           final Object object) {
+		return Globals.DEFAULT_VALUE_STRING;
+	}
 
 	/**
 	 * <h3 class="en-US">Parse database-defined default values</h3>
@@ -150,10 +165,39 @@ public abstract class BaseDialect implements Dialect {
 	 */
 	public String parseDefault(final int jdbcType, final int length, final int precision, final int scale,
 	                           final String defaultValue) {
-		if (jdbcType == Types.BOOLEAN) {
-			return Boolean.valueOf(defaultValue).toString();
+		switch (jdbcType) {
+			case Types.BOOLEAN:
+				return Boolean.valueOf(defaultValue).toString();
+			case Types.BIT:
+				return Boolean.parseBoolean(defaultValue) ? "1" : "0";
+			case Types.TINYINT:
+				return Byte.valueOf(defaultValue).toString();
+			case Types.SMALLINT:
+				return Short.valueOf(defaultValue).toString();
+			case Types.INTEGER:
+				return Integer.valueOf(defaultValue).toString();
+			case Types.BIGINT:
+				return Long.valueOf(defaultValue).toString();
+			case Types.FLOAT:
+				return Float.valueOf(defaultValue).toString();
+			case Types.DOUBLE:
+				return Double.valueOf(defaultValue).toString();
+			case Types.DECIMAL:
+			case Types.NUMERIC:
+				return new BigDecimal(defaultValue)
+						.round(new MathContext(precision, RoundingMode.FLOOR))
+						.setScale(scale, RoundingMode.HALF_UP).toString();
+			case Types.DATE:
+			case Types.TIME:
+			case Types.TIMESTAMP:
+				return Globals.DEFAULT_VALUE_STRING;
+			default:
+				String returnValue = StringUtils.isEmpty(defaultValue) ? Globals.DEFAULT_VALUE_STRING : defaultValue.trim();
+				if (returnValue.length() > length) {
+					returnValue = returnValue.substring(returnValue.length() - length);
+				}
+				return returnValue;
 		}
-		return StringUtils.isEmpty(defaultValue) ? Globals.DEFAULT_VALUE_STRING : defaultValue.trim();
 	}
 
 	/**
@@ -170,7 +214,7 @@ public abstract class BaseDialect implements Dialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for support join query</h3>
+	 * <h3 class="en-US">Getter method for the support join query</h3>
 	 * <h3 class="zh-CN">支持关联查询的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Support join query</span>
@@ -189,6 +233,17 @@ public abstract class BaseDialect implements Dialect {
 	 */
 	public final boolean isConnectionPool() {
 		return this.connectionPool;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for support dynamic database switching</h3>
+	 * <h3 class="zh-CN">支持数据库动态切换的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Support dynamic database switching</span>
+	 * <span class="zh-CN">支持数据库动态切换</span>
+	 */
+	public boolean isDatabaseSharding() {
+		return this.databaseSharding;
 	}
 
 	/**
@@ -215,9 +270,9 @@ public abstract class BaseDialect implements Dialect {
 	 * @param scale     <span class="en-US">The scale for a decimal (exact numeric) column</span>
 	 *                  <span class="zh-CN">小数（精确数字）列的比例</span>
 	 * @return <span class="en-US">
-	 *     The type definition of the data column
-	 *     If it is not defined, an empty string of zero lengths is returned.
-	 *     </span>
+	 * The type definition of the data column
+	 * If it is not defined, an empty string of zero lengths is returned.
+	 * </span>
 	 * <span class="zh-CN">数据列的类型定义，如果未定义则返回长度为零的空字符串</span>
 	 */
 	public final String columnType(final int jdbcType, final int length, final int precision, final int scale) {

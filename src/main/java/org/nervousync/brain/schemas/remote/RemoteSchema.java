@@ -18,16 +18,16 @@
 package org.nervousync.brain.schemas.remote;
 
 import jakarta.annotation.Nonnull;
+import jakarta.persistence.LockModeType;
 import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.xml.ws.BindingProvider;
 import org.glassfish.jersey.client.ClientProperties;
-import org.jetbrains.annotations.NotNull;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.auth.impl.TrustStoreAuthentication;
+import org.nervousync.brain.configs.auth.impl.UserAuthentication;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
-import org.nervousync.brain.defines.ColumnDefine;
-import org.nervousync.brain.defines.IndexDefine;
-import org.nervousync.brain.defines.TableDefine;
+import org.nervousync.brain.defines.*;
 import org.nervousync.brain.dialects.DialectFactory;
 import org.nervousync.brain.dialects.remote.RemoteClient;
 import org.nervousync.brain.dialects.remote.RemoteDialect;
@@ -35,18 +35,25 @@ import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.enumerations.remote.RemoteType;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
+import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.commons.Globals;
+import org.nervousync.http.cert.TrustCert;
+import org.nervousync.http.security.GeneX509TrustManager;
 import org.nervousync.proxy.ProxyConfig;
 import org.nervousync.utils.*;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.*;
 import java.net.http.HttpClient;
 import java.nio.charset.Charset;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -99,10 +106,10 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	 *
 	 * @param schemaConfig <span class="en-US">Remote data source configure information</span>
 	 *                     <span class="zh-CN">远程数据源配置信息</span>
-	 * @throws SQLException <span class="en-US">Database server information not found or sharding configuration error</span>
+	 * @throws SQLException <span class="en-US">Database server information hasn't found or sharding configuration error</span>
 	 *                      <span class="zh-CN">数据库服务器信息未找到或分片配置出错</span>
 	 */
-	public RemoteSchema(@NotNull final RemoteSchemaConfig schemaConfig) throws SQLException {
+	public RemoteSchema(@Nonnull final RemoteSchemaConfig schemaConfig) throws SQLException {
 		super(schemaConfig, DialectFactory.retrieve(schemaConfig.getDialectName()).unwrap(RemoteDialect.class));
 		this.remoteType = schemaConfig.getRemoteType();
 		this.remoteAddress = schemaConfig.getRemoteAddress();
@@ -112,16 +119,41 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 					.property(ClientProperties.FOLLOW_REDIRECTS, HttpClient.Redirect.NORMAL)
 					.property(ClientProperties.CONNECT_TIMEOUT, this.getConnectTimeout());
 
+			if (this.trustStore != null) {
+				try {
+					TrustCert trustCert =
+							TrustCert.newInstance(FileUtils.readFileBytes(this.trustStore.getTrustStorePath()),
+									this.trustStore.getTrustStorePassword());
+					SSLContext sslContext = SSLContext.getInstance("TLS");
+					GeneX509TrustManager x509TrustManager =
+							GeneX509TrustManager.newInstance(this.trustStore.getTrustStorePassword(), List.of(trustCert));
+					sslContext.init(new KeyManager[0], new TrustManager[]{x509TrustManager}, new SecureRandom());
+					this.clientBuilder.sslContext(sslContext);
+				} catch (Exception e) {
+					throw new MultilingualSQLException(0x00DB00000044L, e);
+				}
+			}
 			Optional.ofNullable(this.trustStore)
 					.map(store -> CertificateUtils.loadKeyStore(store.getTrustStorePath(), store.getTrustStorePassword()))
 					.ifPresent(this.clientBuilder::trustStore);
 
-			if (this.authentication != null && this.authentication instanceof TrustStoreAuthentication) {
-				KeyStore keyStore =
-						CertificateUtils.loadKeyStore(((TrustStoreAuthentication) this.authentication).getTrustStorePath(),
-								((TrustStoreAuthentication) this.authentication).getTrustStorePassword());
-				if (keyStore != null) {
-					this.clientBuilder.keyStore(keyStore, ((TrustStoreAuthentication) this.authentication).getTrustStorePassword());
+			if (this.authentication != null) {
+				if (this.authentication instanceof TrustStoreAuthentication) {
+					KeyStore keyStore =
+							CertificateUtils.loadKeyStore(((TrustStoreAuthentication) this.authentication).getTrustStorePath(),
+									((TrustStoreAuthentication) this.authentication).getTrustStorePassword());
+					if (keyStore != null) {
+						this.clientBuilder.keyStore(keyStore, ((TrustStoreAuthentication) this.authentication).getTrustStorePassword());
+					}
+				}
+				if (this.authentication instanceof UserAuthentication) {
+					UserAuthentication userAuthentication = (UserAuthentication) this.authentication;
+					if (StringUtils.notBlank(userAuthentication.getUserName())) {
+						this.configMap.put(BindingProvider.USERNAME_PROPERTY, userAuthentication.getUserName());
+					}
+					if (StringUtils.notBlank(userAuthentication.getPassWord())) {
+						this.configMap.put(BindingProvider.PASSWORD_PROPERTY, userAuthentication.getPassWord());
+					}
 				}
 			}
 
@@ -265,17 +297,13 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	public void beginTransactional() throws SQLException {
 		if (this.operatorThreadLocal.get() == null) {
 			try {
-				Map<String, String> configMap = new HashMap<>(this.configMap);
-				Optional.ofNullable(this.dialect.properties(this.trustStore, this.authentication))
-						.map(ConvertUtils::toMap)
-						.ifPresent(configMap::putAll);
 				RemoteClient remoteClient;
 				switch (this.remoteType) {
 					case SOAP:
-						remoteClient = this.dialect.SOAPClient(this.remoteAddress, configMap);
+						remoteClient = this.dialect.SOAPClient(this.remoteAddress, this.configMap);
 						break;
 					case Restful:
-						remoteClient = this.dialect.restfulClient(this.remoteAddress, this.clientBuilder, configMap);
+						remoteClient = this.dialect.restfulClient(this.remoteAddress, this.clientBuilder, this.configMap);
 						break;
 					default:
 						throw new MultilingualSQLException(0x00DB00000030L, this.remoteType);
@@ -310,7 +338,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	}
 
 	@Override
-	public void truncateTable(@NotNull final TableDefine tableDefine) throws SQLException {
+	public void truncateTable(@Nonnull final TableDefine tableDefine) throws SQLException {
 		this.operatorThreadLocal.get().truncateTable(tableDefine.getTableName());
 	}
 
@@ -320,7 +348,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	}
 
 	@Override
-	public void dropTable(@NotNull final TableDefine tableDefine, @NotNull final DropOption dropOption)
+	public void dropTable(@Nonnull final TableDefine tableDefine, @Nonnull final DropOption dropOption)
 			throws SQLException {
 		StringBuilder indexNames = new StringBuilder();
 		for (IndexDefine indexDefine : tableDefine.getIndexDefines()) {
@@ -334,71 +362,65 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	}
 
 	@Override
-	public boolean lockRecord(@NotNull final TableDefine tableDefine,
-	                          @NotNull final Map<String, Object> filterMap) {
-		return this.operatorThreadLocal.get().lockRecord(this.shardingTable(tableDefine.getTableName(), filterMap),
+	public boolean lockRecord(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap,
+	                          final LockModeType lockOption) {
+		return this.operatorThreadLocal.get().lockRecord(tableDefine.getTableName(),
 				StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE));
 	}
 
 	@Override
-	public Map<String, Object> insert(@NotNull final TableDefine tableDefine,
-	                                  @NotNull final Map<String, Object> dataMap) throws SQLException {
-		String tableName = this.shardingTable(tableDefine.getTableName(), dataMap);
-		String responseData =
-				this.operatorThreadLocal.get()
-						.insert(tableName,
-								StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.FALSE));
-		if (StringUtils.notBlank(responseData)) {
-			return StringUtils.dataToMap(responseData, StringUtils.StringType.JSON);
-		}
-		return Map.of();
+	public Map<String, Object> insert(@Nonnull final TableDefine tableDefine,
+	                                  @Nonnull final Map<String, Object> dataMap) throws SQLException {
+		return Optional.ofNullable(this.operatorThreadLocal.get())
+				.map(remoteClient ->
+						remoteClient.insert(tableDefine.getTableName(),
+								StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.FALSE)))
+				.filter(StringUtils::notBlank)
+				.map(responseData -> StringUtils.dataToMap(responseData, StringUtils.StringType.JSON))
+				.orElse(Map.of());
 	}
 
 	@Override
-	public Map<String, Object> retrieve(@NotNull final TableDefine tableDefine, final String columns,
-	                                    @NotNull final Map<String, Object> filterMap, final boolean forUpdate)
+	public Map<String, Object> retrieve(@Nonnull final TableDefine tableDefine, final String columns,
+	                                    @Nonnull final Map<String, Object> filterMap, final boolean forUpdate,
+	                                    final LockModeType lockOption)
 			throws SQLException {
-		String tableName = this.shardingTable(tableDefine.getTableName(), filterMap);
-		String responseData =
-				this.operatorThreadLocal.get()
-						.retrieve(tableName,
-								StringUtils.isEmpty(columns) ? super.queryColumns(tableDefine, forUpdate) : columns,
+		return Optional.ofNullable(this.operatorThreadLocal.get())
+				.map(remoteClient ->
+						remoteClient.retrieve(tableDefine.getTableName(),
+								StringUtils.isEmpty(columns) ? SELECT_ALL_COLUMNS : columns,
 								StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE),
-								forUpdate, tableDefine.getLockOption());
-		if (StringUtils.notBlank(responseData)) {
-			return StringUtils.dataToMap(responseData, StringUtils.StringType.JSON);
-		}
-		return Map.of();
+								forUpdate, lockOption))
+				.filter(StringUtils::notBlank)
+				.map(responseData -> StringUtils.dataToMap(responseData, StringUtils.StringType.JSON))
+				.orElse(Map.of());
 	}
 
 	@Override
-	public int update(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> dataMap,
-	                  @NotNull final Map<String, Object> filterMap) throws SQLException {
-		String tableName = this.shardingTable(tableDefine.getTableName(), filterMap);
-		return this.operatorThreadLocal.get().update(tableName,
+	public int update(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> dataMap,
+	                  @Nonnull final Map<String, Object> filterMap) throws SQLException {
+		return this.operatorThreadLocal.get().update(tableDefine.getTableName(),
 				StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.FALSE),
 				StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE));
 	}
 
 	@Override
-	public int delete(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> filterMap)
+	public int delete(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap)
 			throws SQLException {
-		String tableName = this.shardingTable(tableDefine.getTableName(), filterMap);
-		return this.operatorThreadLocal.get().delete(tableName,
+		return this.operatorThreadLocal.get().delete(tableDefine.getTableName(),
 				StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE));
 	}
 
 	@Override
-	public List<Map<String, Object>> query(@NotNull final TableDefine tableDefine,
-	                                       @NotNull final QueryInfo queryInfo) throws SQLException {
-		return this.parseResponse(this.operatorThreadLocal.get().query(queryInfo.toString(StringUtils.StringType.JSON)));
+	public PartialCollection query(@Nonnull final TableDefine tableDefine,
+	                                       @Nonnull final QueryInfo queryInfo) throws SQLException {
+		return PartialCollection.parse(this.operatorThreadLocal.get().query(queryInfo.toString(StringUtils.StringType.JSON)));
 	}
 
 	@Override
-	public List<Map<String, Object>> queryForUpdate(@NotNull final TableDefine tableDefine,
-	                                                final List<Condition> conditionList)
+	public PartialCollection queryForUpdate(@Nonnull final TableDefine tableDefine,
+	                                        final List<Condition> conditionList, final LockModeType lockOption)
 			throws SQLException {
-		String tableName = this.shardingTable(tableDefine.getTableName(), conditionList);
 		StringBuilder stringBuilder = new StringBuilder();
 		for (ColumnDefine columnDefine : tableDefine.getColumnDefines()) {
 			stringBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnDefine.getColumnName());
@@ -406,38 +428,24 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 		if (stringBuilder.length() == 0) {
 			throw new MultilingualSQLException(0x00DB00000011L);
 		}
-		return this.parseResponse(
+		return PartialCollection.parse(
 				this.operatorThreadLocal.get()
-						.queryForUpdate(tableName, stringBuilder.toString(),
+						.queryForUpdate(tableDefine.getTableName(), stringBuilder.toString(),
 								StringUtils.objectToString(conditionList, StringUtils.StringType.JSON, Boolean.FALSE),
-								tableDefine.getLockOption()));
+								lockOption));
 	}
 
 	@Override
-	public Long queryTotal(@NotNull final TableDefine tableDefine, final QueryInfo queryInfo) throws SQLException {
+	public Long queryTotal(@Nonnull final TableDefine tableDefine, final QueryInfo queryInfo) throws SQLException {
 		List<Condition> conditionList = queryInfo.getConditionList();
-		return this.operatorThreadLocal.get().queryTotal(this.shardingTable(tableDefine.getTableName(), conditionList),
+		return this.operatorThreadLocal.get().queryTotal(tableDefine.getTableName(),
 				StringUtils.objectToString(conditionList, StringUtils.StringType.JSON, Boolean.FALSE));
 	}
 
-	private List<Map<String, Object>> parseResponse(final String responseData) {
-		List<Map<String, Object>> resultList = new ArrayList<>();
-		for (Map<?, ?> dataMap : StringUtils.stringToList(responseData, Globals.DEFAULT_ENCODING, Map.class)) {
-			Map<String, Object> resultMap = new HashMap<>();
-			dataMap.forEach((key, value) -> resultMap.put(key.toString(), value));
-			resultList.add(resultMap);
-		}
-		return resultList;
-	}
-
 	@Override
-	protected void initSharding(final String shardingKey) {
-		//  Not support the sharding database
-	}
-
-	@Override
-	protected void initTable(@NotNull final DDLType ddlType, @NotNull final TableDefine tableDefine,
-	                         final String shardingDatabase) {
+	public void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
+	                      final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy,
+	                      @Nonnull final Map<String, InitOption> initOptionsMap) {
 		//  Not support the table initialize operating
 	}
 

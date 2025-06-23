@@ -18,31 +18,24 @@
 package org.nervousync.brain.schemas;
 
 import jakarta.annotation.Nonnull;
-import org.nervousync.brain.commons.BrainCommons;
+import jakarta.persistence.LockModeType;
 import org.nervousync.brain.configs.auth.Authentication;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.secure.TrustStore;
-import org.nervousync.brain.configs.sharding.ShardingConfig;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
-import org.nervousync.brain.defines.ShardingDefine;
+import org.nervousync.brain.defines.InitOption;
+import org.nervousync.brain.defines.StrategyDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.core.BaseDialect;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.enumerations.dialect.DialectType;
-import org.nervousync.brain.enumerations.query.ConditionType;
-import org.nervousync.brain.enumerations.sharding.ShardingType;
-import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
+import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
-import org.nervousync.brain.query.condition.impl.ColumnCondition;
-import org.nervousync.brain.query.condition.impl.GroupCondition;
-import org.nervousync.brain.query.param.AbstractParameter;
-import org.nervousync.brain.query.param.impl.ConstantParameter;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.ClassUtils;
 import org.nervousync.utils.LoggerUtils;
-import org.nervousync.utils.StringUtils;
 
 import java.sql.SQLException;
 import java.sql.Wrapper;
@@ -62,6 +55,8 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <span class="zh-CN">日志实例</span>
 	 */
 	protected transient final LoggerUtils.Logger logger = LoggerUtils.getLogger(this.getClass());
+
+	protected static final String SELECT_ALL_COLUMNS = "*";
 
 	/**
 	 * <span class="en-US">Last modified timestamp</span>
@@ -99,21 +94,6 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 */
 	private int connectTimeout;
 	/**
-	 * <span class="en-US">Data source support sharding</span>
-	 * <span class="zh-CN">数据源是否支持分片</span>
-	 */
-	protected final boolean sharding;
-	/**
-	 * <span class="en-US">Default database sharding value</span>
-	 * <span class="zh-CN">默认数据库分片值</span>
-	 */
-	protected final String shardingDefault;
-	/**
-	 * <span class="en-US">Sharding configure information mapping</span>
-	 * <span class="zh-CN">分片配置信息映射表</span>
-	 */
-	protected final Hashtable<String, ShardingConfig> shardingConfigs = new Hashtable<>();
-	/**
 	 * <span class="en-US">Initialize status of data source</span>
 	 * <span class="zh-CN">数据源初始化状态</span>
 	 */
@@ -132,26 +112,15 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 *                     <span class="zh-CN">数据源配置信息</span>
 	 * @param dialect      <span class="en-US">Database dialect instance object</span>
 	 *                     <span class="zh-CN">数据库方言实例对象</span>
-	 * @throws SQLException <span class="en-US">Database server information not found or sharding configuration error</span>
-	 *                      <span class="zh-CN">数据库服务器信息未找到或分片配置出错</span>
 	 */
-	protected BaseSchema(@Nonnull final SchemaConfig schemaConfig, @Nonnull final D dialect) throws SQLException {
+	protected BaseSchema(@Nonnull final SchemaConfig schemaConfig, @Nonnull final D dialect) {
 		this.lastModified = schemaConfig.getLastModified();
-		this.sharding = schemaConfig.isSharding();
 		this.authentication = schemaConfig.getAuthentication();
 		this.trustStore = schemaConfig.getTrustStore();
 		this.dialect = dialect;
 		this.lowQueryTimeout = schemaConfig.getLowQueryTimeout();
 		this.validateTimeout = schemaConfig.getValidateTimeout();
 		this.connectTimeout = schemaConfig.getConnectTimeout();
-		if (this.sharding) {
-			if (StringUtils.isEmpty(schemaConfig.getShardingDefault())) {
-				throw new MultilingualSQLException(0x00DB00000020L);
-			}
-			this.shardingDefault = schemaConfig.getShardingDefault();
-		} else {
-			this.shardingDefault = Globals.DEFAULT_VALUE_STRING;
-		}
 	}
 
 	/**
@@ -230,139 +199,6 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	}
 
 	/**
-	 * <h3 class="en-US">Obtain sharding template</h3>
-	 * <h3 class="zh-CN">获取分片值模板</h3>
-	 *
-	 * @param tableName <span class="en-US">Data table name</span>
-	 *                  <span class="zh-CN">数据表名</span>
-	 * @return <span class="en-US">Sharding template</span>
-	 * <span class="zh-CN">分片值模板</span>
-	 */
-	protected final String shardingTemplate(final String tableName) {
-		if (!this.sharding) {
-			return Globals.DEFAULT_VALUE_STRING;
-		}
-		return Optional.ofNullable(this.shardingConfigs.get(tableName))
-				.map(ShardingConfig::shardingTemplate)
-				.orElse(Globals.DEFAULT_VALUE_STRING);
-	}
-
-	/**
-	 * <h3 class="en-US">Calculate database sharding key</h3>
-	 * <h3 class="zh-CN">计算数据库分片值</h3>
-	 *
-	 * @param tableName    <span class="en-US">Data table name</span>
-	 *                     <span class="zh-CN">数据表名</span>
-	 * @param parameterMap <span class="en-US">Columns data mapping</span>
-	 *                     <span class="zh-CN">数据列信息映射表</span>
-	 * @return <span class="en-US">Calculated sharding key result</span>
-	 * <span class="zh-CN">分片计算结果值</span>
-	 */
-	protected final String shardingDatabase(final String tableName, final Map<String, Object> parameterMap) {
-		if (!this.sharding) {
-			return Globals.DEFAULT_VALUE_STRING;
-		}
-		return Optional.ofNullable(this.shardingConfigs.get(tableName))
-				.map(shardingConfig -> shardingConfig.shardingKey(ShardingType.DATABASE, parameterMap))
-				.orElse(this.shardingDefault);
-	}
-
-	/**
-	 * <h3 class="en-US">Calculate table sharding key</h3>
-	 * <h3 class="zh-CN">计算数据表分片值</h3>
-	 *
-	 * @param tableName     <span class="en-US">Data table name</span>
-	 *                      <span class="zh-CN">数据表名</span>
-	 * @param conditionList <span class="en-US">Data column condition information list</span>
-	 *                      <span class="zh-CN">数据列条件信息列表</span>
-	 * @return <span class="en-US">Calculated sharding key result</span>
-	 * <span class="zh-CN">分片计算结果值</span>
-	 * @throws SQLException <span class="en-US">If an error occurs during parsing</span>
-	 *                      <span class="zh-CN">如果解析过程出错</span>
-	 */
-	protected final String shardingDatabase(final String tableName, final List<Condition> conditionList)
-			throws SQLException {
-		if (!this.sharding) {
-			return Globals.DEFAULT_VALUE_STRING;
-		}
-		ShardingConfig shardingConfig = this.shardingConfigs.get(tableName);
-		if (shardingConfig == null) {
-			return Globals.DEFAULT_VALUE_STRING;
-		}
-		return shardingConfig.shardingKey(ShardingType.DATABASE, this.parseConditions(conditionList));
-	}
-
-	/**
-	 * <h3 class="en-US">Calculate table sharding key</h3>
-	 * <h3 class="zh-CN">计算数据表分片值</h3>
-	 *
-	 * @param tableName    <span class="en-US">Data table name</span>
-	 *                     <span class="zh-CN">数据表名</span>
-	 * @param parameterMap <span class="en-US">Columns data mapping</span>
-	 *                     <span class="zh-CN">数据列信息映射表</span>
-	 * @return <span class="en-US">Calculated sharding key result</span>
-	 * <span class="zh-CN">分片计算结果值</span>
-	 */
-	protected final String shardingTable(@Nonnull final String tableName, final Map<String, Object> parameterMap) {
-		return Optional.ofNullable(this.shardingConfigs.get(tableName))
-				.map(shardingConfig -> shardingConfig.shardingKey(ShardingType.TABLE, parameterMap))
-				.orElse(tableName);
-	}
-
-	/**
-	 * <h3 class="en-US">Calculate table sharding key</h3>
-	 * <h3 class="zh-CN">计算数据表分片值</h3>
-	 *
-	 * @param tableName     <span class="en-US">Data table name</span>
-	 *                      <span class="zh-CN">数据表名</span>
-	 * @param conditionList <span class="en-US">Data column condition information list</span>
-	 *                      <span class="zh-CN">数据列条件信息列表</span>
-	 * @return <span class="en-US">Calculated sharding key result</span>
-	 * <span class="zh-CN">分片计算结果值</span>
-	 * @throws SQLException <span class="en-US">If an error occurs during parsing</span>
-	 *                      <span class="zh-CN">如果解析过程出错</span>
-	 */
-	protected final String shardingTable(final String tableName, final List<Condition> conditionList)
-			throws SQLException {
-		if (!this.sharding) {
-			return Globals.DEFAULT_VALUE_STRING;
-		}
-		ShardingConfig shardingConfig = this.shardingConfigs.get(tableName);
-		if (shardingConfig == null) {
-			return Globals.DEFAULT_VALUE_STRING;
-		}
-		return shardingConfig.shardingKey(ShardingType.TABLE, this.parseConditions(conditionList));
-	}
-
-	/**
-	 * <h3 class="en-US">Parse the query matching condition list into a data mapping table</h3>
-	 * <h3 class="zh-CN">解析查询匹配条件列表为数据映射表</h3>
-	 *
-	 * @param conditionList <span class="en-US">Query matching condition list</span>
-	 *                      <span class="zh-CN">查询匹配条件列表</span>
-	 * @return <span class="en-US">Converted data mapping table</span>
-	 * <span class="zh-CN">数据映射表</span>
-	 * @throws SQLException <span class="en-US">If an error occurs during parsing</span>
-	 *                      <span class="zh-CN">如果解析过程出错</span>
-	 */
-	protected final Map<String, Object> parseConditions(final List<Condition> conditionList) throws SQLException {
-		Map<String, Object> parameterMap = new HashMap<>();
-		for (Condition condition : conditionList) {
-			if (ConditionType.GROUP.equals(condition.getConditionType())) {
-				parameterMap.putAll(this.parseConditions(condition.unwrap(GroupCondition.class).getConditionList()));
-			} else {
-				ColumnCondition columnCondition = condition.unwrap(ColumnCondition.class);
-				AbstractParameter<?> abstractParameter = columnCondition.getConditionParameter();
-				if (abstractParameter != null && abstractParameter.isWrapperFor(ConstantParameter.class)) {
-					parameterMap.put(columnCondition.getColumnName(),
-							abstractParameter.unwrap(ConstantParameter.class).getItemValue());
-				}
-			}
-		}
-		return parameterMap;
-	}
-
-	/**
 	 * <h3 class="en-US">Initialize the current data source</h3>
 	 * <h3 class="zh-CN">初始化当前数据源</h3>
 	 */
@@ -391,40 +227,6 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	}
 
 	/**
-	 * <h3 class="en-US">Initialize data table</h3>
-	 * <h3 class="zh-CN">初始化数据表</h3>
-	 *
-	 * @param ddlType     <span class="en-US">Enumeration value of DDL operate</span>
-	 *                    <span class="zh-CN">操作类型枚举值</span>
-	 * @param tableDefine <span class="en-US">Table define information</span>
-	 *                    <span class="zh-CN">数据表定义信息</span>
-	 * @param database    <span class="en-US">Database sharding configuration information</span>
-	 *                    <span class="zh-CN">数据库分片配置信息</span>
-	 * @param table       <span class="en-US">Data table sharding configuration information</span>
-	 *                    <span class="zh-CN">数据表分片配置信息</span>
-	 * @throws Exception <span class="en-US">An error occurred during execution</span>
-	 *                   <span class="zh-CN">执行过程中出错</span>
-	 */
-	public final void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
-	                            final ShardingDefine<?> database, final ShardingDefine<?> table) throws Exception {
-		ShardingConfig shardingConfig = null;
-		if (this.sharding && (database != null || table != null)) {
-			if (this.shardingConfigs.contains(tableDefine.getTableName())) {
-				this.logger.warn("Registered_Sharding_Configure", tableDefine.getTableName());
-			}
-			shardingConfig = new ShardingConfig(tableDefine, database, table);
-			this.shardingConfigs.put(tableDefine.getTableName(), shardingConfig);
-		}
-
-		String shardingDatabase =
-				(shardingConfig == null)
-						? this.shardingDefault
-						: shardingConfig.shardingKey(ShardingType.DATABASE, Map.of());
-		this.initSharding(shardingDatabase);
-		this.initTable(ddlType, tableDefine, shardingDatabase);
-	}
-
-	/**
 	 * <h3 class="en-US">Convert default value to string</h3>
 	 * <h3 class="zh-CN">转换默认值为字符串</h3>
 	 *
@@ -448,57 +250,6 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	}
 
 	/**
-	 * <h3 class="en-US">Checks whether the given database name complies with sharding rules</h3>
-	 * <h3 class="zh-CN">检查给定的数据库名是否符合分片规则</h3>
-	 *
-	 * @param databaseName <span class="en-US">Database name</span>
-	 *                     <span class="zh-CN">数据库名</span>
-	 * @return <span class="en-US">Match result</span>
-	 * <span class="zh-CN">检查结果</span>
-	 */
-	protected final boolean matchesDatabaseKey(final String databaseName) {
-		return this.shardingConfigs
-				.values()
-				.stream()
-				.anyMatch(shardingConfig -> shardingConfig.matchKey(ShardingType.DATABASE, databaseName));
-	}
-
-	protected final String queryColumns(final TableDefine tableDefine, final boolean forUpdate) {
-		StringBuilder columnsBuilder = new StringBuilder();
-		if (forUpdate) {
-			columnsBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(" * ");
-		} else {
-			tableDefine.getColumnDefines()
-					.stream()
-					.filter(columnDefine -> !columnDefine.isLazyLoad())
-					.forEach(columnDefine ->
-							columnsBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER)
-									.append(this.dialect.nameCase(columnDefine.getColumnName())));
-		}
-		return columnsBuilder.substring(BrainCommons.DEFAULT_SPLIT_CHARACTER.length());
-	}
-
-	/**
-	 * <h3 class="en-US">Begin transactional</h3>
-	 * <h3 class="zh-CN">开启事务</h3>
-	 *
-	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
-	 *                   <span class="zh-CN">如果执行过程中出错</span>
-	 */
-	protected abstract void beginTransactional() throws Exception;
-
-	/**
-	 * <h3 class="en-US">Rollback transactional</h3>
-	 * <h3 class="zh-CN">回滚事务</h3>
-	 *
-	 * @param e <span class="en-US">Cached execution information</span>
-	 *          <span class="zh-CN">捕获的异常信息</span>
-	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
-	 *                   <span class="zh-CN">如果执行过程中出错</span>
-	 */
-	public abstract void rollback(final Exception e) throws Exception;
-
-	/**
 	 * <h3 class="en-US">Submit transactional execute</h3>
 	 * <h3 class="zh-CN">提交事务执行</h3>
 	 *
@@ -508,7 +259,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	public abstract void commit() throws Exception;
 
 	/**
-	 * <h3 class="en-US">Truncate all data table</h3>
+	 * <h3 class="en-US">Truncate all data tables</h3>
 	 * <h3 class="zh-CN">清空所有数据表</h3>
 	 *
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
@@ -560,19 +311,22 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param filterMap   <span class="en-US">Filter data mapping</span>
 	 *                    <span class="zh-CN">查询数据映射表</span>
+	 * @param lockOption  <span class="en-US">Lock option</span>
+	 *                    <span class="zh-CN">数据锁选项</span>
 	 * @return <span class="en-US">Primary key value mapping table generated by database</span>
 	 * <span class="zh-CN">数据库生成的主键值映射表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public abstract boolean lockRecord(@Nonnull final TableDefine tableDefine,
-	                                   @Nonnull final Map<String, Object> filterMap) throws Exception;
+	                                   @Nonnull final Map<String, Object> filterMap,
+	                                   final LockModeType lockOption) throws Exception;
 
 	/**
 	 * <h3 class="en-US">Execute insert record command</h3>
 	 * <h3 class="zh-CN">执行插入数据命令</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param dataMap     <span class="en-US">Insert data mapping</span>
 	 *                    <span class="zh-CN">写入数据映射表</span>
@@ -596,20 +350,22 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 *                    <span class="zh-CN">查询条件映射表</span>
 	 * @param forUpdate   <span class="en-US">Retrieve result using for update record</span>
 	 *                    <span class="zh-CN">检索结果用于更新记录</span>
+	 * @param lockOption  <span class="en-US">Lock option</span>
+	 *                    <span class="zh-CN">数据锁选项</span>
 	 * @return <span class="en-US">Data mapping table of retrieved records</span>
 	 * <span class="zh-CN">检索到记录的数据映射表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public abstract Map<String, Object> retrieve(@Nonnull final TableDefine tableDefine, final String columns,
-	                                             @Nonnull final Map<String, Object> filterMap,
-	                                             final boolean forUpdate) throws Exception;
+	                                             @Nonnull final Map<String, Object> filterMap, final boolean forUpdate,
+	                                             final LockModeType lockOption) throws Exception;
 
 	/**
 	 * <h3 class="en-US">Execute update record command</h3>
 	 * <h3 class="zh-CN">执行更新记录命令</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param dataMap     <span class="en-US">Update data mapping</span>
 	 *                    <span class="zh-CN">更新数据映射表</span>
@@ -627,7 +383,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <h3 class="en-US">Execute delete record command</h3>
 	 * <h3 class="zh-CN">执行删除记录命令</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table define information</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param filterMap   <span class="en-US">Delete filter mapping</span>
 	 *                    <span class="zh-CN">删除条件映射表</span>
@@ -652,8 +408,8 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public abstract List<Map<String, Object>> query(@Nonnull final TableDefine tableDefine,
-	                                                @Nonnull final QueryInfo queryInfo) throws Exception;
+	public abstract PartialCollection query(@Nonnull final TableDefine tableDefine,
+	                                        @Nonnull final QueryInfo queryInfo) throws Exception;
 
 	/**
 	 * <h3 class="en-US">Execute query commands for data updates</h3>
@@ -663,14 +419,17 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @param queryInfo   <span class="en-US">Query record information</span>
 	 *                    <span class="zh-CN">数据检索信息</span>
+	 * @param lockOption  <span class="en-US">Lock option</span>
+	 *                    <span class="zh-CN">数据锁选项</span>
 	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
 	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public final List<Map<String, Object>> queryForUpdate(@Nonnull final TableDefine tableDefine,
-	                                                      @Nonnull final QueryInfo queryInfo) throws Exception {
-		return this.queryForUpdate(tableDefine, queryInfo.getConditionList());
+	public final PartialCollection queryForUpdate(@Nonnull final TableDefine tableDefine,
+	                                              @Nonnull final QueryInfo queryInfo,
+	                                              final LockModeType lockOption) throws Exception {
+		return this.queryForUpdate(tableDefine, queryInfo.getConditionList(), lockOption);
 	}
 
 	/**
@@ -681,13 +440,16 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 *                      <span class="zh-CN">数据表定义信息</span>
 	 * @param conditionList <span class="en-US">Query condition instance list</span>
 	 *                      <span class="zh-CN">查询条件实例对象列表</span>
+	 * @param lockOption    <span class="en-US">Lock option</span>
+	 *                      <span class="zh-CN">数据锁选项</span>
 	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
 	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public abstract List<Map<String, Object>> queryForUpdate(@Nonnull final TableDefine tableDefine,
-	                                                         final List<Condition> conditionList) throws Exception;
+	public abstract PartialCollection queryForUpdate(@Nonnull final TableDefine tableDefine,
+	                                                 final List<Condition> conditionList,
+	                                                 final LockModeType lockOption) throws Exception;
 
 	/**
 	 * <h3 class="en-US">Query total record count</h3>
@@ -720,15 +482,24 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	}
 
 	/**
-	 * <h3 class="en-US">Initialize sharding connections</h3>
-	 * <h3 class="zh-CN">初始化分片连接</h3>
+	 * <h3 class="en-US">Begin transactional</h3>
+	 * <h3 class="zh-CN">开启事务</h3>
 	 *
-	 * @param shardingKey <span class="en-US">Database sharding value</span>
-	 *                    <span class="zh-CN">数据库分片值</span>
-	 * @throws Exception <span class="en-US">If an error occurs during parsing</span>
-	 *                   <span class="zh-CN">如果解析过程出错</span>
+	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
+	 *                   <span class="zh-CN">如果执行过程中出错</span>
 	 */
-	protected abstract void initSharding(final String shardingKey) throws Exception;
+	protected abstract void beginTransactional() throws Exception;
+
+	/**
+	 * <h3 class="en-US">Rollback transactional</h3>
+	 * <h3 class="zh-CN">回滚事务</h3>
+	 *
+	 * @param e <span class="en-US">Cached execution information</span>
+	 *          <span class="zh-CN">捕获的异常信息</span>
+	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
+	 *                   <span class="zh-CN">如果执行过程中出错</span>
+	 */
+	public abstract void rollback(final Exception e) throws Exception;
 
 	/**
 	 * <h3 class="en-US">Initialize data table</h3>
@@ -736,15 +507,20 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 *
 	 * @param ddlType          <span class="en-US">Enumeration value of DDL operate</span>
 	 *                         <span class="zh-CN">操作类型枚举值</span>
-	 * @param tableDefine      <span class="en-US">Table define information</span>
+	 * @param tableDefine      <span class="en-US">Table defines information</span>
 	 *                         <span class="zh-CN">数据表定义信息</span>
-	 * @param shardingDatabase <span class="en-US">Sharded database name</span>
-	 *                         <span class="zh-CN">分片数据库名</span>
+	 * @param databaseStrategy <span class="en-US">Database strategy defines information</span>
+	 *                         <span class="zh-CN">数据库分片规则定义信息</span>
+	 * @param tableStrategy    <span class="en-US">Data table strategy defines information</span>
+	 *                         <span class="zh-CN">数据表分片规则定义信息</span>
+     * @param initOptionsMap   <span class="en-US">Data column initialize option</span>
+     *                         <span class="zh-CN">数据列初始化选项</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	protected abstract void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
-	                                  final String shardingDatabase) throws Exception;
+	public abstract void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
+	                               final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy,
+	                               @Nonnull final Map<String, InitOption> initOptionsMap) throws Exception;
 
 	/**
 	 * <h3 class="en-US">Clear current transactional</h3>

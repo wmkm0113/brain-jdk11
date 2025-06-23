@@ -17,6 +17,12 @@
 
 package org.nervousync.brain.sharding;
 
+import jakarta.annotation.Nonnull;
+import org.nervousync.brain.query.condition.Condition;
+
+import java.util.List;
+import java.util.Map;
+
 /**
  * <h2 class="en-US">Sharding calculator interface</h2>
  * <h2 class="zh-CN">分片计算器接口</h2>
@@ -24,18 +30,51 @@ package org.nervousync.brain.sharding;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 27, 2021 10:21:16 $
  */
-public interface Calculator<T> {
+public interface Calculator {
 
 	/**
 	 * <h3 class="en-US">Calculate sharding result</h3>
 	 * <h3 class="zh-CN">计算分片值</h3>
 	 *
-	 * @param value <span class="en-US">Data column value</span>
-	 *              <span class="zh-CN">数据列的值</span>
+	 * @param conditionList <span class="en-US">Query condition instance list</span>
+	 *                      <span class="zh-CN">查询条件实例对象列表</span>
 	 * @return <span class="en-US">Calculate result</span>
 	 * <span class="zh-CN">计算结果</span>
 	 */
-	String result(final T value);
+	String result(@Nonnull final List<Condition> conditionList);
+
+	/**
+	 * <h3 class="en-US">Calculate sharding result</h3>
+	 * <h3 class="zh-CN">计算分片值</h3>
+	 *
+	 * @param values <span class="en-US">Array of data column values involved in the calculation</span>
+	 *               <span class="zh-CN">参与计算的数据列值的数组</span>
+	 * @return <span class="en-US">Calculate result</span>
+	 * <span class="zh-CN">计算结果</span>
+	 */
+	String result(final Object... values);
+
+	/**
+	 * <h3 class="en-US">Get the list of calculated sharding result</h3>
+	 * <h3 class="zh-CN">获取分片值列表</h3>
+	 *
+	 * @param dataMap <span class="en-US">Data objects that need to be sharded</span>
+	 *                <span class="zh-CN">需要分片的数据对象</span>
+	 * @return <span class="en-US">List of calculated sharding result</span>
+	 * <span class="zh-CN">分片值列表</span>
+	 */
+	List<String> keys(@Nonnull Map<String, Object> dataMap);
+
+	/**
+	 * <h3 class="en-US">Get the list of calculated sharding result</h3>
+	 * <h3 class="zh-CN">获取分片值列表</h3>
+	 *
+	 * @param conditionList <span class="en-US">Query condition instance list</span>
+	 *                      <span class="zh-CN">查询条件实例对象列表</span>
+	 * @return <span class="en-US">List of calculated sharding result</span>
+	 * <span class="zh-CN">分片值列表</span>
+	 */
+	List<String> keys(@Nonnull final List<Condition> conditionList);
 
 	/**
 	 * <h3 class="en-US">Matches sharding result</h3>

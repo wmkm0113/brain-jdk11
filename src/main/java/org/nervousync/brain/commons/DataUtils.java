@@ -18,6 +18,7 @@
 package org.nervousync.brain.commons;
 
 import jakarta.annotation.Nonnull;
+import jakarta.persistence.LockModeType;
 import org.nervousync.annotations.provider.Provider;
 import org.nervousync.brain.configs.storage.StorageConfig;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
@@ -499,7 +500,7 @@ public final class DataUtils {
 			LOGGER.debug("Identify_Information_Data",
 					StringUtils.objectToString(identifyMap, StringUtils.StringType.JSON, Boolean.TRUE));
 		}
-		return ConvertUtils.toHex(SecurityUtils.SHA256(identifyMap));
+		return ConvertUtils.bytesToHex(SecurityUtils.SHA256(identifyMap));
 	}
 
 	/**
@@ -967,7 +968,10 @@ public final class DataUtils {
 					.filter(transferColumn -> recordMap.containsKey(transferColumn.getColumnName()))
 					.forEach(transferColumn -> {
 						String columnName = transferColumn.getColumnName();
-						String columnValue = transferColumn.marshall(recordMap.get(columnName));
+						String columnValue = Optional.ofNullable(transferColumn.marshall(recordMap.get(columnName)))
+								.map(ConvertUtils::toByteArray)
+								.map(StringUtils::base64Encode)
+								.orElse(Globals.DEFAULT_VALUE_STRING);
 						if (transferColumn.isPrimaryKey()) {
 							primaryKey.put(columnName, columnValue);
 						}
@@ -1469,6 +1473,8 @@ public final class DataUtils {
 			transferColumnList.forEach(transferColumn ->
 					Optional.ofNullable(dataMap.get(transferColumn.getColumnName()))
 							.filter(StringUtils::notBlank)
+							.map(StringUtils::base64Decode)
+							.map(ConvertUtils::toObject)
 							.ifPresent(columnValue -> {
 								if (transferColumn.isPrimaryKey()) {
 									filterMap.put(transferColumn.getColumnName(), transferColumn.unmarshall(columnValue));
@@ -1479,8 +1485,7 @@ public final class DataUtils {
 			if (dataRecord.isRemoveOperate()) {
 				dataSource.delete(identifyCode, filterMap);
 			} else {
-				boolean existRecord = dataSource.lockRecord(identifyCode, filterMap);
-				if (existRecord) {
+				if (dataSource.lockRecord(identifyCode, filterMap, LockModeType.NONE)) {
 					dataSource.update(identifyCode, convertMap, filterMap);
 				} else {
 					Map<String, Object> allMap = new HashMap<>();
@@ -1594,7 +1599,9 @@ public final class DataUtils {
 				if (this.dataSource != null) {
 					for (QueryInfo queryInfo : this.queryInfoList) {
 						this.dataSource.query(queryInfo)
-								.forEach(dataMap -> dataExporter.appendData(queryInfo.getTableName(), dataMap));
+								.asList()
+								.forEach(dataMap ->
+										dataExporter.appendData(queryInfo.getTableName(), dataMap));
 					}
 					this.hasError = Boolean.FALSE;
 				} else {

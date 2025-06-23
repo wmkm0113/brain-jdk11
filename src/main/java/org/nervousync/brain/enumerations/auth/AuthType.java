@@ -20,7 +20,7 @@ package org.nervousync.brain.enumerations.auth;
 import jakarta.xml.bind.annotation.XmlEnum;
 
 /**
- * <h2 class="en-US">Enumeration value of authentication type</h2>
+ * <h2 class="en-US">Enumeration value of the authentication type</h2>
  * <h2 class="zh-CN">身份认证类型的枚举值</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>

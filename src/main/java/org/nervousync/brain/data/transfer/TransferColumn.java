@@ -134,7 +134,7 @@ public final class TransferColumn {
 	}
 
 	/**
-	 * <h3 class="en-US">Convert the given data to current field type</h3>
+	 * <h3 class="en-US">Convert the given data to the current field type</h3>
 	 * <h3 class="zh-CN">转换给定的数据为当前属性类型值</h3>
 	 *
 	 * @param object <span class="en-US">The given data</span>
@@ -142,12 +142,12 @@ public final class TransferColumn {
 	 * @return <span class="en-US">Converted data</span>
 	 * <span class="zh-CN">转换后的数据</span>
 	 */
-	public String marshall(final Object object) {
+	public Object marshall(final Object object) {
 		return this.transferConfig.marshal(object);
 	}
 
 	/**
-	 * <h3 class="en-US">Convert the given data to current field type</h3>
+	 * <h3 class="en-US">Convert the given data to the current field type</h3>
 	 * <h3 class="zh-CN">转换给定的数据为当前属性类型值</h3>
 	 *
 	 * @param string <span class="en-US">The given data</span>
@@ -155,7 +155,7 @@ public final class TransferColumn {
 	 * @return <span class="en-US">Converted data</span>
 	 * <span class="zh-CN">转换后的数据</span>
 	 */
-	public Object unmarshall(final String string) {
+	public Object unmarshall(final Object string) {
 		return this.transferConfig.unmarshal(string);
 	}
 }

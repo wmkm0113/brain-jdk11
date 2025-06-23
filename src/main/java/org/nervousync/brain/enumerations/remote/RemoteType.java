@@ -20,7 +20,7 @@ package org.nervousync.brain.enumerations.remote;
 import jakarta.xml.bind.annotation.XmlEnum;
 
 /**
- * <h2 class="en-US">Enumeration value of remote schema type</h2>
+ * <h2 class="en-US">Enumeration value of remote schema types</h2>
  * <h2 class="zh-CN">远程数据源类型的枚举值</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>

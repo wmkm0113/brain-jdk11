@@ -27,7 +27,7 @@ package org.nervousync.brain.schemas;
 public interface BaseSchemaMBean {
 
 	/**
-	 * <h3 class="en-US">Read timeout value of low query</h3>
+	 * <h3 class="en-US">Read the timeout value of the low query</h3>
 	 * <h3 class="zh-CN">获取慢查询的临界时间</h3>
 	 *
 	 * @return <span class="en-US">Low query timeout (Unit: milliseconds)</span>
@@ -36,19 +36,19 @@ public interface BaseSchemaMBean {
 	long getLowQueryTimeout();
 
 	/**
-	 * <h3 class="en-US">Setup timeout value of low query</h3>
+	 * <h3 class="en-US">Setup timeout value of the low query</h3>
 	 * <h3 class="zh-CN">设置慢查询的临界时间</h3>
 	 *
 	 * @param timeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
 	 *                <span class="zh-CN">慢查询的临界时间（单位：毫秒）</span>
 	 */
-	void lowQueryTimeout(long timeout);
+	void lowQueryTimeout(final long timeout);
 
 	/**
 	 * <h3 class="en-US">Read timeout value of connection validate</h3>
 	 * <h3 class="zh-CN">获取连接检查超时时间</h3>
 	 *
-	 * @return <span class="en-US">Timeout value of connection validate</span>
+	 * @return <span class="en-US">Timeout value of connection validates</span>
 	 * <span class="zh-CN">连接检查超时时间</span>
 	 */
 	int getValidateTimeout();
@@ -57,10 +57,10 @@ public interface BaseSchemaMBean {
 	 * <h3 class="en-US">Setup timeout value of connection validate</h3>
 	 * <h3 class="zh-CN">设置连接检查超时时间</h3>
 	 *
-	 * @param timeout <span class="en-US">Timeout value of connection validate</span>
+	 * @param timeout <span class="en-US">Timeout value of connection validates</span>
 	 *                <span class="zh-CN">连接检查超时时间</span>
 	 */
-	void validateTimeout(int timeout);
+	void validateTimeout(final int timeout);
 
 	/**
 	 * <h3 class="en-US">Read timeout value of create connection</h3>
@@ -72,13 +72,13 @@ public interface BaseSchemaMBean {
 	int getConnectTimeout();
 
 	/**
-	 * <h3 class="en-US">Setup timeout value of create connection</h3>
+	 * <h3 class="en-US">Setup timeout value of creating connection</h3>
 	 * <h3 class="zh-CN">设置建立连接超时时间</h3>
 	 *
 	 * @param timeout <span class="en-US">Timeout value of create connection</span>
 	 *                <span class="zh-CN">建立连接超时时间</span>
 	 */
-	void connectTimeout(int timeout);
+	void connectTimeout(final int timeout);
 
 	/**
 	 * <h3 class="en-US">Data source was initialized</h3>

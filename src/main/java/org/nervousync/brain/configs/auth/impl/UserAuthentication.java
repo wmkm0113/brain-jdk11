@@ -27,7 +27,7 @@ import org.nervousync.brain.enumerations.auth.AuthType;
  * <h2 class="zh-CN">基本身份认证信息</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
- * @version $Revision : 1.0.0 $ $Date: Apr 10, 2018 15:44:07 $
+ * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:44:07 $
  */
 @XmlRootElement(name = "user_authentication", namespace = "https://nervousync.org/schemas/brain")
 @XmlType(name = "user_authentication", namespace = "https://nervousync.org/schemas/brain")

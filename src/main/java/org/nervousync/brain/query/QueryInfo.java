@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <h2 class="en-US">Query information define</h2>
+ * <h2 class="en-US">Query information defines</h2>
  * <h2 class="zh-CN">查询信息定义</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
@@ -191,7 +191,7 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for related query information list</h3>
+	 * <h3 class="en-US">Getter method for the related query information list</h3>
 	 * <h3 class="zh-CN">关联查询信息列表的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Related query information list</span>
@@ -202,7 +202,7 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for related query information list</h3>
+	 * <h3 class="en-US">Setter method for the related query information list</h3>
 	 * <h3 class="zh-CN">关联查询信息列表的Setter方法</h3>
 	 *
 	 * @param queryJoins <span class="en-US">Related query information list</span>
@@ -213,7 +213,7 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for query item instance list</h3>
+	 * <h3 class="en-US">Getter method for the query item instance list</h3>
 	 * <h3 class="zh-CN">查询项目实例对象列表的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Query item instance list</span>
@@ -224,7 +224,7 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for query item instance list</h3>
+	 * <h3 class="en-US">Setter method for the query item instance list</h3>
 	 * <h3 class="zh-CN">查询项目实例对象列表的Setter方法</h3>
 	 *
 	 * @param itemList <span class="en-US">Query item instance list</span>
@@ -237,7 +237,7 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for query condition instance list</h3>
+	 * <h3 class="en-US">Getter method for the query condition instance list</h3>
 	 * <h3 class="zh-CN">查询条件实例对象列表的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Query condition instance list</span>
@@ -248,7 +248,7 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for query condition instance list</h3>
+	 * <h3 class="en-US">Setter method for the query condition instance list</h3>
 	 * <h3 class="zh-CN">查询条件实例对象列表的Setter方法</h3>
 	 *
 	 * @param conditionList <span class="en-US">Query condition instance list</span>
@@ -260,10 +260,10 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for query order by columns list</h3>
+	 * <h3 class="en-US">Getter method for query order by column list</h3>
 	 * <h3 class="zh-CN">查询排序数据列列表的Getter方法</h3>
 	 *
-	 * @return <span class="en-US">Query order by columns list</span>
+	 * @return <span class="en-US">Query order by column list</span>
 	 * <span class="zh-CN">查询排序数据列列表</span>
 	 */
 	public List<OrderBy> getOrderByList() {
@@ -271,10 +271,10 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for query order by columns list</h3>
+	 * <h3 class="en-US">Setter method for query order by column list</h3>
 	 * <h3 class="zh-CN">查询排序数据列列表的Setter方法</h3>
 	 *
-	 * @param orderByList <span class="en-US">Query order by columns list</span>
+	 * @param orderByList <span class="en-US">Query order by column list</span>
 	 *                    <span class="zh-CN">查询排序数据列列表</span>
 	 */
 	public void setOrderByList(final List<OrderBy> orderByList) {
@@ -283,7 +283,7 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for query group by columns list</h3>
+	 * <h3 class="en-US">Getter method for the query group by column list</h3>
 	 * <h3 class="zh-CN">查询分组数据列列表的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Query group by columns list</span>
@@ -294,7 +294,7 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for query group by columns list</h3>
+	 * <h3 class="en-US">Setter method for the query group by column list</h3>
 	 * <h3 class="zh-CN">查询分组数据列列表的Setter方法</h3>
 	 *
 	 * @param groupByList <span class="en-US">Query group by columns list</span>
@@ -306,7 +306,7 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for group having condition instance list</h3>
+	 * <h3 class="en-US">Getter method for the group having condition instance list</h3>
 	 * <h3 class="zh-CN">分组筛选条件实例对象列表的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Group having condition instance list</span>
@@ -317,7 +317,7 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for group having condition instance list</h3>
+	 * <h3 class="en-US">Setter method for the group having condition instance list</h3>
 	 * <h3 class="zh-CN">分组筛选条件实例对象列表的Setter方法</h3>
 	 *
 	 * @param havingList <span class="en-US">Group having condition instance list</span>
@@ -328,7 +328,7 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for query result can cacheable</h3>
+	 * <h3 class="en-US">Getter method for the query result can cacheable</h3>
 	 * <h3 class="zh-CN">查询结果可以缓存的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Query result can cacheable</span>
@@ -339,7 +339,7 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for query result can cacheable</h3>
+	 * <h3 class="en-US">Setter method for the query result can cacheable</h3>
 	 * <h3 class="zh-CN">查询结果可以缓存的Setter方法</h3>
 	 *
 	 * @param cacheables <span class="en-US">Query result can cacheable</span>

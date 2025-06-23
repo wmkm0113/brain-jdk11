@@ -19,23 +19,26 @@ package org.nervousync.brain.configs.auth;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.xml.bind.annotation.*;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.configs.auth.impl.TrustStoreAuthentication;
 import org.nervousync.brain.configs.auth.impl.UserAuthentication;
 import org.nervousync.brain.configs.auth.impl.X509Authentication;
 import org.nervousync.brain.enumerations.auth.AuthType;
 import org.nervousync.commons.Globals;
+import org.nervousync.utils.StringUtils;
 
 /**
  * <h2 class="en-US">Authentication information abstract class</h2>
  * <h2 class="zh-CN">认证信息抽象类</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
- * @version $Revision : 1.0.0 $ $Date: Apr 10, 2018 15:44:07 $
+ * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:44:07 $
  */
 @XmlType(namespace = "https://nervousync.org/schemas/brain")
 @XmlSeeAlso({TrustStoreAuthentication.class, UserAuthentication.class, X509Authentication.class})
 @XmlAccessorType(XmlAccessType.NONE)
+@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
 public abstract class Authentication extends BeanObject {
 
 	/**
@@ -69,7 +72,7 @@ public abstract class Authentication extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for enumeration value of authentication type</h3>
+	 * <h3 class="en-US">Getter method for enumeration value of the authentication type</h3>
 	 * <h3 class="zh-CN">身份认证类型的枚举值的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Enumeration value of authentication type</span>

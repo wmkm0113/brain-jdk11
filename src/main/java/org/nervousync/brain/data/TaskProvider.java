@@ -115,7 +115,7 @@ public interface TaskProvider {
 	void finishTask(@Nonnull final Long taskCode, @Nonnull final Boolean hasError, @Nonnull final String errorMessage);
 
 	/**
-	 * <h3 class="en-US">Read data task status information list</h3>
+	 * <h3 class="en-US">Read data task status information lists</h3>
 	 * <h3 class="zh-CN">读取数据任务状态信息列表</h3>
 	 *
 	 * @param userCode  <span class="en-US">User identification code</span>

@@ -65,7 +65,9 @@ public final class BrainConfigureTest {
 		configure = this.newBuilder(configure)
 				.distributeConfig("Distribute")
 				.removeServer("localhost", 2271)
-				.serverLevel("localhost", 2270, 40)
+				.serverBuilder("localhost", 2270)
+				.level(40)
+				.confirmParent(SchemaConfigBuilder.DistributeConfigBuilder.class)
 				.trustStoreAuthenticationBuilder()
 				.confirmParent(SchemaConfigBuilder.DistributeConfigBuilder.class)
 				.confirmParent(BrainConfigureBuilder.class)
@@ -77,12 +79,17 @@ public final class BrainConfigureTest {
 	@Order(20)
 	public void jdbcConfig() throws Exception {
 		BrainConfigure configure =
-				this.jdbc(this.newBuilder(null).jdbcConfig("Jdbc"), Boolean.FALSE).confirm();
+				this.jdbc(this.newBuilder(null).jdbcConfig("Jdbc")).confirm();
 		System.out.println(configure.toString(StringUtils.StringType.XML));
 		configure = this.newBuilder(configure)
 				.jdbcConfig("Jdbc")
 				.removeServer("localhost", 2271)
-				.serverLevel("localhost", 2270, 40)
+				.serverBuilder("localhost", 2270)
+				.level(40)
+				.userAuthenticationBuilder()
+				.authenticate("testUser", "testPwd")
+				.confirmParent(SchemaConfigBuilder.ServerInfoBuilder.class)
+				.confirmParent(SchemaConfigBuilder.JdbcConfigBuilder.class)
 				.trustStoreAuthenticationBuilder()
 				.confirmParent(SchemaConfigBuilder.JdbcConfigBuilder.class)
 				.testConnection(Boolean.TRUE, Boolean.TRUE)
@@ -100,16 +107,10 @@ public final class BrainConfigureTest {
 		configure = this.newBuilder(configure)
 				.disableLazyInit()
 				.disableJmxMonitor()
-				.distributeConfig("Distribute")
-				.removeServer("localhost", 2271)
-				.serverLevel("localhost", 2270, 40)
-				.trustStoreAuthenticationBuilder()
-				.confirmParent(SchemaConfigBuilder.DistributeConfigBuilder.class)
+				.remoteConfig("Remote")
 				.confirmParent(BrainConfigureBuilder.class)
 				.jdbcConfig("Jdbc")
 				.removeServer("localhost", 2271)
-				.serverLevel("localhost", 2270, 40)
-				.confirmParent(SchemaConfigBuilder.JdbcConfigBuilder.class)
 				.testConnection(Boolean.TRUE, Boolean.TRUE)
 				.confirmParent(BrainConfigureBuilder.class)
 				.remoteConfig("Remote")
@@ -124,7 +125,7 @@ public final class BrainConfigureTest {
 	public void mixedConfig() throws Exception {
 		BrainConfigureBuilder brainConfigureBuilder = this.newBuilder(null);
 		brainConfigureBuilder = this.distribute(brainConfigureBuilder.distributeConfig("Distribute"));
-		brainConfigureBuilder = this.jdbc(brainConfigureBuilder.jdbcConfig("Jdbc"), Boolean.TRUE);
+		brainConfigureBuilder = this.jdbc(brainConfigureBuilder.jdbcConfig("Jdbc"));
 		brainConfigureBuilder = this.remote(brainConfigureBuilder.remoteConfig("Remote"));
 		brainConfigureBuilder = this.cache(brainConfigureBuilder.cacheConfig());
 		BrainConfigure configure = brainConfigureBuilder.defaultSchema("Jdbc").confirm();
@@ -142,10 +143,22 @@ public final class BrainConfigureTest {
 
 	private BrainConfigureBuilder distribute(final SchemaConfigBuilder.DistributeConfigBuilder configBuilder) {
 		return configBuilder.dialect("DistributeDialect")
-				.addServer("datacenter1", "localhost", 2270, 10)
-				.addServer("datacenter2", "localhost", 2271, 20)
-				.addServer("datacenter3", "localhost", 2272, 30)
-				.addServer("localhost", 2273, 0)
+				.serverBuilder("localhost", 2270)
+				.name("datacenter1")
+				.level(10)
+				.confirmParent(SchemaConfigBuilder.DistributeConfigBuilder.class)
+				.serverBuilder("localhost", 2271)
+				.name("datacenter2")
+				.level(20)
+				.confirmParent(SchemaConfigBuilder.DistributeConfigBuilder.class)
+				.serverBuilder("localhost", 2272)
+				.name("datacenter3")
+				.level(30)
+				.confirmParent(SchemaConfigBuilder.DistributeConfigBuilder.class)
+				.serverBuilder("localhost", 2273)
+				.name("datacenter")
+				.level(0)
+				.confirmParent(SchemaConfigBuilder.DistributeConfigBuilder.class)
 				.connectionPool(Boolean.TRUE, 2, 10)
 				.databaseName("DatabaseName")
 				.useSsl(Boolean.TRUE)
@@ -159,11 +172,11 @@ public final class BrainConfigureTest {
 				.confirmParent(BrainConfigureBuilder.class);
 	}
 
-	private BrainConfigureBuilder jdbc(final SchemaConfigBuilder.JdbcConfigBuilder configBuilder, final boolean serverArray)
+	private BrainConfigureBuilder jdbc(final SchemaConfigBuilder.JdbcConfigBuilder configBuilder)
 			throws Exception {
 		KeyPair keyPair = SecurityUtils.RSAKeyPair();
 		return configBuilder.dialect("JdbcDialect")
-				.servers(serverArray, "localhost|2270|10" + FileUtils.LF + "localhost|2271|20" + FileUtils.LF + "localhost|2272|30")
+				.servers("localhost|2270|10" + FileUtils.LF + "localhost|2271|20" + FileUtils.LF + "localhost|2272|30")
 				.connectionPool(Boolean.TRUE, 2, 10)
 				.jdbcUrl("jdbc:url://testUrl")
 				.lowQuery(1000L)

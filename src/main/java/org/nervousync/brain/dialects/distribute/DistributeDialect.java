@@ -24,7 +24,6 @@ import org.nervousync.brain.exceptions.dialects.DialectException;
 import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.commons.Globals;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -41,8 +40,8 @@ public abstract class DistributeDialect extends BaseDialect {
 	 * <h3 class="en-US">Constructor method for distribute database dialect abstract class</h3>
 	 * <h3 class="zh-CN">分布式数据库方言抽象类的构造方法</h3>
 	 *
-	 * @throws DialectException <span class="en-US">If the implementation class does not find the org. nervousync. brain. annotations. dialect.SchemaDialect annotation</span>
-	 *                          <span class="zh-CN">如果实现类未找到org. nervousync. brain. annotations. dialect.SchemaDialect注解</span>
+	 * @throws DialectException <span class="en-US">If the implementation class does not find the SchemaDialect annotation</span>
+	 *                          <span class="zh-CN">如果实现类未找到 SchemaDialect 注解</span>
 	 */
 	protected DistributeDialect() throws DialectException {
 		super(DialectType.Distribute);
@@ -50,7 +49,7 @@ public abstract class DistributeDialect extends BaseDialect {
 
 	@Override
 	protected String parameterValue(final Map<String, String> aliasMap, final AbstractParameter<?> abstractParameter,
-	                                final List<Object> values) throws SQLException {
+	                                final List<Object> values) {
 		return Globals.DEFAULT_VALUE_STRING;
 	}
 

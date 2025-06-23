@@ -17,11 +17,14 @@
 
 package org.nervousync.brain.schemas.distribute;
 
-import org.jetbrains.annotations.NotNull;
+import jakarta.annotation.Nonnull;
+import jakarta.persistence.LockModeType;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.server.ServerInfo;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
+import org.nervousync.brain.defines.InitOption;
+import org.nervousync.brain.defines.StrategyDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.DialectFactory;
 import org.nervousync.brain.dialects.distribute.DistributeClient;
@@ -29,6 +32,7 @@ import org.nervousync.brain.dialects.distribute.DistributeDialect;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
+import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.schemas.BaseSchema;
@@ -74,10 +78,10 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 	 *
 	 * @param schemaConfig <span class="en-US">Distribute data source configure information</span>
 	 *                     <span class="zh-CN">分布式数据源配置信息</span>
-	 * @throws SQLException <span class="en-US">Database server information not found or sharding configuration error</span>
+	 * @throws SQLException <span class="en-US">Database server information hasn't found or sharding configuration error</span>
 	 *                      <span class="zh-CN">数据库服务器信息未找到或分片配置出错</span>
 	 */
-	public DistributeSchema(@NotNull final DistributeSchemaConfig schemaConfig) throws Exception {
+	public DistributeSchema(@Nonnull final DistributeSchemaConfig schemaConfig) throws Exception {
 		super(schemaConfig, DialectFactory.retrieve(schemaConfig.getDialectName()).unwrap(DistributeDialect.class));
 		this.useSsl = schemaConfig.isUseSsl();
 		List<ServerInfo> serverList =
@@ -89,7 +93,6 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 		this.serverList = serverList;
 		this.serverInfo = serverList.get(0);
 		this.distributeClient = this.dialect.newClient(schemaConfig);
-		this.initSharding(this.shardingDefault);
 	}
 
 	@Override
@@ -125,7 +128,7 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 	}
 
 	@Override
-	public void truncateTable(@NotNull final TableDefine tableDefine) throws Exception {
+	public void truncateTable(@Nonnull final TableDefine tableDefine) throws Exception {
 		this.distributeClient.truncateTable(tableDefine);
 	}
 
@@ -135,79 +138,69 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 	}
 
 	@Override
-	public void dropTable(@NotNull final TableDefine tableDefine, @NotNull final DropOption dropOption)
+	public void dropTable(@Nonnull final TableDefine tableDefine, @Nonnull final DropOption dropOption)
 			throws Exception {
 		this.distributeClient.dropTable(tableDefine, dropOption);
 	}
 
 	@Override
-	public boolean lockRecord(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> filterMap)
+	public boolean lockRecord(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap,
+	                          final LockModeType lockOption)
 			throws Exception {
-		return this.distributeClient.lockRecord(this.shardingDatabase(tableDefine.getTableName(), filterMap),
-				tableDefine, filterMap);
+		return this.distributeClient.lockRecord(tableDefine, filterMap);
 	}
 
 	@Override
-	public Map<String, Object> insert(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> dataMap)
+	public Map<String, Object> insert(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> dataMap)
 			throws Exception {
-		return this.distributeClient.insert(this.shardingDatabase(tableDefine.getTableName(), dataMap),
-				tableDefine, dataMap);
+		return this.distributeClient.insert(tableDefine, dataMap);
 	}
 
 	@Override
-	public Map<String, Object> retrieve(@NotNull final TableDefine tableDefine, final String columns,
-	                                    @NotNull final Map<String, Object> filterMap,
-	                                    final boolean forUpdate) throws Exception {
-		return this.distributeClient.retrieve(this.shardingDatabase(tableDefine.getTableName(), filterMap), tableDefine,
-				StringUtils.isEmpty(columns) ? super.queryColumns(tableDefine, forUpdate) : columns,
+	public Map<String, Object> retrieve(@Nonnull final TableDefine tableDefine, final String columns,
+	                                    @Nonnull final Map<String, Object> filterMap, final boolean forUpdate,
+	                                    final LockModeType lockOption) throws Exception {
+		return this.distributeClient.retrieve(tableDefine,
+				StringUtils.isEmpty(columns) ? SELECT_ALL_COLUMNS : columns,
 				filterMap, forUpdate);
 	}
 
 	@Override
-	public int update(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> dataMap,
-	                  @NotNull final Map<String, Object> filterMap) throws Exception {
-		return this.distributeClient.update(this.shardingDatabase(tableDefine.getTableName(), filterMap),
-				tableDefine, dataMap, filterMap);
+	public int update(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> dataMap,
+	                  @Nonnull final Map<String, Object> filterMap) throws Exception {
+		return this.distributeClient.update(tableDefine, dataMap, filterMap);
 	}
 
 	@Override
-	public int delete(@NotNull final TableDefine tableDefine, @NotNull final Map<String, Object> filterMap)
+	public int delete(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap)
 			throws Exception {
-		return this.distributeClient.delete(this.shardingDatabase(tableDefine.getTableName(), filterMap),
-				tableDefine, filterMap);
+		return this.distributeClient.delete(tableDefine, filterMap);
 	}
 
 	@Override
-	public List<Map<String, Object>> query(@NotNull final TableDefine tableDefine,
-	                                       @NotNull final QueryInfo queryInfo) throws Exception {
-		return this.distributeClient.query(this.shardingDatabase(queryInfo.getTableName(), queryInfo.getConditionList()),
-				tableDefine, queryInfo);
+	public PartialCollection query(@Nonnull final TableDefine tableDefine,
+	                               @Nonnull final QueryInfo queryInfo) throws Exception {
+		return this.distributeClient.query(tableDefine, queryInfo);
 	}
 
 	@Override
-	public List<Map<String, Object>> queryForUpdate(@NotNull final TableDefine tableDefine,
-	                                                final List<Condition> conditionList)
+	public PartialCollection queryForUpdate(@Nonnull final TableDefine tableDefine,
+	                                                final List<Condition> conditionList, final LockModeType lockOption)
 			throws Exception {
-		return this.distributeClient.queryForUpdate(this.shardingDatabase(tableDefine.getTableName(), conditionList),
-				tableDefine, conditionList);
+		return this.distributeClient.queryForUpdate(tableDefine, conditionList);
 	}
 
 	@Override
-	public Long queryTotal(@NotNull final TableDefine tableDefine, final QueryInfo queryInfo) throws Exception {
-		return this.distributeClient.queryTotal(
-				this.shardingDatabase(tableDefine.getTableName(), queryInfo.getConditionList()),
-				tableDefine, queryInfo);
+	public Long queryTotal(@Nonnull final TableDefine tableDefine, final QueryInfo queryInfo) throws Exception {
+		return this.distributeClient.queryTotal(tableDefine, queryInfo);
 	}
 
 	@Override
-	protected void initSharding(final String shardingKey) throws Exception {
-		this.distributeClient.initSharding(shardingKey);
-	}
-
-	@Override
-	protected void initTable(@NotNull final DDLType ddlType, @NotNull final TableDefine tableDefine,
-	                         final String shardingDatabase) throws Exception {
-		this.distributeClient.initTable(ddlType, tableDefine, shardingDatabase);
+	public void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
+	                      final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy,
+	                      @Nonnull final Map<String, InitOption> initOptionsMap) throws Exception {
+		//  Ignore strategy configure
+		this.distributeClient.initTable(ddlType, tableDefine, initOptionsMap);
 	}
 
 	@Override

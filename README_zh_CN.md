@@ -231,9 +231,6 @@ SYNCHRONIZE: 同步实体类定义与数据表结构。如果数据表不存在�
 |     参数名     |                    数据类型                     |    备注     |
 |:-----------:|:-------------------------------------------:|:---------:|
 | tableDefine |  org.nervousync.brain.defines.TableDefine   |  数据表定义信息  |
-|  database   | org.nervousync.brain.defines.ShardingDefine | 数据库分片配置信息 |
-|    table    | org.nervousync.brain.defines.ShardingDefine | 数据表分片配置信息 |
-| schemaNames |           java.lang.String array            |  数据源名称数组  |
 
 抛出异常：如果在执行过程中出错
 
@@ -245,14 +242,13 @@ SYNCHRONIZE: 同步实体类定义与数据表结构。如果数据表不存在�
 
 **清空数据表：**
 
-调用org.nervousync.brain.source.BrainDataSource单例对象的名为 “truncateTable” 的方法来清空指定数据源中指定数据表的数据。
+调用org.nervousync.brain.source.BrainDataSource单例对象的名为 “truncateTable” 的方法来清空指定数据表的数据。
 
 参数信息：
 
-|     参数名     |                   数据类型                   |  Notes  |
-|:-----------:|:----------------------------------------:|:-------:|
-| tableDefine | org.nervousync.brain.defines.TableDefine | 数据表定义信息 |
-| schemaNames |          java.lang.String array          | 数据源名称数组 |
+|    参数名    |       数据类型       | Notes |
+|:---------:|:----------------:|:-----:|
+| tableName | java.lang.String | 数据表名  |
 
 Throws: Exception if an error occurred during execution
 
@@ -270,15 +266,14 @@ Throws: Exception if an error occurred during execution
 
 **删除数据表**
 
-调用org.nervousync.brain.source.BrainDataSource单例对象的名为 “dropTable” 的方法来删除指定数据源中的指定数据表。
+调用org.nervousync.brain.source.BrainDataSource单例对象的名为 “dropTable” 的方法来删除指定数据表。
 
 参数信息：
 
-|     参数名     |                       数据类型                       |   备注    |
-|:-----------:|:------------------------------------------------:|:-------:|
-| tableDefine |     org.nervousync.brain.defines.TableDefine     | 数据表定义信息 |
-| dropOption  | org.nervousync.brain.enumerations.ddl.DropOption | 级联删除选项  |
-| schemaNames |              java.lang.String array              | 数据源名称数组 |
+|    参数名     |                       数据类型                       |   备注   |
+|:----------:|:------------------------------------------------:|:------:|
+| tableName  |                 java.lang.String                 |  数据表名  |
+| dropOption | org.nervousync.brain.enumerations.ddl.DropOption | 级联删除选项 |
 
 抛出异常：如果在执行过程中出错
 
@@ -288,11 +283,10 @@ Throws: Exception if an error occurred during execution
 
 参数信息：
 
-|     参数名     |                   数据类型                   |   备注    |
-|:-----------:|:----------------------------------------:|:-------:|
-| schemaName  |             java.lang.String             |  数据源名称  |
-| tableDefine | org.nervousync.brain.defines.TableDefine | 数据表定义信息 |
-|   dataMap   |   java.util.Map<String, Serializable>    | 写入数据映射表 |
+|    参数名    |                数据类型                 |   备注    |
+|:---------:|:-----------------------------------:|:-------:|
+| tableName |          java.lang.String           |  数据表名   |
+|  dataMap  | java.util.Map<String, Serializable> | 写入数据映射表 |
 
 返回值：数据库生成的主键值映射表
 
@@ -304,13 +298,13 @@ Throws: Exception if an error occurred during execution
 
 参数信息：
 
-|     参数名     |                   数据类型                   |     备注     |
-|:-----------:|:----------------------------------------:|:----------:|
-| schemaName  |             java.lang.String             |   数据源名称    |
-| tableDefine | org.nervousync.brain.defines.TableDefine |  数据表定义信息   |
-|  filterMap  |   java.util.Map<String, Serializable>    |  查询条件映射表   |
-|  forUpdate  |                 boolean                  | 检索结果用于更新记录 |
-| lockOption  |     jakarta.persistence.LockModeType     |  查询记录锁定选项  |
+|    参数名     |                数据类型                 |     备注     |
+|:----------:|:-----------------------------------:|:----------:|
+| tableName  |          java.lang.String           |    数据表名    |
+|  columns   |          java.lang.String           |   查询数据列名   |
+| filterMap  | java.util.Map<String, Serializable> |  查询条件映射表   |
+| forUpdate  |               boolean               | 检索结果用于更新记录 |
+| lockOption |  jakarta.persistence.LockModeType   |  查询记录锁定选项  |
 
 返回值：检索到记录的数据映射表
 
@@ -322,12 +316,11 @@ Throws: Exception if an error occurred during execution
 
 参数信息：
 
-|     参数名     |                   数据类型                   |   备注    |
-|:-----------:|:----------------------------------------:|:-------:|
-| schemaName  |             java.lang.String             |  数据源名称  |
-| tableDefine | org.nervousync.brain.defines.TableDefine | 数据表定义信息 |
-|   dataMap   |   java.util.Map<String, Serializable>    | 更新数据映射表 |
-|  filterMap  |   java.util.Map<String, Serializable>    | 更新条件映射表 |
+|    参数名    |                数据类型                 |   备注    |
+|:---------:|:-----------------------------------:|:-------:|
+| tableName |          java.lang.String           |  数据表名   |
+|  dataMap  | java.util.Map<String, Serializable> | 更新数据映射表 |
+| filterMap | java.util.Map<String, Serializable> | 更新条件映射表 |
 
 返回值：更新记录条数
 
@@ -339,11 +332,10 @@ Throws: Exception if an error occurred during execution
 
 参数信息：
 
-|     参数名     |                   数据类型                   |   备注    |
-|:-----------:|:----------------------------------------:|:-------:|
-| schemaName  |             java.lang.String             |  数据源名称  |
-| tableDefine | org.nervousync.brain.defines.TableDefine | 数据表定义信息 |
-|  filterMap  |   java.util.Map<String, Serializable>    | 删除条件映射表 |
+|    参数名    |                数据类型                 |   备注    |
+|:---------:|:-----------------------------------:|:-------:|
+| tableName |          java.lang.String           |  数据表名   |
+| filterMap | java.util.Map<String, Serializable> | 删除条件映射表 |
 
 返回值：删除记录条数
 
@@ -367,12 +359,18 @@ Throws: Exception if an error occurred during execution
 
 调用org.nervousync.brain.source.BrainDataSource单例对象的名为 “queryForUpdate” 的方法在指定数据源中进行数据查询，查询结果用于批量更新数据操作。
 
-参数信息：
+参数信息类型1：
+
+|    参数名     |                 数据类型                 |    备注    |
+|:----------:|:------------------------------------:|:--------:|
+| queryInfo  | org.nervousync.brain.query.QueryInfo |  数据检索信息  |
+| lockOption |   jakarta.persistence.LockModeType   | 查询记录锁定选项 |
+
+参数信息类型2：
 
 |      参数名      |                             数据类型                              |     备注     |
 |:-------------:|:-------------------------------------------------------------:|:----------:|
-|  schemaName   |                       java.lang.String                        |   数据源名称    |
-|  tableDefine  |           org.nervousync.brain.defines.TableDefine            |  数据表定义信息   |
+|   tableName   |                       java.lang.String                        |    数据表名    |
 | conditionList | jva.util.List<org.nervousync.brain.query.condition.Condition> | 查询条件实例对象列表 |
 |  lockOption   |               jakarta.persistence.LockModeType                |  查询记录锁定选项  |
 

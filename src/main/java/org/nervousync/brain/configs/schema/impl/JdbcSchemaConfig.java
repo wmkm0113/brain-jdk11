@@ -32,7 +32,7 @@ import java.util.List;
  * <h2 class="zh-CN">JDBC数据源配置信息</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
- * @version $Revision : 1.0.0 $ $Date: Jul 12, 2020 16:42:35 $
+ * @version $Revision: 1.0.0 $ $Date: Jul 12, 2020 16:42:35 $
  */
 @XmlType(name = "jdbc_schema", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "jdbc_schema", namespace = "https://nervousync.org/schemas/brain")
@@ -94,6 +94,24 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	 */
 	@XmlElement(name = "test_on_return")
 	private boolean testOnReturn = Boolean.FALSE;
+	/**
+	 * <span class="en-US">Data source support sharding</span>
+	 * <span class="zh-CN">数据源是否支持分片</span>
+	 */
+	@XmlElement
+	private boolean sharding = Boolean.FALSE;
+	/**
+	 * <span class="en-US">Default database sharding value</span>
+	 * <span class="zh-CN">默认数据库分片值</span>
+	 */
+	@XmlElement(name = "sharding_default")
+	private String shardingDefault = Globals.DEFAULT_VALUE_STRING;
+	/**
+	 * <span class="en-US">Parameter value of create databases</span>
+	 * <span class="zh-CN">创建数据库时使用的参数信息</span>
+	 */
+	@XmlElement(name = "database_parameters")
+	private String databaseParameters = Globals.DEFAULT_VALUE_STRING;
 
 	/**
 	 * <h3 class="en-US">Constructor method for relational data source configuration information</h3>
@@ -202,7 +220,7 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for retry count if obtains connection has error</h3>
+	 * <h3 class="en-US">Setter method for retry count if it gets connection has error</h3>
 	 * <h3 class="zh-CN">获取连接的重试次数的Setter方法</h3>
 	 *
 	 * @param retryPeriod <span class="en-US">Retry count if obtains connection has error</span>
@@ -213,7 +231,7 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for maximum size of prepared statement</h3>
+	 * <h3 class="en-US">Getter method for maximum size of the prepared statement</h3>
 	 * <h3 class="zh-CN">查询分析器的最大缓存结果的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Maximum size of prepared statement</span>
@@ -224,7 +242,7 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for maximum size of prepared statement</h3>
+	 * <h3 class="en-US">Setter method for maximum size of the prepared statement</h3>
 	 * <h3 class="zh-CN">查询分析器的最大缓存结果的Setter方法</h3>
 	 *
 	 * @param cachedLimitSize <span class="en-US">Maximum size of prepared statement</span>
@@ -235,7 +253,7 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for check connection validate when obtains database connection</h3>
+	 * <h3 class="en-US">Getter method for check connection validate when gets database connection</h3>
 	 * <h3 class="zh-CN">在获取连接时检查连接是否有效的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Check connection validate when obtains database connection</span>
@@ -246,7 +264,7 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for check connection validate when obtains database connection</h3>
+	 * <h3 class="en-US">Setter method for check connection validate when gets database connection</h3>
 	 * <h3 class="zh-CN">在获取连接时检查连接是否有效的Setter方法</h3>
 	 *
 	 * @param testOnBorrow <span class="en-US">Check connection validate when obtains database connection</span>
@@ -276,6 +294,72 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	 */
 	public void setTestOnReturn(final boolean testOnReturn) {
 		this.testOnReturn = testOnReturn;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for data source support sharding</h3>
+	 * <h3 class="zh-CN">数据源是否支持分片的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Data source support sharding</span>
+	 * <span class="zh-CN">数据源是否支持分片</span>
+	 */
+	public boolean isSharding() {
+		return this.sharding;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for data source support sharding</h3>
+	 * <h3 class="zh-CN">数据源是否支持分片的Setter方法</h3>
+	 *
+	 * @param sharding <span class="en-US">Data source support sharding</span>
+	 *                 <span class="zh-CN">数据源是否支持分片</span>
+	 */
+	public void setSharding(final boolean sharding) {
+		this.sharding = sharding;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for default database sharding value</h3>
+	 * <h3 class="zh-CN">默认数据库分片值的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Default database sharding value</span>
+	 * <span class="zh-CN">默认数据库分片值</span>
+	 */
+	public String getShardingDefault() {
+		return this.shardingDefault;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for default database sharding value</h3>
+	 * <h3 class="zh-CN">默认数据库分片值的Setter方法</h3>
+	 *
+	 * @param shardingDefault <span class="en-US">Default database sharding value</span>
+	 *                        <span class="zh-CN">默认数据库分片值</span>
+	 */
+	public void setShardingDefault(final String shardingDefault) {
+		this.shardingDefault = shardingDefault;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the parameter value of create databases</h3>
+	 * <h3 class="zh-CN">创建数据库时使用的参数信息的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Parameter value of create databases</span>
+	 * <span class="zh-CN">创建数据库时使用的参数信息</span>
+	 */
+	public String getDatabaseParameters() {
+		return this.databaseParameters;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the parameter value of create databases</h3>
+	 * <h3 class="zh-CN">创建数据库时使用的参数信息的Setter方法</h3>
+	 *
+	 * @param databaseParameters <span class="en-US">Parameter value of create databases</span>
+	 *                           <span class="zh-CN">创建数据库时使用的参数信息</span>
+	 */
+	public void setDatabaseParameters(final String databaseParameters) {
+		this.databaseParameters = databaseParameters;
 	}
 
 	/**

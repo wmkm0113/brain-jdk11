@@ -21,7 +21,7 @@ import org.nervousync.brain.query.core.SortedItem;
 import org.nervousync.utils.ObjectUtils;
 
 /**
- * <h2 class="en-US">Query group by column define</h2>
+ * <h2 class="en-US">Query group by column definition</h2>
  * <h2 class="zh-CN">查询分组列信息定义</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
@@ -51,14 +51,14 @@ public final class GroupBy extends SortedItem {
 	private String columnName;
 
 	/**
-	 * <h3 class="en-US">Constructor method for query group by column define</h3>
+	 * <h3 class="en-US">Constructor method for the query group by column definition</h3>
 	 * <h3 class="zh-CN">查询分组列信息定义的构造方法</h3>
 	 */
 	public GroupBy() {
 	}
 
 	/**
-	 * <h3 class="en-US">Constructor method for query group by column define</h3>
+	 * <h3 class="en-US">Constructor method for the query group by column definition</h3>
 	 * <h3 class="zh-CN">查询分组列信息定义的构造方法</h3>
 	 *
 	 * @param tableName  <span class="en-US">Data table name</span>

@@ -17,7 +17,7 @@
 package org.nervousync.brain.enumerations.query;
 
 /**
- * <h2 class="en-US">Enumeration value of join type</h2>
+ * <h2 class="en-US">Enumeration value of join types</h2>
  * <h2 class="zh-CN">数据表关联类型的枚举值</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>

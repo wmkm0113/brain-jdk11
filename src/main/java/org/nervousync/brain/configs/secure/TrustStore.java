@@ -18,20 +18,23 @@
 package org.nervousync.brain.configs.secure;
 
 import jakarta.xml.bind.annotation.*;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.annotations.configs.Password;
 import org.nervousync.beans.core.BeanObject;
 import org.nervousync.commons.Globals;
+import org.nervousync.utils.StringUtils;
 
 /**
  * <h2 class="en-US">Trust certificate store configuration information</h2>
  * <h2 class="zh-CN">信任证书库配置信息</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
- * @version $Revision : 1.0.0 $ $Date: Jul 12, 2020 16:22:41 $
+ * @version $Revision: 1.0.0 $ $Date: Jul 12, 2020 16:22:41 $
  */
 @XmlType(name = "trust_store", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "trust_store", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
+@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
 public final class TrustStore extends BeanObject {
 
 	/**
@@ -62,7 +65,7 @@ public final class TrustStore extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for trust certificate store path</h3>
+	 * <h3 class="en-US">Getter method for the trust certificate store path</h3>
 	 * <h3 class="zh-CN">信任证书库地址的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Trust certificate store path</span>
@@ -73,7 +76,7 @@ public final class TrustStore extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for trust certificate store path</h3>
+	 * <h3 class="en-US">Setter method for the trust certificate store path</h3>
 	 * <h3 class="zh-CN">信任证书库地址的Setter方法</h3>
 	 *
 	 * @param trustStorePath <span class="en-US">Trust certificate store path</span>

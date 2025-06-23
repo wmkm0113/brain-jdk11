@@ -26,7 +26,7 @@ import org.nervousync.brain.enumerations.auth.AuthType;
  * <h2 class="zh-CN">X.509证书认证信息</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
- * @version $Revision : 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
+ * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
  */
 @XmlType(name = "x509_authentication", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "x509_authentication", namespace = "https://nervousync.org/schemas/brain")

@@ -304,7 +304,7 @@ public abstract class AbstractItem extends SortedItem implements Wrapper {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for query item type</h3>
+	 * <h3 class="en-US">Getter method for the query item type</h3>
 	 * <h3 class="zh-CN">查询项类型的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Query item type</span>

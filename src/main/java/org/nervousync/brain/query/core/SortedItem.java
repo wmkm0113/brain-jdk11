@@ -24,6 +24,7 @@ import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.enumerations.query.OrderType;
 import org.nervousync.commons.Globals;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 /**
@@ -36,40 +37,40 @@ import java.util.Comparator;
 @XmlTransient
 public abstract class SortedItem extends BeanObject {
 
-    /**
-     * <span class="en-US">Serial version UID</span>
-     * <span class="zh-CN">序列化UID</span>
-     */
-    private static final long serialVersionUID = -8808799678096056072L;
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = -8808799678096056072L;
 
-    /**
-     * <span class="en-US">Sort code</span>
-     * <span class="zh-CN">排序代码</span>
-     */
-    @XmlElement(name = "sort_code")
-    private int sortCode;
+	/**
+	 * <span class="en-US">Sort code</span>
+	 * <span class="zh-CN">排序代码</span>
+	 */
+	@XmlElement(name = "sort_code")
+	private int sortCode;
 
-    /**
-     * <h3 class="en-US">Getter method for sort code</h3>
-     * <h3 class="zh-CN">排序代码的Getter方法</h3>
-     *
-     * @return <span class="en-US">Sort code</span>
-     * <span class="zh-CN">排序代码</span>
-     */
-    public int getSortCode() {
-        return sortCode;
-    }
+	/**
+	 * <h3 class="en-US">Getter method for sort code</h3>
+	 * <h3 class="zh-CN">排序代码的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Sort code</span>
+	 * <span class="zh-CN">排序代码</span>
+	 */
+	public int getSortCode() {
+		return sortCode;
+	}
 
-    /**
-     * <h3 class="en-US">Setter method for sort code</h3>
-     * <h3 class="zh-CN">排序代码的Setter方法</h3>
-     *
-     * @param sortCode <span class="en-US">Sort code</span>
-     *                 <span class="zh-CN">排序代码</span>
-     */
-    public void setSortCode(int sortCode) {
-        this.sortCode = sortCode;
-    }
+	/**
+	 * <h3 class="en-US">Setter method for sort code</h3>
+	 * <h3 class="zh-CN">排序代码的Setter方法</h3>
+	 *
+	 * @param sortCode <span class="en-US">Sort code</span>
+	 *                 <span class="zh-CN">排序代码</span>
+	 */
+	public void setSortCode(int sortCode) {
+		this.sortCode = sortCode;
+	}
 
 	/**
 	 * <h3 class="en-US">Generate ASC mode comparator instance</h3>
@@ -78,9 +79,9 @@ public abstract class SortedItem extends BeanObject {
 	 * @return <span class="en-US">Generated ASC mode comparator instance</span>
 	 * <span class="zh-CN">生成的升序排序比较器</span>
 	 */
-    public static SortedItemComparator asc() {
-        return new SortedItemComparator(OrderType.ASC);
-    }
+	public static SortedItemComparator asc() {
+		return new SortedItemComparator(OrderType.ASC);
+	}
 
 	/**
 	 * <h3 class="en-US">Generate DESC mode comparator instance</h3>
@@ -89,9 +90,9 @@ public abstract class SortedItem extends BeanObject {
 	 * @return <span class="en-US">Generated DESC mode comparator instance</span>
 	 * <span class="zh-CN">生成的降序排序比较器</span>
 	 */
-    public static SortedItemComparator desc() {
-        return new SortedItemComparator(OrderType.DESC);
-    }
+	public static SortedItemComparator desc() {
+		return new SortedItemComparator(OrderType.DESC);
+	}
 
 	/**
 	 * <h2 class="en-US">Sort item comparator</h2>
@@ -100,13 +101,18 @@ public abstract class SortedItem extends BeanObject {
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:38:17 $
 	 */
-    public static final class SortedItemComparator implements Comparator<SortedItem> {
+	public static final class SortedItemComparator implements Comparator<SortedItem>, Serializable {
 
+		/**
+		 * <span class="en-US">Serial version UID</span>
+		 * <span class="zh-CN">序列化UID</span>
+		 */
+		private static final long serialVersionUID = 2521000063641856426L;
 		/**
 		 * <span class="en-US">Order type</span>
 		 * <span class="zh-CN">排序类型</span>
 		 */
-        private final OrderType orderType;
+		private final OrderType orderType;
 
 		/**
 		 * <h3 class="en-US">Private constructor method for sort item comparator</h3>
@@ -115,22 +121,22 @@ public abstract class SortedItem extends BeanObject {
 		 * @param orderType <span class="en-US">Order type</span>
 		 *                  <span class="zh-CN">排序类型</span>
 		 */
-        private SortedItemComparator(@Nonnull final OrderType orderType) {
-            this.orderType = orderType;
-        }
+		private SortedItemComparator(@Nonnull final OrderType orderType) {
+			this.orderType = orderType;
+		}
 
 		/**
 		 * (Non-javadoc)
 		 *
 		 * @see Comparator#compare(Object, Object)
 		 */
-        @Override
-        public int compare(final SortedItem o1, final SortedItem o2) {
-            int compare = Integer.compare(o1.getSortCode(), o2.getSortCode());
-            if (OrderType.DESC.equals(this.orderType)) {
-                compare *= Globals.DEFAULT_VALUE_INT;
-            }
-            return compare;
-        }
-    }
+		@Override
+		public int compare(final SortedItem o1, final SortedItem o2) {
+			int compare = Integer.compare(o1.getSortCode(), o2.getSortCode());
+			if (OrderType.DESC.equals(this.orderType)) {
+				compare *= Globals.DEFAULT_VALUE_INT;
+			}
+			return compare;
+		}
+	}
 }

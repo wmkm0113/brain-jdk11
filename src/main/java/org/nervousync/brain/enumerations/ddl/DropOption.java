@@ -19,7 +19,7 @@ package org.nervousync.brain.enumerations.ddl;
 import jakarta.xml.bind.annotation.XmlEnum;
 
 /**
- * <h2 class="en-US">Enumeration value of drop option</h2>
+ * <h2 class="en-US">Enumeration value of the drop option</h2>
  * <h2 class="zh-CN">删除选项的枚举值</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>

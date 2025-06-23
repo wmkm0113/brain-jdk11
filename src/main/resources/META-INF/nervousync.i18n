@@ -169,6 +169,14 @@
     {
       "code": "0x00DB00000042",
       "key": "Fill_Query_Item_Error"
+    },
+    {
+      "code": "0x00DB00000043",
+      "key": "Data_Migration_Error"
+    },
+    {
+      "code": "0x00DB00000044",
+      "key": "SSL_Context_Error"
     }
   ],
   "languages": [
@@ -358,7 +366,7 @@
         },
         {
           "key": "Sharding_Template_Error",
-          "content": "Sharding template string not found parameter: {shardingKey}! JDBC url: {0}"
+          "content": "Sharding template string not found parameter: {catalog}! JDBC url: {0}"
         },
         {
           "key": "Initialize_Schema_Error",
@@ -449,15 +457,23 @@
           "content": "Fill query item information error! "
         },
         {
+          "key": "Data_Migration_Error",
+          "content": "This operation will result in data migration! Table name: {0}, data map: {1}, filter map: {2}, origin catalog: {3}, new catalog: {4}"
+        },
+        {
+          "key": "SSL_Context_Error",
+          "content": "Initialize ssl context error! "
+        },
+        {
           "key": "Query_Cache_Key_Data",
           "content": "Query information cache key data map: {0}"
         },
         {
-          "key": "Simple_Remote_Dialect_Title",
+          "key": "Remote_Dialect_Title",
           "content": "Simple remote dialect "
         },
         {
-          "key": "Simple_Remote_Dialect_Description",
+          "key": "Remote_Dialect_Description",
           "content": "Simple remote dialect, only support username/password authenticator and pass clear text password information"
         }
       ]
@@ -739,15 +755,23 @@
           "content": "填充查询数据列信息出错！"
         },
         {
+          "key": "Data_Migration_Error",
+          "content": "此操作将导致数据迁移！数据表名：{0}，数据映射表：{1}，过滤条件映射表：{2}，原始分片：{3}，新分片：{4}"
+        },
+        {
+          "key": "SSL_Context_Error",
+          "content": "初始化SSL环境出错！"
+        },
+        {
           "key": "Query_Cache_Key_Data",
           "content": "查询信息缓存识别信息映射表：{0}"
         },
         {
-          "key": "Simple_Remote_Dialect_Title",
+          "key": "Remote_Dialect_Title",
           "content": "简单远程调用方言"
         },
         {
-          "key": "Simple_Remote_Dialect_Description",
+          "key": "Remote_Dialect_Description",
           "content": "简单远程调用方言，仅支持用户名/密码的身份认证方式，且使用明文传递"
         }
       ]

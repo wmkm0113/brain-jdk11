@@ -65,9 +65,14 @@ public class JdbcConnection implements Connection {
 	 * <span class="zh-CN">缓存的查询分析器映射表</span>
 	 */
 	private final List<StatementWrapper<?>> cachedStatements;
+	/**
+	 * <span class="en-US">Current database sharding value</span>
+	 * <span class="zh-CN">当前数据库分片值</span>
+	 */
+	private String currentCatalog;
 
 	/**
-	 * <h3 class="en-US">Constructor method for data source creates a wrapper class for the connection</h3>
+	 * <h3 class="en-US">Constructor method for the data source creates a wrapper class for the connection</h3>
 	 * <h3 class="zh-CN">数据源创建连接的包装类的构造方法</h3>
 	 *
 	 * @param connectionPool  <span class="en-US">Database connection pool</span>
@@ -80,27 +85,21 @@ public class JdbcConnection implements Connection {
 	 *                        <span class="zh-CN">查询分析器的最大缓存结果</span>
 	 */
 	JdbcConnection(final JdbcConnectionPool connectionPool, final Connection connection,
-	               final long lowQueryTimeout, final int cachedLimitSize) {
+	               final long lowQueryTimeout, final int cachedLimitSize) throws SQLException {
 		this.connectionPool = connectionPool;
 		this.connection = connection;
 		this.lowQueryTimeout = lowQueryTimeout;
 		this.cachedLimitSize = cachedLimitSize;
 		this.cachedStatements = new ArrayList<>();
+		this.currentCatalog = connection.getCatalog();
+	}
+
+	boolean match(final int identifyCode, final String catalog) {
+		return (this.connectionPool.getIdentifyCode() == identifyCode) && StringUtils.notBlank(catalog) && ObjectUtils.nullSafeEquals(this.currentCatalog, catalog);
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for connection pool identify code</h3>
-	 * <h3 class="zh-CN">连接池识别代码的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Connection pool identify code</span>
-	 * <span class="zh-CN">连接池识别代码</span>
-	 */
-	public int identifyCode() {
-		return this.connectionPool.getIdentifyCode();
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for maximum size of prepared statement</h3>
+	 * <h3 class="en-US">Setter method for maximum size of the prepared statement</h3>
 	 * <h3 class="zh-CN">查询分析器的最大缓存结果的Setter方法</h3>
 	 *
 	 * @param cachedLimitSize <span class="en-US">Maximum size of prepared statement</span>
@@ -190,10 +189,8 @@ public class JdbcConnection implements Connection {
 
 	@Override
 	public CallableStatement prepareCall(final String sql,
-	                                     @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE})
-	                                     final int resultSetType,
-	                                     @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE})
-	                                     final int resultSetConcurrency)
+	                                     @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE}) final int resultSetType,
+	                                     @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE}) final int resultSetConcurrency)
 			throws SQLException {
 		return this.obtainStatement(KeyType.CALL_CONCURRENCY, sql, resultSetType, resultSetConcurrency,
 				ResultSet.CLOSE_CURSORS_AT_COMMIT, Statement.NO_GENERATED_KEYS,
@@ -217,12 +214,9 @@ public class JdbcConnection implements Connection {
 
 	@Override
 	public CallableStatement prepareCall(final String sql,
-	                                     @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE})
-	                                     final int resultSetType,
-	                                     @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE})
-	                                     final int resultSetConcurrency,
-	                                     @MagicConstant(intValues = {ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT})
-	                                     final int resultSetHoldability)
+	                                     @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE}) final int resultSetType,
+	                                     @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE}) final int resultSetConcurrency,
+	                                     @MagicConstant(intValues = {ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT}) final int resultSetHoldability)
 			throws SQLException {
 		return this.obtainStatement(KeyType.CALL_HOLDABILITY, sql, resultSetType,
 				resultSetConcurrency, resultSetHoldability, Statement.NO_GENERATED_KEYS,
@@ -297,7 +291,11 @@ public class JdbcConnection implements Connection {
 
 	@Override
 	public void setCatalog(final String catalog) throws SQLException {
-		this.connection.setCatalog(catalog);
+		if (StringUtils.notBlank(catalog) && ObjectUtils.nullSafeEquals(this.currentCatalog, catalog)) {
+			this.connection.setCatalog(catalog);
+			this.cachedStatements.clear();
+			this.currentCatalog = catalog;
+		}
 	}
 
 	@Override
@@ -479,14 +477,10 @@ public class JdbcConnection implements Connection {
 	 *                      <span class="zh-CN">如果发生数据库访问错误，或者在关闭的连接上调用此方法</span>
 	 */
 	private StatementWrapper<?> obtainStatement(final KeyType keyType, final String sql,
-												@MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE})
-	                                            final int resultSetType,
-												@MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE})
-	                                            final int resultSetConcurrency,
-												@MagicConstant(intValues = {ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT})
-	                                            final int resultSetHoldability,
-												@MagicConstant(intValues = {Statement.RETURN_GENERATED_KEYS, Statement.NO_GENERATED_KEYS})
-	                                            final int autoGeneratedKeys,
+	                                            @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE}) final int resultSetType,
+	                                            @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE}) final int resultSetConcurrency,
+	                                            @MagicConstant(intValues = {ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT}) final int resultSetHoldability,
+	                                            @MagicConstant(intValues = {Statement.RETURN_GENERATED_KEYS, Statement.NO_GENERATED_KEYS}) final int autoGeneratedKeys,
 	                                            final int[] columnIndexes, final String[] columnNames)
 			throws SQLException {
 		String cacheKey = cacheKey(keyType, sql, resultSetType, resultSetConcurrency,
@@ -611,7 +605,7 @@ public class JdbcConnection implements Connection {
 		if (LOGGER.isDebugEnabled()) {
 			LOGGER.debug("Cache_Statement_Map", jsonData);
 		}
-		return ConvertUtils.toHex(SecurityUtils.SHA256(jsonData));
+		return ConvertUtils.bytesToHex(SecurityUtils.SHA256(jsonData));
 	}
 
 	/**

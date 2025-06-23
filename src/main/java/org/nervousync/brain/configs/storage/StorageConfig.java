@@ -11,9 +11,11 @@ package org.nervousync.brain.configs.storage;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.commons.Globals;
+import org.nervousync.utils.StringUtils;
 
 /**
  * <h2 class="en-US">Configure information of data import/export utilities</h2>
@@ -24,6 +26,7 @@ import org.nervousync.commons.Globals;
  */
 @XmlType(name = "storage_config", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "storage_config", namespace = "https://nervousync.org/schemas/brain")
+@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
 public final class StorageConfig extends BeanObject {
 
 	/**
@@ -115,7 +118,7 @@ public final class StorageConfig extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for number of tasks allowed to be executed simultaneously</h3>
+	 * <h3 class="en-US">Getter method for the number of tasks allowed to be executed simultaneously</h3>
 	 * <h3 class="zh-CN">允许同时执行的任务数的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Number of tasks allowed to be executed simultaneously</span>

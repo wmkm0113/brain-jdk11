@@ -36,7 +36,7 @@ public final class CallableStatementWrapper extends StatementWrapper<CallableSta
 		implements CallableStatement {
 
 	/**
-	 * <h3 class="en-US">Constructor method for implementation class for callable statement</h3>
+	 * <h3 class="en-US">Constructor method for implementation class for the callable statement</h3>
 	 * <h3 class="zh-CN">可缓存的参数化存储过程执行器实现类的构造方法</h3>
 	 *
 	 * @param identifyKey     <span class="en-US">Identification code</span>
@@ -56,7 +56,7 @@ public final class CallableStatementWrapper extends StatementWrapper<CallableSta
 	}
 
 	/**
-	 * <h3 class="en-US">Constructor method for implementation class for callable statement</h3>
+	 * <h3 class="en-US">Constructor method for implementation class for the callable statement</h3>
 	 * <h3 class="zh-CN">可缓存的参数化存储过程执行器实现类的构造方法</h3>
 	 *
 	 * @param identifyKey          <span class="en-US">Identification code</span>
@@ -82,7 +82,7 @@ public final class CallableStatementWrapper extends StatementWrapper<CallableSta
 	}
 
 	/**
-	 * <h3 class="en-US">Constructor method for implementation class for callable statement</h3>
+	 * <h3 class="en-US">Constructor method for implementation class for the callable statement</h3>
 	 * <h3 class="zh-CN">可缓存的参数化存储过程执行器实现类的构造方法</h3>
 	 *
 	 * @param identifyKey          <span class="en-US">Identification code</span>

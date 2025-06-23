@@ -274,6 +274,6 @@ public final class BrainCommons {
 		if (StringUtils.isEmpty(string)) {
 			return Globals.DEFAULT_VALUE_STRING;
 		}
-		return ConvertUtils.toHex(SecurityUtils.SHA256(string));
+		return ConvertUtils.bytesToHex(SecurityUtils.SHA256(string));
 	}
 }

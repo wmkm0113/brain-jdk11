@@ -231,9 +231,6 @@ SYNCHRONIZE: 同步實體類別定義與資料表結構。如果資料表不存�
 |    參數名稱     |                    資料型別                     |    備註     |
 |:-----------:|:-------------------------------------------:|:---------:|
 | tableDefine |  org.nervousync.brain.defines.TableDefine   |  資料表定義資訊  |
-|  database   | org.nervousync.brain.defines.ShardingDefine | 資料庫分片設定資訊 |
-|    table    | org.nervousync.brain.defines.ShardingDefine | 資料表分片設定資訊 |
-| schemaNames |           java.lang.String array            | 資料來源名稱陣列  |
 
 拋出例外：如果在執行過程中出錯
 
@@ -245,14 +242,13 @@ SYNCHRONIZE: 同步實體類別定義與資料表結構。如果資料表不存�
 
 **清空資料表：**
 
-呼叫org.nervousync.brain.source.BrainDataSource單例物件的名為 “truncateTable” 的方法來清空指定資料來源中指定資料表的資料。
+呼叫org.nervousync.brain.source.BrainDataSource單例物件的名為 “truncateTable” 的方法來清空指定資料表的資料。
 
 參數資訊：
 
-|     參數名     |                   資料型別                   |  Notes   |
-|:-----------:|:----------------------------------------:|:--------:|
-| tableDefine | org.nervousync.brain.defines.TableDefine | 資料表定義資訊  |
-| schemaNames |          java.lang.String array          | 資料來源名稱陣列 |
+|    參數名    |       資料型別       | Notes |
+|:---------:|:----------------:|:-----:|
+| tableName | java.lang.String | 資料表名  |
 
 Throws: Exception if an error occurred during execution
 
@@ -270,15 +266,14 @@ Throws: Exception if an error occurred during execution
 
 **刪除資料表**
 
-呼叫org.nervousync.brain.source.BrainDataSource單例物件的名為 “dropTable” 的方法來刪除指定資料來源中的指定資料表。
+呼叫org.nervousync.brain.source.BrainDataSource單例物件的名為 “dropTable” 的方法來刪除指定資料表。
 
 參數資訊：
 
-|    參數名稱     |                       資料型別                       |    備註    |
-|:-----------:|:------------------------------------------------:|:--------:|
-| tableDefine |     org.nervousync.brain.defines.TableDefine     | 資料表定義資訊  |
-| dropOption  | org.nervousync.brain.enumerations.ddl.DropOption |  級聯刪除選項  |
-| schemaNames |              java.lang.String array              | 資料來源名稱陣列 |
+|    參數名稱    |                       資料型別                       |   備註   |
+|:----------:|:------------------------------------------------:|:------:|
+| tableName  |                 java.lang.String                 |  資料表名  |
+| dropOption | org.nervousync.brain.enumerations.ddl.DropOption | 級聯刪除選項 |
 
 拋出例外：如果在執行過程中出錯
 
@@ -288,11 +283,10 @@ Throws: Exception if an error occurred during execution
 
 參數資訊：
 
-|    參數名稱     |                   資料型別                   |   備註    |
-|:-----------:|:----------------------------------------:|:-------:|
-| schemaName  |             java.lang.String             | 資料來源名稱  |
-| tableDefine | org.nervousync.brain.defines.TableDefine | 資料表定義資訊 |
-|   dataMap   |   java.util.Map<String, Serializable>    | 寫入資料映射表 |
+|   參數名稱    |                資料型別                 |   備註    |
+|:---------:|:-----------------------------------:|:-------:|
+| tableName |          java.lang.String           |  資料表名   |
+|  dataMap  | java.util.Map<String, Serializable> | 寫入資料映射表 |
 
 傳回值：資料庫產生的主鍵值映射表
 
@@ -304,13 +298,13 @@ Throws: Exception if an error occurred during execution
 
 參數資訊：
 
-|    參數名稱     |                   資料型別                   |     備註     |
-|:-----------:|:----------------------------------------:|:----------:|
-| schemaName  |             java.lang.String             |   資料來源名稱   |
-| tableDefine | org.nervousync.brain.defines.TableDefine |  資料表定義資訊   |
-|  filterMap  |   java.util.Map<String, Serializable>    |  查詢條件映射表   |
-|  forUpdate  |                 boolean                  | 檢索結果用於更新記錄 |
-| lockOption  |     jakarta.persistence.LockModeType     |  查詢記錄鎖定選項  |
+|    參數名稱    |                資料型別                 |     備註     |
+|:----------:|:-----------------------------------:|:----------:|
+| tableName  |          java.lang.String           |    資料表名    |
+|  columns   |          java.lang.String           |   查詢資料列名   |
+| filterMap  | java.util.Map<String, Serializable> |  查詢條件映射表   |
+| forUpdate  |               boolean               | 檢索結果用於更新記錄 |
+| lockOption |  jakarta.persistence.LockModeType   |  查詢記錄鎖定選項  |
 
 傳回值：檢索到記錄的資料映射表
 
@@ -322,12 +316,11 @@ Throws: Exception if an error occurred during execution
 
 參數資訊：
 
-|    參數名稱     |                   資料型別                   |   備註    |
-|:-----------:|:----------------------------------------:|:-------:|
-| schemaName  |             java.lang.String             | 資料來源名稱  |
-| tableDefine | org.nervousync.brain.defines.TableDefine | 資料表定義資訊 |
-|   dataMap   |   java.util.Map<String, Serializable>    | 更新資料映射表 |
-|  filterMap  |   java.util.Map<String, Serializable>    | 更新條件映射表 |
+|   參數名稱    |                資料型別                 |   備註    |
+|:---------:|:-----------------------------------:|:-------:|
+| tableName |          java.lang.String           |  資料表名   |
+|  dataMap  | java.util.Map<String, Serializable> | 更新資料映射表 |
+| filterMap | java.util.Map<String, Serializable> | 更新條件映射表 |
 
 傳回值：更新記錄條數
 
@@ -339,11 +332,10 @@ Throws: Exception if an error occurred during execution
 
 參數資訊：
 
-|    參數名稱     |                   資料型別                   |   備註    |
-|:-----------:|:----------------------------------------:|:-------:|
-| schemaName  |             java.lang.String             | 資料來源名稱  |
-| tableDefine | org.nervousync.brain.defines.TableDefine | 資料表定義資訊 |
-|  filterMap  |   java.util.Map<String, Serializable>    | 刪除條件映射表 |
+|   參數名稱    |                資料型別                 |   備註    |
+|:---------:|:-----------------------------------:|:-------:|
+| tableName |          java.lang.String           |  資料表名   |
+| filterMap | java.util.Map<String, Serializable> | 刪除條件映射表 |
 
 傳回值：刪除記錄條數
 
@@ -367,12 +359,18 @@ Throws: Exception if an error occurred during execution
 
 呼叫org.nervousync.brain.source.BrainDataSource單例物件的名為 “queryForUpdate” 的方法在指定資料來源中進行資料查詢，查詢結果用於批次更新資料操作。
 
-參數資訊：
+參數資訊類型1：
+
+|    參數名稱    |                 資料型別                 |    備註    |
+|:----------:|:------------------------------------:|:--------:|
+| queryInfo  | org.nervousync.brain.query.QueryInfo |  資料檢索資訊  |
+| lockOption |   jakarta.persistence.LockModeType   | 查詢記錄鎖定選項 |
+
+參數資訊類型2：
 
 |     參數名稱      |                             資料型別                              |     備註     |
 |:-------------:|:-------------------------------------------------------------:|:----------:|
-|  schemaName   |                       java.lang.String                        |   資料來源名稱   |
-|  tableDefine  |           org.nervousync.brain.defines.TableDefine            |  資料表定義資訊   |
+|   tableName   |                       java.lang.String                        |    資料表名    |
 | conditionList | jva.util.List<org.nervousync.brain.query.condition.Condition> | 查詢條件實例物件清單 |
 |  lockOption   |               jakarta.persistence.LockModeType                |  查詢記錄鎖定選項  |
 

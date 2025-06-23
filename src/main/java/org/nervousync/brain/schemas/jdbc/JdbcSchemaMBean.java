@@ -125,7 +125,7 @@ public interface JdbcSchemaMBean extends BaseSchemaMBean {
 	long getRetryPeriod();
 
 	/**
-	 * <h3 class="en-US">Setup maximum size of prepared statement</h3>
+	 * <h3 class="en-US">Setup maximum size of the prepared statement</h3>
 	 * <h3 class="zh-CN">设置查询分析器的最大缓存结果</h3>
 	 *
 	 * @param cacheLimitSize <span class="en-US">Maximum size of prepared statement</span>
@@ -134,7 +134,7 @@ public interface JdbcSchemaMBean extends BaseSchemaMBean {
 	void configCacheLimitSize(final int cacheLimitSize);
 
 	/**
-	 * <h3 class="en-US">Read maximum size of prepared statement</h3>
+	 * <h3 class="en-US">Read the maximum size of the prepared statement</h3>
 	 * <h3 class="zh-CN">获取查询分析器的最大缓存结果</h3>
 	 *
 	 * @return <span class="en-US">Maximum size of prepared statement</span>
@@ -143,7 +143,7 @@ public interface JdbcSchemaMBean extends BaseSchemaMBean {
 	int getCachedLimitSize();
 
 	/**
-	 * <h3 class="en-US">Setup check connection validate</h3>
+	 * <h3 class="en-US">Setup checks connection validate</h3>
 	 * <h3 class="zh-CN">设置连接检查</h3>
 	 *
 	 * @param testOnBorrow <span class="en-US">Check connection validate when obtains database connection</span>
@@ -154,7 +154,7 @@ public interface JdbcSchemaMBean extends BaseSchemaMBean {
 	void configTest(final boolean testOnBorrow, final boolean testOnReturn);
 
 	/**
-	 * <h3 class="en-US">Read check connection validate when obtains database connection</h3>
+	 * <h3 class="en-US">Read check connection validate when gets database connection</h3>
 	 * <h3 class="zh-CN">获取在获取连接时检查连接是否有效</h3>
 	 *
 	 * @return <span class="en-US">Check connection validate when obtains database connection</span>

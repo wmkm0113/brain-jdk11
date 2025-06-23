@@ -21,7 +21,7 @@ import org.nervousync.brain.enumerations.query.ItemType;
 import org.nervousync.brain.query.core.AbstractItem;
 
 /**
- * <h2 class="en-US">Query column information define</h2>
+ * <h2 class="en-US">Query column information defines</h2>
  * <h2 class="zh-CN">查询数据列信息定义</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>

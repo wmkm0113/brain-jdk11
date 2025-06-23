@@ -22,7 +22,7 @@ import jakarta.xml.bind.annotation.*;
 import org.nervousync.beans.core.BeanObject;
 
 /**
- * <h2 class="en-US">Match condition range define</h2>
+ * <h2 class="en-US">Match condition ranges define</h2>
  * <h2 class="zh-CN">匹配条件范围定义</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>

@@ -27,7 +27,7 @@ import org.nervousync.brain.query.param.impl.FunctionParameter;
 import java.util.*;
 
 /**
- * <h2 class="en-US">Query function information define</h2>
+ * <h2 class="en-US">Query function information defines</h2>
  * <h2 class="zh-CN">查询数据函数信息定义</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>

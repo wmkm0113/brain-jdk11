@@ -38,7 +38,7 @@ public interface DistributeSchemaMBean extends BaseSchemaMBean {
 	String getServerInfo();
 
 	/**
-	 * <h3 class="en-US">Read main database server information</h3>
+	 * <h3 class="en-US">Read the main database server information</h3>
 	 * <h3 class="zh-CN">获取主数据库服务器信息</h3>
 	 *
 	 * @return <span class="en-US">Main database server information</span>
@@ -47,7 +47,7 @@ public interface DistributeSchemaMBean extends BaseSchemaMBean {
 	String getMainServer();
 
 	/**
-	 * <h3 class="en-US">Read use ssl status when connect to database</h3>
+	 * <h3 class="en-US">Read use ssl status when connect to the database</h3>
 	 * <h3 class="zh-CN">获取是否使用SSL连接数据库</h3>
 	 *
 	 * @return <span class="en-US">Use ssl status</span>

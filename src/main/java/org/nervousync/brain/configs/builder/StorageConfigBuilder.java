@@ -27,7 +27,7 @@ import org.nervousync.utils.ObjectUtils;
  * <h2 class="zh-CN">数据导入导出工具配置信息构建器的实现类</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
- * @version $Revision : 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
+ * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
  */
 public final class StorageConfigBuilder extends AbstractBuilder<StorageConfig> {
 

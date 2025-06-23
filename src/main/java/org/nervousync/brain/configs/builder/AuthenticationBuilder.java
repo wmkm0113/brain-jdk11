@@ -36,7 +36,7 @@ import java.security.cert.X509Certificate;
  * <h2 class="zh-CN">认证信息构建器的抽象类</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
- * @version $Revision : 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
+ * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
  */
 public abstract class AuthenticationBuilder<T extends Authentication> extends AbstractBuilder<T> {
 
@@ -78,7 +78,7 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 	 * <h2 class="zh-CN">使用证书库中X.509证书的认证信息的构建器</h2>
 	 *
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
-	 * @version $Revision : 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
+	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
 	 */
 	public static final class TrustStoreAuthenticationBuilder extends AuthenticationBuilder<TrustStoreAuthentication> {
 
@@ -91,7 +91,7 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 		 * @param authentication <span class="en-US">Use the authentication information of the X.509 certificate in the certificate store</span>
 		 *                       <span class="zh-CN">使用证书库中X.509证书的认证信息</span>
 		 */
-		TrustStoreAuthenticationBuilder(final SchemaConfigBuilder<?> parentBuilder,
+		TrustStoreAuthenticationBuilder(final ParentBuilder parentBuilder,
 		                                @Nonnull final TrustStoreAuthentication authentication) {
 			super(parentBuilder, authentication);
 		}
@@ -146,7 +146,7 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 	 * <h2 class="zh-CN">基本身份认证信息的构建器</h2>
 	 *
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
-	 * @version $Revision : 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
+	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
 	 */
 	public static final class UserAuthenticationBuilder extends AuthenticationBuilder<UserAuthentication> {
 
@@ -159,7 +159,7 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 		 * @param authentication <span class="en-US">Basic authentication information</span>
 		 *                       <span class="zh-CN">基本身份认证信息</span>
 		 */
-		UserAuthenticationBuilder(final SchemaConfigBuilder<?> parentBuilder,
+		UserAuthenticationBuilder(final ParentBuilder parentBuilder,
 		                          @Nonnull final UserAuthentication authentication) {
 			super(parentBuilder, authentication);
 		}
@@ -195,7 +195,7 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 	 * <h2 class="zh-CN">X.509证书认证信息的构建器</h2>
 	 *
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
-	 * @version $Revision : 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
+	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
 	 */
 	public static final class X509AuthenticationBuilder extends AuthenticationBuilder<X509Authentication> {
 

@@ -100,7 +100,7 @@ public enum ConditionCode {
      */
 	EXISTS,
     /**
-     * <span class="en-US">Sub-query results not contains record</span>
+     * <span class="en-US">Sub-query results don't contain record</span>
      * <span class="zh-CN">子查询没有记录</span>
      */
 	NOT_EXISTS

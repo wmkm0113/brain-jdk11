@@ -195,7 +195,7 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	 *                  <span class="zh-CN">关联列信息列表</span>
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
-	 * @throws SQLException <span class="en-US">If the query join information already exists</span>
+	 * @throws SQLException <span class="en-US">If the query joins information already exists</span>
 	 *                      <span class="zh-CN">如果关联信息已存在</span>
 	 */
 	public BrainQueryBuilder joinTable(@Nonnull final String leftTable, final String joinTable,
@@ -217,7 +217,7 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	 *                  <span class="zh-CN">关联列信息列表</span>
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
-	 * @throws SQLException <span class="en-US">If the query join information already exists</span>
+	 * @throws SQLException <span class="en-US">If the query joins information already exists</span>
 	 *                      <span class="zh-CN">如果关联信息已存在</span>
 	 */
 	public BrainQueryBuilder joinTable(@Nonnull final String leftTable, final JoinType joinType, final String joinTable,
@@ -241,7 +241,7 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	 *                  <span class="zh-CN">关联列信息列表</span>
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
-	 * @throws SQLException <span class="en-US">If the query join information already exists</span>
+	 * @throws SQLException <span class="en-US">If the query joins information already exists</span>
 	 *                      <span class="zh-CN">如果关联信息已存在</span>
 	 */
 	public BrainQueryBuilder joinTable(@Nonnull final String leftTable, final JoinType joinType, final String joinTable,
@@ -5449,7 +5449,7 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	}
 
 	/**
-	 * <h3 class="en-US">Add group by data column</h3>
+	 * <h3 class="en-US">Add the group by data column</h3>
 	 * <h3 class="zh-CN">添加分组数据列</h3>
 	 *
 	 * @param tableName  <span class="en-US">Data table name</span>
@@ -5466,7 +5466,7 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	}
 
 	/**
-	 * <h3 class="en-US">Add group by data column</h3>
+	 * <h3 class="en-US">Add the group by data column</h3>
 	 * <h3 class="zh-CN">添加分组数据列</h3>
 	 *
 	 * @param tableName  <span class="en-US">Data table name</span>
@@ -5490,7 +5490,7 @@ public final class BrainQueryBuilder implements Builder<QueryInfo> {
 	}
 
 	/**
-	 * <h3 class="en-US">Setting for query result can cacheable</h3>
+	 * <h3 class="en-US">Setting for the query result can cacheable</h3>
 	 * <h3 class="zh-CN">设置查询结果可以缓存</h3>
 	 *
 	 * @param cacheables <span class="en-US">Query result can cacheable</span>

@@ -38,7 +38,6 @@ import java.sql.SQLException;
 @WebServiceClient
 public interface RemoteClient {
 
-
 	/**
 	 * <h3 class="en-US">Begin transactional</h3>
 	 * <h3 class="zh-CN">开启事务</h3>
@@ -94,7 +93,7 @@ public interface RemoteClient {
 	String commit(@WebParam @PathParam("txCode") final long txCode);
 
 	/**
-	 * <h3 class="en-US">Truncate all data table</h3>
+	 * <h3 class="en-US">Truncate all data tables</h3>
 	 * <h3 class="zh-CN">清空所有数据表</h3>
 	 *
 	 * @return <span class="en-US">Response data</span>
@@ -123,7 +122,7 @@ public interface RemoteClient {
 	String truncateTable(@Nonnull @WebParam @PathParam("tableName") final String tableName);
 
 	/**
-	 * <h3 class="en-US">Drop all data table</h3>
+	 * <h3 class="en-US">Drop all data tables</h3>
 	 * <h3 class="zh-CN">删除所有数据表</h3>
 	 *
 	 * @param dropOption <span class="en-US">Cascading delete options</span>

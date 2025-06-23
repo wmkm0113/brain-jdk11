@@ -21,7 +21,9 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.beans.core.BeanObject;
+import org.nervousync.utils.StringUtils;
 
 import java.util.List;
 
@@ -34,7 +36,14 @@ import java.util.List;
  */
 @XmlType(name = "index_define", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "index_define", namespace = "https://nervousync.org/schemas/brain")
+@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
 public final class IndexDefine extends BeanObject {
+
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = 5899867987262401316L;
 
 	/**
 	 * <span class="en-US">Index name</span>
@@ -86,7 +95,7 @@ public final class IndexDefine extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for index contains column name list</h3>
+	 * <h3 class="en-US">Getter method for index contains the column name list</h3>
 	 * <h3 class="zh-CN">索引包含的列名列表的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Index contains column name list</span>
@@ -97,7 +106,7 @@ public final class IndexDefine extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for index contains column name list</h3>
+	 * <h3 class="en-US">Setter method for index contains the column name list</h3>
 	 * <h3 class="zh-CN">索引包含的列名列表的Setter方法</h3>
 	 *
 	 * @param columnList <span class="en-US">Index contains column name list</span>

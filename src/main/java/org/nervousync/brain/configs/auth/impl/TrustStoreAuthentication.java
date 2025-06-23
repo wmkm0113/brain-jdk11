@@ -28,7 +28,7 @@ import org.nervousync.commons.Globals;
  * <h2 class="zh-CN">使用证书库中X.509证书的认证信息</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
- * @version $Revision : 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
+ * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
  */
 @XmlType(name = "trust_store_authentication", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "trust_store_authentication", namespace = "https://nervousync.org/schemas/brain")
@@ -70,7 +70,7 @@ public final class TrustStoreAuthentication extends Authentication {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for trust certificate store path</h3>
+	 * <h3 class="en-US">Getter method for the trust certificate store path</h3>
 	 * <h3 class="zh-CN">信任证书库地址的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Trust certificate store path</span>
@@ -81,7 +81,7 @@ public final class TrustStoreAuthentication extends Authentication {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for trust certificate store path</h3>
+	 * <h3 class="en-US">Setter method for the trust certificate store path</h3>
 	 * <h3 class="zh-CN">信任证书库地址的Setter方法</h3>
 	 *
 	 * @param trustStorePath <span class="en-US">Trust certificate store path</span>

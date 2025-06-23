@@ -146,7 +146,7 @@ public final class QueryData extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for query condition instance list</h3>
+	 * <h3 class="en-US">Getter method for the query condition instance list</h3>
 	 * <h3 class="zh-CN">查询条件实例对象列表的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Query condition instance list</span>
@@ -157,7 +157,7 @@ public final class QueryData extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for query condition instance list</h3>
+	 * <h3 class="en-US">Setter method for the query condition instance list</h3>
 	 * <h3 class="zh-CN">查询条件实例对象列表的Setter方法</h3>
 	 *
 	 * @param conditions <span class="en-US">Query condition instance list</span>
@@ -190,7 +190,7 @@ public final class QueryData extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for group having condition instance list</h3>
+	 * <h3 class="en-US">Getter method for the group having condition instance list</h3>
 	 * <h3 class="zh-CN">分组筛选条件实例对象列表的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Group having condition instance list</span>
@@ -201,7 +201,7 @@ public final class QueryData extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for group having condition instance list</h3>
+	 * <h3 class="en-US">Setter method for the group having condition instance list</h3>
 	 * <h3 class="zh-CN">分组筛选条件实例对象列表的Setter方法</h3>
 	 *
 	 * @param havingList <span class="en-US">Group having condition instance list</span>

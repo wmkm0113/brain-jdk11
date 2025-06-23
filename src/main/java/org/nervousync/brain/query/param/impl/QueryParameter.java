@@ -63,7 +63,7 @@ public final class QueryParameter extends AbstractParameter<QueryData> {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for function name of sub-query</h3>
+	 * <h3 class="en-US">Getter method for function name of the sub-query</h3>
 	 * <h3 class="zh-CN">的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Function name of sub-query</span>
@@ -74,7 +74,7 @@ public final class QueryParameter extends AbstractParameter<QueryData> {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for function name of sub-query</h3>
+	 * <h3 class="en-US">Setter method for function name of the sub-query</h3>
 	 * <h3 class="zh-CN">子查询函数名的Setter方法</h3>
 	 *
 	 * @param functionName <span class="en-US">Function name of sub-query</span>

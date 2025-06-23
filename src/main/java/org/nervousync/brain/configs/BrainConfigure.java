@@ -18,6 +18,7 @@
 package org.nervousync.brain.configs;
 
 import jakarta.xml.bind.annotation.*;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
@@ -27,6 +28,7 @@ import org.nervousync.brain.configs.storage.StorageConfig;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.cache.config.CacheConfig;
 import org.nervousync.commons.Globals;
+import org.nervousync.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,11 +38,12 @@ import java.util.List;
  * <h2 class="zh-CN">数据源配置信息定义</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@Hotmail.com">wmkm0113@Hotmail.com</a>
- * @version $Revision : 1.0 $ $Date: Dec 20, 2018 15:43:52 $
+ * @version $Revision: 1.0 $ $Date: Dec 20, 2018 15:43:52 $
  */
 @XmlType(name = "brain_config", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "brain_config", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
+@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML}, formatted = true)
 public final class BrainConfigure extends BeanObject {
 
 	/**
@@ -172,7 +175,7 @@ public final class BrainConfigure extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for data source configure information list</h3>
+	 * <h3 class="en-US">Getter method for the data source configure information list</h3>
 	 * <h3 class="zh-CN">数据源配置信息列表的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Data source configure information list</span>
@@ -183,7 +186,7 @@ public final class BrainConfigure extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for data source configure information list</h3>
+	 * <h3 class="en-US">Setter method for the data source configure information list</h3>
 	 * <h3 class="zh-CN">数据源配置信息列表的Setter方法</h3>
 	 *
 	 * @param schemaConfigs <span class="en-US">Data source configure information list</span>

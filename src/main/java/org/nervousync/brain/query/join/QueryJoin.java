@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <h2 class="en-US">Query join information define</h2>
+ * <h2 class="en-US">Query join information defines</h2>
  * <h2 class="zh-CN">查询关联信息定义</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
@@ -176,7 +176,7 @@ public final class QueryJoin extends SortedItem {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for table join type</h3>
+	 * <h3 class="en-US">Getter method for the table join type</h3>
 	 * <h3 class="zh-CN">数据表关联类型的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Table join type</span>
@@ -187,7 +187,7 @@ public final class QueryJoin extends SortedItem {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for table join type</h3>
+	 * <h3 class="en-US">Setter method for the table join type</h3>
 	 * <h3 class="zh-CN">数据表关联类型的Setter方法</h3>
 	 *
 	 * @param joinType <span class="en-US">Table join type</span>
@@ -198,7 +198,7 @@ public final class QueryJoin extends SortedItem {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for join columns list</h3>
+	 * <h3 class="en-US">Getter method for the join columns list</h3>
 	 * <h3 class="zh-CN">关联列信息列表的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Join columns list</span>
@@ -209,7 +209,7 @@ public final class QueryJoin extends SortedItem {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for join columns list</h3>
+	 * <h3 class="en-US">Setter method for the join columns list</h3>
 	 * <h3 class="zh-CN">关联列信息列表的Setter方法</h3>
 	 *
 	 * @param joinInfos <span class="en-US">Join columns list</span>

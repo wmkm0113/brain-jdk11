@@ -99,7 +99,7 @@ public class StatementWrapper<S extends PreparedStatement> implements PreparedSt
 	private long beginTime = Globals.DEFAULT_VALUE_LONG;
 
 	/**
-	 * <h3 class="en-US">Constructor method for abstract class for cached statement</h3>
+	 * <h3 class="en-US">Constructor method for abstract class for the cached statement</h3>
 	 * <h3 class="zh-CN">可缓存的查询执行器抽象类的构造方法</h3>
 	 *
 	 * @param identifyKey     <span class="en-US">Identification code</span>

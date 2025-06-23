@@ -26,7 +26,7 @@ import java.lang.annotation.*;
  * <h2 class="zh-CN">数据库方言注解定义</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
- * @version $Revision : 1.0.0 $ $Date: Jun 25, 2018 08:42:51 $
+ * @version $Revision: 1.0.0 $ $Date: Jun 25, 2018 08:42:51 $
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
@@ -41,6 +41,15 @@ public @interface SchemaDialect {
 	 * <span class="zh-CN">支持关联查询</span>
 	 */
 	boolean supportJoin();
+
+	/**
+	 * <h3 class="en-US">Support dynamic database switching</h3>
+	 * <h3 class="zh-CN">支持数据库动态切换</h3>
+	 *
+	 * @return <span class="en-US">Support dynamic database switching</span>
+	 * <span class="zh-CN">支持数据库动态切换</span>
+	 */
+	boolean sharding() default false;
 
 	/**
 	 * <h3 class="en-US">Support database connection pool</h3>
