@@ -24,15 +24,14 @@ import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.secure.TrustStore;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.InitOption;
-import org.nervousync.brain.defines.StrategyDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.core.BaseDialect;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.enumerations.dialect.DialectType;
+import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
-import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.ClassUtils;
 import org.nervousync.utils.LoggerUtils;
@@ -56,6 +55,10 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 */
 	protected transient final LoggerUtils.Logger logger = LoggerUtils.getLogger(this.getClass());
 
+	/**
+	 * <span class="en-US">Select all columns command</span>
+	 * <span class="zh-CN">选择所有数据列命令</span>
+	 */
 	protected static final String SELECT_ALL_COLUMNS = "*";
 
 	/**
@@ -112,8 +115,13 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 *                     <span class="zh-CN">数据源配置信息</span>
 	 * @param dialect      <span class="en-US">Database dialect instance object</span>
 	 *                     <span class="zh-CN">数据库方言实例对象</span>
+	 * @throws SQLException <span class="en-US">Database dialect type isn't matched</span>
+	 *                      <span class="zh-CN">数据库方言不匹配</span>
 	 */
-	protected BaseSchema(@Nonnull final SchemaConfig schemaConfig, @Nonnull final D dialect) {
+	protected BaseSchema(@Nonnull final SchemaConfig schemaConfig, @Nonnull final D dialect) throws SQLException {
+		if (!dialect.type().equals(schemaConfig.getDialectType())) {
+			throw new MultilingualSQLException(0x00DB00000045L, dialect.type(), schemaConfig.getDialectType());
+		}
 		this.lastModified = schemaConfig.getLastModified();
 		this.authentication = schemaConfig.getAuthentication();
 		this.trustStore = schemaConfig.getTrustStore();
@@ -399,72 +407,27 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <h3 class="en-US">Execute query record command</h3>
 	 * <h3 class="zh-CN">执行数据检索命令</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table defines information</span>
-	 *                    <span class="zh-CN">数据表定义信息</span>
-	 * @param queryInfo   <span class="en-US">Query record information</span>
-	 *                    <span class="zh-CN">数据检索信息</span>
+	 * @param queryInfo <span class="en-US">Query record information</span>
+	 *                  <span class="zh-CN">数据检索信息</span>
 	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
 	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public abstract PartialCollection query(@Nonnull final TableDefine tableDefine,
-	                                        @Nonnull final QueryInfo queryInfo) throws Exception;
-
-	/**
-	 * <h3 class="en-US">Execute query commands for data updates</h3>
-	 * <h3 class="zh-CN">执行用于数据更新的查询命令</h3>
-	 *
-	 * @param tableDefine <span class="en-US">Table defines information</span>
-	 *                    <span class="zh-CN">数据表定义信息</span>
-	 * @param queryInfo   <span class="en-US">Query record information</span>
-	 *                    <span class="zh-CN">数据检索信息</span>
-	 * @param lockOption  <span class="en-US">Lock option</span>
-	 *                    <span class="zh-CN">数据锁选项</span>
-	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
-	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
-	 * @throws Exception <span class="en-US">An error occurred during execution</span>
-	 *                   <span class="zh-CN">执行过程中出错</span>
-	 */
-	public final PartialCollection queryForUpdate(@Nonnull final TableDefine tableDefine,
-	                                              @Nonnull final QueryInfo queryInfo,
-	                                              final LockModeType lockOption) throws Exception {
-		return this.queryForUpdate(tableDefine, queryInfo.getConditionList(), lockOption);
-	}
-
-	/**
-	 * <h3 class="en-US">Execute query commands for data updates</h3>
-	 * <h3 class="zh-CN">执行用于数据更新的查询命令</h3>
-	 *
-	 * @param tableDefine   <span class="en-US">Table defines information</span>
-	 *                      <span class="zh-CN">数据表定义信息</span>
-	 * @param conditionList <span class="en-US">Query condition instance list</span>
-	 *                      <span class="zh-CN">查询条件实例对象列表</span>
-	 * @param lockOption    <span class="en-US">Lock option</span>
-	 *                      <span class="zh-CN">数据锁选项</span>
-	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
-	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
-	 * @throws Exception <span class="en-US">An error occurred during execution</span>
-	 *                   <span class="zh-CN">执行过程中出错</span>
-	 */
-	public abstract PartialCollection queryForUpdate(@Nonnull final TableDefine tableDefine,
-	                                                 final List<Condition> conditionList,
-	                                                 final LockModeType lockOption) throws Exception;
+	public abstract PartialCollection query(@Nonnull final QueryInfo queryInfo) throws Exception;
 
 	/**
 	 * <h3 class="en-US">Query total record count</h3>
 	 * <h3 class="zh-CN">查询总记录数</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table defines information</span>
-	 *                    <span class="zh-CN">数据表定义信息</span>
-	 * @param queryInfo   <span class="en-US">Query record information</span>
-	 *                    <span class="zh-CN">数据检索信息</span>
+	 * @param queryInfo <span class="en-US">Query record information</span>
+	 *                  <span class="zh-CN">数据检索信息</span>
 	 * @return <span class="en-US">Total record count</span>
 	 * <span class="zh-CN">总记录条数</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public abstract Long queryTotal(@Nonnull final TableDefine tableDefine, final QueryInfo queryInfo)
+	public abstract Long queryTotal(final QueryInfo queryInfo)
 			throws Exception;
 
 	/**
@@ -505,21 +468,16 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <h3 class="en-US">Initialize data table</h3>
 	 * <h3 class="zh-CN">初始化数据表</h3>
 	 *
-	 * @param ddlType          <span class="en-US">Enumeration value of DDL operate</span>
-	 *                         <span class="zh-CN">操作类型枚举值</span>
-	 * @param tableDefine      <span class="en-US">Table defines information</span>
-	 *                         <span class="zh-CN">数据表定义信息</span>
-	 * @param databaseStrategy <span class="en-US">Database strategy defines information</span>
-	 *                         <span class="zh-CN">数据库分片规则定义信息</span>
-	 * @param tableStrategy    <span class="en-US">Data table strategy defines information</span>
-	 *                         <span class="zh-CN">数据表分片规则定义信息</span>
-     * @param initOptionsMap   <span class="en-US">Data column initialize option</span>
-     *                         <span class="zh-CN">数据列初始化选项</span>
+	 * @param ddlType        <span class="en-US">Enumeration value of DDL operate</span>
+	 *                       <span class="zh-CN">操作类型枚举值</span>
+	 * @param tableDefine    <span class="en-US">Table defines information</span>
+	 *                       <span class="zh-CN">数据表定义信息</span>
+	 * @param initOptionsMap <span class="en-US">Data column initialize option</span>
+	 *                       <span class="zh-CN">数据列初始化选项</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public abstract void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
-	                               final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy,
 	                               @Nonnull final Map<String, InitOption> initOptionsMap) throws Exception;
 
 	/**

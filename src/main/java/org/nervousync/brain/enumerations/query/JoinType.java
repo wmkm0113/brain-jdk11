@@ -24,29 +24,29 @@ package org.nervousync.brain.enumerations.query;
  * @version $Revision: 1.0.0 $ $Date: Feb 17, 2021 09:49:16 $
  */
 public enum JoinType {
-    /**
-     * <span class="en-US">Left join</span>
-     * <span class="zh-CN">左连接</span>
-     */
+	/**
+	 * <span class="en-US">Left join</span>
+	 * <span class="zh-CN">左连接</span>
+	 */
 	LEFT,
-    /**
-     * <span class="en-US">Right join</span>
-     * <span class="zh-CN">右连接</span>
-     */
+	/**
+	 * <span class="en-US">Right join</span>
+	 * <span class="zh-CN">右连接</span>
+	 */
 	RIGHT,
-    /**
-     * <span class="en-US">Full join</span>
-     * <span class="zh-CN">完全连接</span>
-     */
+	/**
+	 * <span class="en-US">Full join</span>
+	 * <span class="zh-CN">完全连接</span>
+	 */
 	FULL,
-    /**
-     * <span class="en-US">Inner join</span>
-     * <span class="zh-CN">内连接</span>
-     */
+	/**
+	 * <span class="en-US">Inner join</span>
+	 * <span class="zh-CN">内连接</span>
+	 */
 	INNER,
-    /**
-     * <span class="en-US">Cross join</span>
-     * <span class="zh-CN">交叉连接</span>
-     */
+	/**
+	 * <span class="en-US">Cross join</span>
+	 * <span class="zh-CN">交叉连接</span>
+	 */
 	CROSS
 }

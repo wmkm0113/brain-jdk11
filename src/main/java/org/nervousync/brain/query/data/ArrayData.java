@@ -31,57 +31,46 @@ import org.nervousync.beans.core.BeanObject;
 @XmlRootElement(name = "array_data", namespace = "https://nervousync.org/schemas/brain")
 public final class ArrayData extends BeanObject {
 
-    /**
-     * <span class="en-US">Serial version UID</span>
-     * <span class="zh-CN">序列化UID</span>
-     */
-    private static final long serialVersionUID = 5864161740076618428L;
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = 5864161740076618428L;
 
-    /**
-     * <span class="en-US">Array objects</span>
-     * <span class="zh-CN">数组值</span>
-     */
-    @XmlElement(name = "data_value")
-    @XmlElementWrapper(name = "array_objects")
-    private Object[] arrayObject;
+	/**
+	 * <span class="en-US">Array objects</span>
+	 * <span class="zh-CN">数组值</span>
+	 */
+	@XmlElement(name = "data_value")
+	@XmlElementWrapper(name = "array_objects")
+	private Object[] arrayObject;
 
-    /**
-     * <h3 class="en-US">Constructor method for array objects define</h3>
-     * <h3 class="zh-CN">数组值定义的构造方法</h3>
-     */
-    public ArrayData() {
-    }
+	/**
+	 * <h3 class="en-US">Constructor method for array objects define</h3>
+	 * <h3 class="zh-CN">数组值定义的构造方法</h3>
+	 */
+	public ArrayData() {
+	}
 
-    /**
-     * <h3 class="en-US">Constructor method for array objects define</h3>
-     * <h3 class="zh-CN">数组值定义的构造方法</h3>
-     *
-     * @param arrayObject <span class="en-US">Array objects</span>
-     *                    <span class="zh-CN">数组值</span>
-     */
-    public ArrayData(final Object[] arrayObject) {
-        this.arrayObject = arrayObject;
-    }
+	/**
+	 * <h3 class="en-US">Getter method for array objects</h3>
+	 * <h3 class="zh-CN">数组值的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Array objects</span>
+	 * <span class="zh-CN">数组值</span>
+	 */
+	public Object[] getArrayObject() {
+		return this.arrayObject;
+	}
 
-    /**
-     * <h3 class="en-US">Getter method for array objects</h3>
-     * <h3 class="zh-CN">数组值的Getter方法</h3>
-     *
-     * @return <span class="en-US">Array objects</span>
-     * <span class="zh-CN">数组值</span>
-     */
-    public Object[] getArrayObject() {
-        return arrayObject;
-    }
-
-    /**
-     * <h3 class="en-US">Setter method for array objects</h3>
-     * <h3 class="zh-CN">数组值的Setter方法</h3>
-     *
-     * @param arrayObject <span class="en-US">Array objects</span>
-     *                    <span class="zh-CN">数组值</span>
-     */
-    public void setArrayObject(final Object[] arrayObject) {
-        this.arrayObject = arrayObject;
-    }
+	/**
+	 * <h3 class="en-US">Setter method for array objects</h3>
+	 * <h3 class="zh-CN">数组值的Setter方法</h3>
+	 *
+	 * @param arrayObject <span class="en-US">Array objects</span>
+	 *                    <span class="zh-CN">数组值</span>
+	 */
+	public void setArrayObject(final Object[] arrayObject) {
+		this.arrayObject = arrayObject;
+	}
 }

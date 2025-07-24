@@ -24,44 +24,44 @@ package org.nervousync.brain.enumerations.query;
  * @version $Revision: 1.0.0 $ $Date: Oct 6, 2020 19:02:27 $
  */
 public enum ItemType {
-    /**
-     * <span class="en-US">Column</span>
-     * <span class="zh-CN">数据列</span>
-     */
-    COLUMN,
-    /**
-     * <span class="en-US">SQL function</span>
-     * <span class="zh-CN">SQL函数</span>
-     */
-    FUNCTION,
-    /**
-     * <span class="en-US">Constant value</span>
-     * <span class="zh-CN">常量值</span>
-     */
-    CONSTANT,
-    /**
-     * <span class="en-US">Sub-query</span>
-     * <span class="zh-CN">子查询</span>
-     */
-    QUERY,
-    /**
-     * <span class="en-US">Ranges value</span>
-     * <span class="zh-CN">区间值</span>
-     */
-    RANGE,
-    /**
-     * <span class="en-US">Object array</span>
-     * <span class="zh-CN">数据数组</span>
-     */
-    ARRAY,
-    /**
-     * <span class="en-US">Calculate value</span>
-     * <span class="zh-CN">数据计算值</span>
-     */
-    CALCULATE,
-    /**
-     * <span class="en-US">Query result</span>
-     * <span class="zh-CN">查询结果</span>
-     */
-    RESULT
+	/**
+	 * <span class="en-US">Column</span>
+	 * <span class="zh-CN">数据列</span>
+	 */
+	COLUMN,
+	/**
+	 * <span class="en-US">SQL function</span>
+	 * <span class="zh-CN">SQL函数</span>
+	 */
+	FUNCTION,
+	/**
+	 * <span class="en-US">Constant value</span>
+	 * <span class="zh-CN">常量值</span>
+	 */
+	CONSTANT,
+	/**
+	 * <span class="en-US">Sub-query</span>
+	 * <span class="zh-CN">子查询</span>
+	 */
+	QUERY,
+	/**
+	 * <span class="en-US">Ranges value</span>
+	 * <span class="zh-CN">区间值</span>
+	 */
+	RANGE,
+	/**
+	 * <span class="en-US">Object array</span>
+	 * <span class="zh-CN">数据数组</span>
+	 */
+	ARRAY,
+	/**
+	 * <span class="en-US">Calculate value</span>
+	 * <span class="zh-CN">数据计算值</span>
+	 */
+	CALCULATE,
+	/**
+	 * <span class="en-US">Query result</span>
+	 * <span class="zh-CN">查询结果</span>
+	 */
+	RESULT
 }

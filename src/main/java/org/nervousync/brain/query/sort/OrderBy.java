@@ -14,9 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.nervousync.brain.query.filter;
+package org.nervousync.brain.query.sort;
 
-import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.OrderType;
 import org.nervousync.brain.query.core.SortedItem;
@@ -63,27 +62,6 @@ public final class OrderBy extends SortedItem {
 	 * <h3 class="zh-CN">查询排序列信息定义的构造方法</h3>
 	 */
 	public OrderBy() {
-	}
-
-	/**
-	 * <h3 class="en-US">Constructor method for query order by column definition</h3>
-	 * <h3 class="zh-CN">查询排序列信息定义的构造方法</h3>
-	 *
-	 * @param tableName  <span class="en-US">Data table name</span>
-	 *                   <span class="zh-CN">数据表名</span>
-	 * @param columnName <span class="en-US">Data column name</span>
-	 *                   <span class="zh-CN">数据列名</span>
-	 * @param orderType  <span class="en-US">Query order type</span>
-	 *                   <span class="zh-CN">查询结果集排序类型</span>
-	 * @param sortCode   <span class="en-US">Sort code</span>
-	 *                   <span class="zh-CN">排序代码</span>
-	 */
-	public OrderBy(@Nonnull final String tableName, @Nonnull final String columnName,
-	               @Nonnull final OrderType orderType, final int sortCode) {
-		this.tableName = tableName;
-		this.columnName = columnName;
-		this.orderType = orderType;
-		super.setSortCode(sortCode);
 	}
 
 	/**

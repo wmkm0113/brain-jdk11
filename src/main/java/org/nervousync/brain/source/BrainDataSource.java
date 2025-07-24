@@ -20,14 +20,11 @@ package org.nervousync.brain.source;
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.LockModeType;
 import org.nervousync.annotations.jmx.Monitor;
-import org.nervousync.brain.commons.BrainCommons;
-import org.nervousync.brain.commons.DataUtils;
 import org.nervousync.brain.configs.BrainConfigure;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
-import org.nervousync.brain.configs.storage.StorageConfig;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.InitOption;
 import org.nervousync.brain.defines.StrategyDefine;
@@ -36,15 +33,17 @@ import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
+import org.nervousync.brain.manager.TableManager;
 import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
+import org.nervousync.brain.query.core.QueryFrom;
+import org.nervousync.brain.query.from.FromSubQuery;
+import org.nervousync.brain.query.from.FromTable;
 import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.brain.schemas.distribute.DistributeSchema;
 import org.nervousync.brain.schemas.jdbc.JdbcSchema;
 import org.nervousync.brain.schemas.remote.RemoteSchema;
-import org.nervousync.cache.CacheUtils;
-import org.nervousync.cache.config.CacheConfig;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.LoggerUtils;
 import org.nervousync.utils.ObjectUtils;
@@ -101,15 +100,10 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	private final Hashtable<String, BaseSchema<?>> registeredSchemas;
 	/**
-	 * <span class="en-US">Registered data table define information mapping table</span>
-	 * <span class="zh-CN">注册的数据表定义信息</span>
+	 * <span class="en-US">Data table manager instance object</span>
+	 * <span class="zh-CN">数据表管理器实例对象</span>
 	 */
-	private final Hashtable<String, TableDefine> registeredTables;
-	/**
-	 * <span class="en-US">Mapping table of data table identification codes and table names</span>
-	 * <span class="zh-CN">数据表识别代码与表名的映射表</span>
-	 */
-	private final Hashtable<String, String> identifyCodeMapping;
+	private final TableManager tableManager;
 	/**
 	 * <span class="en-US">Last modified timestamp</span>
 	 * <span class="zh-CN">最后修改时间戳</span>
@@ -122,8 +116,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	BrainDataSource() {
 		this.registeredSchemas = new Hashtable<>();
-		this.registeredTables = new Hashtable<>();
-		this.identifyCodeMapping = new Hashtable<>();
+		this.tableManager = TableManager.getInstance();
 	}
 
 	/**
@@ -168,24 +161,23 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 				}
 			}
 		}
-
-		StorageConfig storageConfig = configure.getStorageConfig();
-		if (storageConfig == null) {
-			DataUtils.destroy();
-		} else {
-			DataUtils.initialize(storageConfig);
-		}
-
-		CacheConfig cacheConfig = configure.getCacheConfig();
-		if (cacheConfig == null) {
-			CacheUtils.deregister(BrainCommons.CACHE_NAME);
-		} else {
-			CacheUtils.register(BrainCommons.CACHE_NAME, cacheConfig);
-		}
 		this.lastModified = configure.getLastModified();
 		if (!configure.isLazyInitialize()) {
 			this.initialize();
 		}
+	}
+
+	/**
+	 * <h3 class="en-US">Check whether the given data source name was registered</h3>
+	 * <h3 class="zh-CN">检查给定的数据源名称是否注册</h3>
+	 *
+	 * @param schemaName <span class="en-US">Data schema name</span>
+	 *                   <span class="zh-CN">数据源名称</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
+	 */
+	public boolean registered(final String schemaName) {
+		return this.registeredSchemas.containsKey(schemaName);
 	}
 
 	/**
@@ -249,18 +241,20 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                         <span class="zh-CN">数据库分片规则定义信息</span>
 	 * @param tableStrategy    <span class="en-US">Data table strategy defines information</span>
 	 *                         <span class="zh-CN">数据表分片规则定义信息</span>
-     * @param initOptionsMap   <span class="en-US">Data column initialize option</span>
-     *                         <span class="zh-CN">数据列初始化选项</span>
+	 * @param initOptionsMap   <span class="en-US">Data column initialize option</span>
+	 *                         <span class="zh-CN">数据列初始化选项</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public void initTable(@Nonnull final TableDefine tableDefine,
 	                      final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy,
 	                      @Nonnull final Map<String, InitOption> initOptionsMap) throws Exception {
-		this.retrieveSchema(tableDefine.getSchemaName())
-				.initTable(this.ddlType, tableDefine, databaseStrategy, tableStrategy, initOptionsMap);
-		this.registeredTables.put(tableDefine.getTableName(), tableDefine);
-		this.identifyCodeMapping.put(BrainCommons.identifyCode(tableDefine.getTableName()), tableDefine.getTableName());
+		BaseSchema<?> schema = this.retrieveSchema(tableDefine.getSchemaName());
+		if (schema instanceof JdbcSchema) {
+			schema.unwrap(JdbcSchema.class).registerStrategy(tableDefine, databaseStrategy, tableStrategy);
+		}
+		schema.initTable(this.ddlType, tableDefine, initOptionsMap);
+		this.tableManager.register(tableDefine);
 	}
 
 	/**
@@ -335,10 +329,9 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                      <span class="zh-CN">数据源或数据表未注册</span>
 	 */
 	public boolean sameCatalog(@Nonnull final String leftTable, @Nonnull final String rightTable,
-	                           @Nonnull final List<Condition> conditionList)
-			throws SQLException {
-		TableDefine leftDefine = this.checkRegister(leftTable);
-		TableDefine rightDefine = this.checkRegister(rightTable);
+	                           @Nonnull final List<Condition> conditionList) throws SQLException {
+		TableDefine leftDefine = this.tableManager.define(leftTable);
+		TableDefine rightDefine = this.tableManager.define(rightTable);
 
 		if (!ObjectUtils.nullSafeEquals(leftDefine.getSchemaName(), rightDefine.getSchemaName())
 				|| !ObjectUtils.nullSafeEquals(leftDefine.getCatalog(), rightDefine.getCatalog())) {
@@ -374,7 +367,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public void truncateTable(@Nonnull final String tableName) throws Exception {
-		TableDefine tableDefine = this.checkRegister(tableName);
+		TableDefine tableDefine = this.tableManager.define(tableName);
 		this.retrieveSchema(tableDefine.getSchemaName()).truncateTable(tableDefine);
 	}
 
@@ -405,7 +398,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public void dropTable(@Nonnull final String tableName, @Nonnull final DropOption dropOption) throws Exception {
-		TableDefine tableDefine = this.checkRegister(tableName);
+		TableDefine tableDefine = this.tableManager.define(tableName);
 		this.retrieveSchema(tableDefine.getSchemaName()).dropTable(tableDefine, dropOption);
 	}
 
@@ -426,7 +419,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	public boolean lockRecord(@Nonnull final String tableName, @Nonnull final Map<String, Object> filterMap,
 	                          final LockModeType lockOption) throws Exception {
-		TableDefine tableDefine = this.checkRegister(tableName);
+		TableDefine tableDefine = this.tableManager.define(tableName);
 		return this.retrieveSchema(tableDefine.getSchemaName()).lockRecord(tableDefine, filterMap, lockOption);
 	}
 
@@ -445,7 +438,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	public Map<String, Object> insert(@Nonnull final String tableName, @Nonnull final Map<String, Object> dataMap)
 			throws Exception {
-		TableDefine tableDefine = this.checkRegister(tableName);
+		TableDefine tableDefine = this.tableManager.define(tableName);
 		return this.retrieveSchema(tableDefine.getSchemaName()).insert(tableDefine, dataMap);
 	}
 
@@ -471,7 +464,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	public Map<String, Object> retrieve(@Nonnull final String tableName, final String columns,
 	                                    @Nonnull final Map<String, Object> filterMap, final boolean forUpdate,
 	                                    final LockModeType lockOption) throws Exception {
-		TableDefine tableDefine = this.checkRegister(tableName);
+		TableDefine tableDefine = this.tableManager.define(tableName);
 		return this.retrieveSchema(tableDefine.getSchemaName()).retrieve(tableDefine, columns, filterMap, forUpdate, lockOption);
 	}
 
@@ -492,7 +485,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	public int update(@Nonnull final String tableName, @Nonnull final Map<String, Object> dataMap,
 	                  @Nonnull final Map<String, Object> filterMap) throws Exception {
-		TableDefine tableDefine = this.checkRegister(tableName);
+		TableDefine tableDefine = this.tableManager.define(tableName);
 		return this.retrieveSchema(tableDefine.getSchemaName()).update(tableDefine, dataMap, filterMap);
 	}
 
@@ -510,7 +503,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public int delete(@Nonnull final String tableName, @Nonnull final Map<String, Object> filterMap) throws Exception {
-		TableDefine tableDefine = this.checkRegister(tableName);
+		TableDefine tableDefine = this.tableManager.define(tableName);
 		return this.retrieveSchema(tableDefine.getSchemaName()).delete(tableDefine, filterMap);
 	}
 
@@ -526,59 +519,35 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
 	public PartialCollection query(@Nonnull final QueryInfo queryInfo) throws Exception {
-		String tableName = this.identifyCodeMapping.get(BrainCommons.identifyCode(queryInfo.getTableName()));
-		if (StringUtils.isEmpty(tableName)) {
-			throw new MultilingualSQLException(0x00DB00000034L, queryInfo.getTableName());
-		}
-		String schemaName = Optional.ofNullable(this.registeredTables.get(tableName))
-				.map(TableDefine::getSchemaName)
-				.orElseThrow(() -> new MultilingualSQLException(0x00DB00000034L, tableName));
-		if (StringUtils.isEmpty(schemaName)) {
-			schemaName = this.defaultName;
-		}
-		TableDefine tableDefine = this.checkRegister(schemaName, queryInfo.getTableName());
-		return this.retrieveSchema(schemaName).query(tableDefine, queryInfo);
+		return this.retrieveSchema(queryInfo.getQueryFrom()).query(queryInfo);
 	}
 
 	/**
-	 * <h3 class="en-US">Execute query commands for data updates</h3>
-	 * <h3 class="zh-CN">执行用于数据更新的查询命令</h3>
+	 * <h3 class="en-US">Retrieve target data schema</h3>
+	 * <h3 class="zh-CN">获取目标数据源</h3>
 	 *
-	 * @param queryInfo  <span class="en-US">Query record information</span>
-	 *                   <span class="zh-CN">数据检索信息</span>
-	 * @param lockOption <span class="en-US">Lock option</span>
-	 *                   <span class="zh-CN">数据锁选项</span>
-	 * @return <span class="en-US">List of data mapping tables for queried records</span>
-	 * <span class="zh-CN">查询到记录的数据映射表列表</span>
-	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
-	 *                      <span class="zh-CN">执行过程中出错</span>
+	 * @param fromList <span class="en-US">Query from information list</span>
+	 *                 <span class="zh-CN">查询来源信息列表</span>
+	 * @return <span class="en-US">Data schema instance object</span>
+	 * <span class="zh-CN">数据源实例对象</span>
+	 * @throws SQLException <span class="en-US">If data schema not found</span>
+	 *                      <span class="zh-CN">如果数据源未找到</span>
 	 */
-	public PartialCollection queryForUpdate(@Nonnull final QueryInfo queryInfo, final LockModeType lockOption)
-			throws Exception {
-		TableDefine tableDefine = this.checkRegister(queryInfo.getTableName());
-		return this.retrieveSchema(tableDefine.getSchemaName()).queryForUpdate(tableDefine, queryInfo, lockOption);
-	}
+	private BaseSchema<?> retrieveSchema(@Nonnull final List<QueryFrom> fromList) throws SQLException {
+		if (fromList.isEmpty()) {
+			throw new MultilingualSQLException(0x00DB00000047L);
+		}
 
-	/**
-	 * <h3 class="en-US">Execute query commands for data updates</h3>
-	 * <h3 class="zh-CN">执行用于数据更新的查询命令</h3>
-	 *
-	 * @param tableName     <span class="en-US">Data table name</span>
-	 *                      <span class="zh-CN">数据表名称</span>
-	 * @param conditionList <span class="en-US">Query condition instance list</span>
-	 *                      <span class="zh-CN">查询条件实例对象列表</span>
-	 * @param lockOption    <span class="en-US">Lock option</span>
-	 *                      <span class="zh-CN">数据锁选项</span>
-	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
-	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
-	 * @throws Exception <span class="en-US">An error occurred during execution</span>
-	 *                   <span class="zh-CN">执行过程中出错</span>
-	 */
-	public PartialCollection queryForUpdate(@Nonnull final String tableName, final List<Condition> conditionList,
-	                                        final LockModeType lockOption)
-			throws Exception {
-		TableDefine tableDefine = this.checkRegister(tableName);
-		return this.retrieveSchema(tableDefine.getSchemaName()).queryForUpdate(tableDefine, conditionList, lockOption);
+		QueryFrom queryFrom = fromList.get(0);
+		TableDefine drivenTableDefine;
+		if (queryFrom instanceof FromTable) {
+			drivenTableDefine = this.tableManager.define(((FromTable) queryFrom).getTableName());
+		} else if (queryFrom instanceof FromSubQuery) {
+			drivenTableDefine = this.tableManager.define(((FromSubQuery) queryFrom).getQueryData().getTableName());
+		} else {
+			throw new MultilingualSQLException(0x00DB00000032L);
+		}
+		return this.retrieveSchema(drivenTableDefine.getSchemaName());
 	}
 
 	/**
@@ -594,10 +563,8 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	private BaseSchema<?> retrieveSchema(final String schemaName) throws SQLException {
 		this.initialize();
-		BaseSchema<?> baseSchema = null;
-		if (StringUtils.notBlank(schemaName) && this.registeredSchemas.containsKey(schemaName)) {
-			baseSchema = this.registeredSchemas.get(schemaName);
-		}
+		BaseSchema<?> baseSchema =
+				this.registeredSchemas.get(StringUtils.isEmpty(schemaName) ? this.defaultName : schemaName);
 		if (baseSchema == null) {
 			throw new MultilingualSQLException(0x00DB00000032L, schemaName);
 		}
@@ -616,26 +583,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
 	public Long queryTotal(@Nonnull final QueryInfo queryInfo) throws Exception {
-		TableDefine tableDefine = this.checkRegister(queryInfo.getTableName());
-		return this.retrieveSchema(tableDefine.getSchemaName()).queryTotal(tableDefine, queryInfo);
-	}
-
-	/**
-	 * <h3 class="en-US">Get a list of non-lazy loading data column names for a given data table name</h3>
-	 * <h3 class="zh-CN">获取给定数据表名的非懒加载数据列名列表</h3>
-	 *
-	 * @param tableName <span class="en-US">Data table name</span>
-	 *                  <span class="zh-CN">数据表名称</span>
-	 * @return <span class="en-US">Data column name list</span>
-	 * <span class="zh-CN">数据列名列表</span>
-	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
-	 *                      <span class="zh-CN">执行过程中出错</span>
-	 */
-	public List<String> queryColumns(final String tableName) throws SQLException {
-		TableDefine tableDefine = this.checkRegister(tableName);
-		List<String> columnList = new ArrayList<>();
-		tableDefine.getColumnDefines().forEach(columnDefine -> columnList.add(columnDefine.getColumnName()));
-		return columnList;
+		return this.retrieveSchema(queryInfo.getQueryFrom()).queryTotal(queryInfo);
 	}
 
 	/**
@@ -643,7 +591,6 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <h3 class="zh-CN">销毁当前数据源</h3>
 	 */
 	public synchronized void close() {
-		DataUtils.destroy();
 		if (DDLType.CREATE_DROP.equals(this.ddlType)) {
 			for (final BaseSchema<?> schema : this.registeredSchemas.values()) {
 				try {
@@ -679,9 +626,9 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 		if (this.jmxEnabled) {
 			ObjectUtils.unregisterMBean(this);
 		}
-		CacheUtils.deregister(BrainCommons.CACHE_NAME);
 		this.initialized = Boolean.FALSE;
 		this.defaultName = Globals.DEFAULT_VALUE_STRING;
+		TableManager.destroy();
 	}
 
 	/**
@@ -741,52 +688,6 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 			}
 		}
 		this.initialized = Boolean.TRUE;
-	}
-
-	/**
-	 * <h3 class="en-US">Check whether the data source and data table are registered</h3>
-	 * <h3 class="zh-CN">检查数据源和数据表是否注册</h3>
-	 *
-	 * @param identifyCode <span class="en-US">Data table identify code</span>
-	 *                     <span class="zh-CN">数据表识别代码</span>
-	 * @throws SQLException <span class="en-US">The data source or data table is not registered</span>
-	 *                      <span class="zh-CN">数据源或数据表未注册</span>
-	 */
-	private TableDefine checkRegister(@Nonnull final String identifyCode) throws SQLException {
-		String tableName = this.identifyCodeMapping.getOrDefault(identifyCode, identifyCode);
-		if (StringUtils.isEmpty(tableName)) {
-			throw new MultilingualSQLException(0x00DB00000034L, tableName);
-		}
-		TableDefine tableDefine = this.registeredTables.get(tableName);
-		if (tableDefine == null) {
-			throw new MultilingualSQLException(0x00DB00000034L, tableName);
-		}
-		String schemaName = Optional.ofNullable(tableDefine.getSchemaName())
-				.filter(StringUtils::notBlank)
-				.orElse(this.defaultName);
-		if (!this.registeredSchemas.containsKey(schemaName)) {
-			throw new MultilingualSQLException(0x00DB00000032L, schemaName);
-		}
-		return tableDefine;
-	}
-
-	/**
-	 * <h3 class="en-US">Check whether the data source and data table are registered</h3>
-	 * <h3 class="zh-CN">检查数据源和数据表是否注册</h3>
-	 *
-	 * @param schemaName <span class="en-US">Data schema name</span>
-	 *                   <span class="zh-CN">数据源名称</span>
-	 * @param tableName  <span class="en-US">Data table name</span>
-	 *                   <span class="zh-CN">数据表名</span>
-	 * @throws SQLException <span class="en-US">The data source or data table is not registered</span>
-	 *                      <span class="zh-CN">数据源或数据表未注册</span>
-	 */
-	private TableDefine checkRegister(@Nonnull final String schemaName, @Nonnull final String tableName) throws SQLException {
-		if (!this.registeredSchemas.containsKey(schemaName)) {
-			throw new MultilingualSQLException(0x00DB00000032L, schemaName);
-		}
-		return Optional.ofNullable(this.registeredTables.get(tableName))
-				.orElseThrow(() -> new MultilingualSQLException(0x00DB00000034L, tableName));
 	}
 
 	@Override

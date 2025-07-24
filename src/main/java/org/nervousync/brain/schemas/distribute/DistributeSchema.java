@@ -24,7 +24,6 @@ import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.server.ServerInfo;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.InitOption;
-import org.nervousync.brain.defines.StrategyDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.DialectFactory;
 import org.nervousync.brain.dialects.distribute.DistributeClient;
@@ -34,12 +33,10 @@ import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
-import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.utils.StringUtils;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -78,8 +75,8 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 	 *
 	 * @param schemaConfig <span class="en-US">Distribute data source configure information</span>
 	 *                     <span class="zh-CN">分布式数据源配置信息</span>
-	 * @throws SQLException <span class="en-US">Database server information hasn't found or sharding configuration error</span>
-	 *                      <span class="zh-CN">数据库服务器信息未找到或分片配置出错</span>
+	 * @throws Exception <span class="en-US">Database server information hasn't found or sharding configuration error</span>
+	 *                   <span class="zh-CN">数据库服务器信息未找到或分片配置出错</span>
 	 */
 	public DistributeSchema(@Nonnull final DistributeSchemaConfig schemaConfig) throws Exception {
 		super(schemaConfig, DialectFactory.retrieve(schemaConfig.getDialectName()).unwrap(DistributeDialect.class));
@@ -178,26 +175,17 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 	}
 
 	@Override
-	public PartialCollection query(@Nonnull final TableDefine tableDefine,
-	                               @Nonnull final QueryInfo queryInfo) throws Exception {
-		return this.distributeClient.query(tableDefine, queryInfo);
+	public PartialCollection query(@Nonnull final QueryInfo queryInfo) throws Exception {
+		return this.distributeClient.query(queryInfo);
 	}
 
 	@Override
-	public PartialCollection queryForUpdate(@Nonnull final TableDefine tableDefine,
-	                                                final List<Condition> conditionList, final LockModeType lockOption)
-			throws Exception {
-		return this.distributeClient.queryForUpdate(tableDefine, conditionList);
-	}
-
-	@Override
-	public Long queryTotal(@Nonnull final TableDefine tableDefine, final QueryInfo queryInfo) throws Exception {
-		return this.distributeClient.queryTotal(tableDefine, queryInfo);
+	public Long queryTotal(final QueryInfo queryInfo) throws Exception {
+		return this.distributeClient.queryTotal(queryInfo);
 	}
 
 	@Override
 	public void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
-	                      final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy,
 	                      @Nonnull final Map<String, InitOption> initOptionsMap) throws Exception {
 		//  Ignore strategy configure
 		this.distributeClient.initTable(ddlType, tableDefine, initOptionsMap);

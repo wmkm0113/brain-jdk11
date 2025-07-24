@@ -19,7 +19,7 @@ package org.nervousync.brain.query.item;
 
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.ItemType;
-import org.nervousync.brain.query.core.AbstractItem;
+import org.nervousync.brain.query.core.QueryItem;
 import org.nervousync.brain.query.data.QueryData;
 
 /**
@@ -32,7 +32,7 @@ import org.nervousync.brain.query.data.QueryData;
 @XmlType(name = "query_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "query_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
-public final class QueryItem extends AbstractItem {
+public final class SubQueryItem extends QueryItem {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>
@@ -51,7 +51,7 @@ public final class QueryItem extends AbstractItem {
 	 * <h3 class="en-US">Protect constructor method for abstract query item define</h3>
 	 * <h3 class="zh-CN">抽象查询项信息定义的构造方法</h3>
 	 */
-	public QueryItem() {
+	public SubQueryItem() {
 		super(ItemType.QUERY);
 	}
 

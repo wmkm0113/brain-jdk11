@@ -17,6 +17,7 @@
 
 package org.nervousync.brain.configs.schema;
 
+import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.beans.core.BeanObject;
@@ -30,8 +31,13 @@ import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
 import org.nervousync.brain.configs.secure.TrustStore;
+import org.nervousync.brain.configs.server.ServerInfo;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <h2 class="en-US">Data source configuration information abstract class</h2>
@@ -53,6 +59,11 @@ public abstract class SchemaConfig extends BeanObject {
 	private static final long serialVersionUID = 6508704359955500086L;
 
 	/**
+	 * <span class="en-US">Dialect type</span>
+	 * <span class="zh-CN">方言类型</span>
+	 */
+	private final DialectType dialectType;
+	/**
 	 * <span class="en-US">Data source name</span>
 	 * <span class="zh-CN">数据源名称</span>
 	 */
@@ -70,6 +81,13 @@ public abstract class SchemaConfig extends BeanObject {
 	 */
 	@XmlElement(name = "dialect_name")
 	private String dialectName;
+	/**
+	 * <span class="en-US">Database server info list</span>
+	 * <span class="zh-CN">数据库服务器列表</span>
+	 */
+	@XmlElementWrapper(name = "server_list")
+	@XmlElement(name = "server_info")
+	private List<ServerInfo> serverList = new ArrayList<>();
 	/**
 	 * <span class="en-US">Trust certificate store configuration information</span>
 	 * <span class="zh-CN">信任证书库配置信息</span>
@@ -129,6 +147,28 @@ public abstract class SchemaConfig extends BeanObject {
 	 */
 	@XmlElement(name = "last_modified")
 	private long lastModified = Globals.DEFAULT_VALUE_LONG;
+
+	/**
+	 * <h2 class="en-US">Constructor method for the data source configuration information abstract class</h2>
+	 * <h2 class="zh-CN">数据源配置信息抽象类的构造方法</h2>
+	 *
+	 * @param dialectType <span class="en-US">Dialect type</span>
+	 *                    <span class="zh-CN">方言类型</span>
+	 */
+	protected SchemaConfig(@Nonnull final DialectType dialectType) {
+		this.dialectType = dialectType;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the dialect type</h3>
+	 * <h3 class="zh-CN">方言类型的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Dialect type</span>
+	 * <span class="zh-CN">方言类型</span>
+	 */
+	public DialectType getDialectType() {
+		return this.dialectType;
+	}
 
 	/**
 	 * <h3 class="en-US">Getter method for data source name</h3>
@@ -194,6 +234,28 @@ public abstract class SchemaConfig extends BeanObject {
 	 */
 	public void setDialectName(final String dialectName) {
 		this.dialectName = dialectName;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for database server info list</h3>
+	 * <h3 class="zh-CN">数据库服务器列表的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Database server info list</span>
+	 * <span class="zh-CN">数据库服务器列表</span>
+	 */
+	public List<ServerInfo> getServerList() {
+		return this.serverList;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for database server info list</h3>
+	 * <h3 class="zh-CN">数据库服务器列表的Setter方法</h3>
+	 *
+	 * @param serverList <span class="en-US">Database server info list</span>
+	 *                   <span class="zh-CN">数据库服务器列表</span>
+	 */
+	public void setServerList(final List<ServerInfo> serverList) {
+		this.serverList = serverList;
 	}
 
 	/**

@@ -26,8 +26,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.xml.ws.WebServiceClient;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 
-import java.sql.SQLException;
-
 /**
  * <h2 class="en-US">Data source operator interface</h2>
  * <h2 class="zh-CN">数据源操作器接口</h2>
@@ -74,7 +72,7 @@ public interface RemoteClient {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.TEXT_PLAIN)
 	@WebMethod
-	String rollback(@WebParam @PathParam("txCode") final long txCode);
+	String rollback(@WebParam @PathParam("txCode") final Long txCode);
 
 	/**
 	 * <h3 class="en-US">Submit transactional execute</h3>
@@ -90,7 +88,7 @@ public interface RemoteClient {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.TEXT_PLAIN)
 	@WebMethod
-	String commit(@WebParam @PathParam("txCode") final long txCode);
+	String commit(@WebParam @PathParam("txCode") final Long txCode);
 
 	/**
 	 * <h3 class="en-US">Truncate all data tables</h3>
@@ -222,7 +220,7 @@ public interface RemoteClient {
 	String retrieve(@Nonnull @WebParam @PathParam("tableName") final String tableName,
 	                @WebParam @QueryParam("columns") final String columns,
 	                @Nonnull @WebParam @QueryParam("filter") final String filterContent,
-	                @WebParam @QueryParam("forUpdate") final boolean forUpdate,
+	                @WebParam @QueryParam("forUpdate") final Boolean forUpdate,
 	                @WebParam @QueryParam("lockOption") final LockModeType lockOption);
 
 	/**
@@ -286,12 +284,8 @@ public interface RemoteClient {
 	 * <h3 class="en-US">Execute query commands for data updates</h3>
 	 * <h3 class="zh-CN">执行用于数据更新的查询命令</h3>
 	 *
-	 * @param tableName  <span class="en-US">Data table name</span>
-	 *                   <span class="zh-CN">数据表名</span>
-	 * @param columns    <span class="en-US">Query column names</span>
-	 *                   <span class="zh-CN">查询数据列名</span>
-	 * @param conditions <span class="en-US">Query condition instance list</span>
-	 *                   <span class="zh-CN">查询条件实例对象列表</span>
+	 * @param queryInfo  <span class="en-US">Query record information</span>
+	 *                   <span class="zh-CN">数据检索信息</span>
 	 * @param lockOption <span class="en-US">Query record lock option</span>
 	 *                   <span class="zh-CN">查询记录锁定选项</span>
 	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
@@ -302,30 +296,23 @@ public interface RemoteClient {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@WebMethod
-	String queryForUpdate(@Nonnull @WebParam @PathParam("tableName") final String tableName,
-	                      @WebParam @QueryParam("columns") final String columns,
-	                      @Nonnull @WebParam @QueryParam("conditions") final String conditions,
+	String queryForUpdate(@Nonnull @WebParam @QueryParam("query") final String queryInfo,
 	                      @Nonnull @WebParam @QueryParam("lock") final LockModeType lockOption);
 
 	/**
 	 * <h3 class="en-US">Query total record count</h3>
 	 * <h3 class="zh-CN">查询总记录数</h3>
 	 *
-	 * @param tableName  <span class="en-US">Data table name</span>
-	 *                   <span class="zh-CN">数据表名</span>
-	 * @param conditions <span class="en-US">Query condition instance list</span>
-	 *                   <span class="zh-CN">查询条件实例对象列表</span>
+	 * @param queryInfo <span class="en-US">Query record information</span>
+	 *                  <span class="zh-CN">数据检索信息</span>
 	 * @return <span class="en-US">Total record count</span>
 	 * <span class="zh-CN">总记录条数</span>
-	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
-	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
 	@GET
 	@Path("/search/{tableName}/count")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@WebMethod
-	Long queryTotal(@Nonnull @WebParam @PathParam("tableName") final String tableName,
-	                @Nonnull @WebParam @QueryParam("conditions") final String conditions) throws SQLException;
+	Long queryTotal(@Nonnull @WebParam @QueryParam("query") final String queryInfo);
 
 }

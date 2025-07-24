@@ -17,13 +17,16 @@
 
 package org.nervousync.brain.dialects.core;
 
+import jakarta.annotation.Nonnull;
 import org.nervousync.brain.annotations.dialect.DataType;
 import org.nervousync.brain.annotations.dialect.SchemaDialect;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.dialects.Dialect;
 import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.dialects.DialectException;
+import org.nervousync.brain.manager.TableManager;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
+import org.nervousync.brain.query.item.ColumnItem;
 import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.ClassUtils;
@@ -85,6 +88,11 @@ public abstract class BaseDialect implements Dialect {
 	 * <span class="zh-CN">数据类型定义映射表</span>
 	 */
 	private final Hashtable<Integer, String> dataTypes = new Hashtable<>();
+	/**
+	 * <span class="en-US">Data table manager instance object</span>
+	 * <span class="zh-CN">数据表管理器实例对象</span>
+	 */
+	protected final TableManager tableManager;
 
 	/**
 	 * <h3 class="en-US">Constructor method for Database dialect abstract class</h3>
@@ -95,7 +103,7 @@ public abstract class BaseDialect implements Dialect {
 	 * @throws DialectException <span class="en-US">If the implementation class does not find the org.nervousync.brain.annotations.dialect.SchemaDialect annotation</span>
 	 *                          <span class="zh-CN">如果实现类未找到org.nervousync.brain.annotations.dialect.SchemaDialect注解</span>
 	 */
-	protected BaseDialect(final DialectType dialectType) throws DialectException {
+	protected BaseDialect(@Nonnull final DialectType dialectType) throws DialectException {
 		SchemaDialect schemaDialect = Optional.ofNullable(this.getClass().getAnnotation(SchemaDialect.class))
 				.orElseThrow(() -> new DialectException(0x00DB00000005L, this.getClass().getName()));
 		this.dialectType = dialectType;
@@ -117,9 +125,11 @@ public abstract class BaseDialect implements Dialect {
 			}
 			this.dataTypes.put(dataType.code(), dataType.type());
 		}
+		this.tableManager = TableManager.getInstance();
 	}
 
 	@Override
+	@Nonnull
 	public final DialectType type() {
 		return this.dialectType;
 	}
@@ -383,6 +393,21 @@ public abstract class BaseDialect implements Dialect {
 		}
 
 		return sqlBuilder.toString();
+	}
+
+	/**
+	 * <h3 class="en-US">Generate query column name commands</h3>
+	 * <h3 class="zh-CN">生成查询列名称命令</h3>
+	 *
+	 * @param aliasMap   <span class="en-US">Data table alias mapping table</span>
+	 *                   <span class="zh-CN">数据表别名映射表</span>
+	 * @param columnItem <span class="en-US">Query data column define information</span>
+	 *                   <span class="zh-CN">查询数据列信息定义</span>
+	 * @return <span class="en-US">Generated SQL command</span>
+	 * <span class="zh-CN">生成的SQL命令</span>
+	 */
+	protected final String columnName(final Map<String, String> aliasMap, final ColumnItem columnItem) {
+		return this.columnName(aliasMap, columnItem.getTableName(), columnItem.getColumnName());
 	}
 
 	/**

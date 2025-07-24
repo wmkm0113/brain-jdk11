@@ -17,13 +17,9 @@
 
 package org.nervousync.brain.defines;
 
-import jakarta.xml.bind.annotation.XmlRootElement;
-import jakarta.xml.bind.annotation.XmlType;
-import org.nervousync.annotations.beans.OutputConfig;
-import org.nervousync.beans.core.BeanObject;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.StringUtils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,10 +30,7 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 4, 2020 16:33:28 $
  */
-@XmlType(name = "strategy_define", namespace = "https://nervousync.org/schemas/brain")
-@XmlRootElement(name = "strategy_define", namespace = "https://nervousync.org/schemas/brain")
-@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
-public final class StrategyDefine extends BeanObject {
+public final class StrategyDefine implements Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>

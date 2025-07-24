@@ -20,20 +20,15 @@ package org.nervousync.brain.query.condition;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlSeeAlso;
 import jakarta.xml.bind.annotation.XmlTransient;
-import org.nervousync.brain.enumerations.query.ConditionCode;
 import org.nervousync.brain.enumerations.query.ConditionType;
+import org.nervousync.brain.enumerations.query.ConnectionCode;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
-import org.nervousync.brain.query.condition.impl.ConstantCondition;
 import org.nervousync.brain.query.condition.impl.GroupCondition;
 import org.nervousync.brain.query.core.SortedItem;
-import org.nervousync.brain.query.param.AbstractParameter;
-import org.nervousync.commons.Globals;
-import org.nervousync.enumerations.core.ConnectionCode;
 import org.nervousync.utils.ClassUtils;
 
 import java.sql.SQLException;
 import java.sql.Wrapper;
-import java.util.Arrays;
 
 /**
  * <h2 class="en-US">Abstract class for query condition information define</h2>
@@ -56,14 +51,14 @@ public abstract class Condition extends SortedItem implements Wrapper {
 	 * <span class="en-US">Query condition type enumeration value</span>
 	 * <span class="zh-CN">查询条件类型枚举值</span>
 	 */
-	@XmlElement(name = "connection_type")
+	@XmlElement(name = "condition_type")
 	private final ConditionType conditionType;
 	/**
 	 * <span class="en-US">Query connection code</span>
 	 * <span class="zh-CN">查询条件连接代码</span>
 	 */
 	@XmlElement(name = "connection_code")
-	private ConnectionCode connectionCode;
+	private ConnectionCode connectionCode = ConnectionCode.AND;
 
 	/**
 	 * <h3 class="en-US">Constructor method for query condition information define</h3>
@@ -121,89 +116,5 @@ public abstract class Condition extends SortedItem implements Wrapper {
 	@Override
 	public final boolean isWrapperFor(final Class<?> clazz) {
 		return ClassUtils.isAssignable(clazz, this.getClass());
-	}
-
-	/**
-	 * <h3 class="en-US">Static method is used to generate query matching condition group instance objects</h3>
-	 * <h3 class="zh-CN">静态方法用于生成查询匹配条件组实例对象</h3>
-	 *
-	 * @param sortCode       <span class="en-US">Sort code</span>
-	 *                       <span class="zh-CN">排序代码</span>
-	 * @param connectionCode <span class="en-US">Query connection code</span>
-	 *                       <span class="zh-CN">查询条件连接代码</span>
-	 * @param conditions     <span class="en-US">Query condition information array</span>
-	 *                       <span class="zh-CN">查询匹配条件组数组</span>
-	 * @return <span class="en-US">Generated object instance</span>
-	 * <span class="zh-CN">生成的对象实例</span>
-	 */
-	public static GroupCondition group(final int sortCode, final ConnectionCode connectionCode,
-	                                   final Condition... conditions) {
-		if (conditions == null || conditions.length == 0) {
-			return null;
-		}
-		GroupCondition groupCondition = new GroupCondition();
-
-		groupCondition.setConnectionCode(connectionCode);
-		groupCondition.setSortCode((sortCode < Globals.INITIALIZE_INT_VALUE) ? Globals.DEFAULT_VALUE_INT : sortCode);
-		groupCondition.setConditionList(Arrays.asList(conditions));
-
-		return groupCondition;
-	}
-
-	/**
-	 * <h3 class="en-US">Static method is used to generate query data column matching condition instance object</h3>
-	 * <h3 class="zh-CN">静态方法用于生成查询数据列匹配条件实例对象</h3>
-	 *
-	 * @param sortCode           <span class="en-US">Sort code</span>
-	 *                           <span class="zh-CN">排序代码</span>
-	 * @param connectionCode     <span class="en-US">Query connection code</span>
-	 *                           <span class="zh-CN">查询条件连接代码</span>
-	 * @param conditionCode      <span class="en-US">Query condition code</span>
-	 *                           <span class="zh-CN">查询条件运算代码</span>
-	 * @param tableName          <span class="en-US">Data table name</span>
-	 *                           <span class="zh-CN">数据表名</span>
-	 * @param columnName         <span class="en-US">Data column name</span>
-	 *                           <span class="zh-CN">数据列名</span>
-	 * @param conditionParameter <span class="en-US">Match condition</span>
-	 *                           <span class="zh-CN">匹配结果</span>
-	 * @return <span class="en-US">Generated object instance</span>
-	 * <span class="zh-CN">生成的对象实例</span>
-	 */
-	public static ColumnCondition column(final int sortCode, final ConnectionCode connectionCode,
-	                                     final ConditionCode conditionCode, final String tableName,
-	                                     final String columnName, final AbstractParameter<?> conditionParameter) {
-		ColumnCondition columnCondition = new ColumnCondition();
-
-		columnCondition.setConnectionCode(connectionCode);
-		columnCondition.setConditionCode(conditionCode);
-		columnCondition.setTableName(tableName.trim());
-		columnCondition.setColumnName(columnName.trim());
-		columnCondition.setSortCode((sortCode < Globals.INITIALIZE_INT_VALUE) ? Globals.DEFAULT_VALUE_INT : sortCode);
-		columnCondition.setConditionParameter(conditionParameter);
-
-		return columnCondition;
-	}
-
-	/**
-	 * <h3 class="en-US">Static method is used to generate constant condition instance object</h3>
-	 * <h3 class="zh-CN">静态方法用于生成固定条件实例对象</h3>
-	 *
-	 * @param sortCode       <span class="en-US">Sort code</span>
-	 *                       <span class="zh-CN">排序代码</span>
-	 * @param connectionCode <span class="en-US">Query connection code</span>
-	 *                       <span class="zh-CN">查询条件连接代码</span>
-	 * @param matchResult    <span class="en-US">Match result</span>
-	 *                       <span class="zh-CN">匹配结果</span>
-	 * @return <span class="en-US">Generated object instance</span>
-	 * <span class="zh-CN">生成的对象实例</span>
-	 */
-	public static ConstantCondition constant(final int sortCode, final ConnectionCode connectionCode,
-	                                         final boolean matchResult) {
-		ConstantCondition condition = new ConstantCondition(matchResult);
-
-		condition.setConnectionCode(connectionCode);
-		condition.setSortCode(sortCode);
-
-		return condition;
 	}
 }

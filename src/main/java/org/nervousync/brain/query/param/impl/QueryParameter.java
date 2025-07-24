@@ -47,12 +47,6 @@ public final class QueryParameter extends AbstractParameter<QueryData> {
 	 */
 	@XmlElement(name = "function_name")
 	private String functionName = Globals.DEFAULT_VALUE_STRING;
-	/**
-	 * <span class="en-US">Parameter value</span>
-	 * <span class="zh-CN">参数值</span>
-	 */
-	@XmlElement(name = "query_info", namespace = "https://nervousync.org/schemas/brain")
-	private QueryData itemValue;
 
 	/**
 	 * <h3 class="en-US">Constructor method for sub-query parameter information define</h3>
@@ -82,15 +76,5 @@ public final class QueryParameter extends AbstractParameter<QueryData> {
 	 */
 	public void setFunctionName(final String functionName) {
 		this.functionName = functionName;
-	}
-
-	@Override
-	public QueryData getItemValue() {
-		return this.itemValue;
-	}
-
-	@Override
-	public void setItemValue(final QueryData itemValue) {
-		this.itemValue = itemValue;
 	}
 }

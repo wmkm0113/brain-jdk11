@@ -18,6 +18,7 @@
 package org.nervousync.brain.dialects.distribute;
 
 import jakarta.annotation.Nonnull;
+import jakarta.persistence.LockModeType;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.InitOption;
 import org.nervousync.brain.defines.TableDefine;
@@ -25,11 +26,9 @@ import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
-import org.nervousync.brain.query.condition.Condition;
 
 import java.io.Closeable;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -223,58 +222,53 @@ public interface DistributeClient extends Closeable {
 	 * <h3 class="en-US">Execute query record command</h3>
 	 * <h3 class="zh-CN">执行数据检索命令</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table defines information</span>
-	 *                    <span class="zh-CN">数据表定义信息</span>
-	 * @param queryInfo   <span class="en-US">Query record information</span>
-	 *                    <span class="zh-CN">数据检索信息</span>
+	 * @param queryInfo <span class="en-US">Query record information</span>
+	 *                  <span class="zh-CN">数据检索信息</span>
 	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
 	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	PartialCollection query(@Nonnull final TableDefine tableDefine, @Nonnull final QueryInfo queryInfo) throws Exception;
+	PartialCollection query(@Nonnull final QueryInfo queryInfo) throws Exception;
 
 	/**
 	 * <h3 class="en-US">Execute query commands for data updates</h3>
 	 * <h3 class="zh-CN">执行用于数据更新的查询命令</h3>
 	 *
-	 * @param tableDefine   <span class="en-US">Table defines information</span>
-	 *                      <span class="zh-CN">数据表定义信息</span>
-	 * @param conditionList <span class="en-US">Query condition instance list</span>
-	 *                      <span class="zh-CN">查询条件实例对象列表</span>
+	 * @param queryInfo  <span class="en-US">Query record information</span>
+	 *                   <span class="zh-CN">数据检索信息</span>
+	 * @param lockOption <span class="en-US">Lock option</span>
+	 *                   <span class="zh-CN">数据锁选项</span>
 	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
 	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	PartialCollection queryForUpdate(@Nonnull final TableDefine tableDefine,
-	                                 final List<Condition> conditionList) throws Exception;
+	PartialCollection queryForUpdate(@Nonnull final QueryInfo queryInfo, final LockModeType lockOption) throws Exception;
 
 	/**
 	 * <h3 class="en-US">Query total record count</h3>
 	 * <h3 class="zh-CN">查询总记录数</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table defines information</span>
-	 *                    <span class="zh-CN">数据表定义信息</span>
-	 * @param queryInfo   <span class="en-US">Query record information</span>
-	 *                    <span class="zh-CN">数据检索信息</span>
+	 * @param queryInfo <span class="en-US">Query record information</span>
+	 *                  <span class="zh-CN">数据检索信息</span>
 	 * @return <span class="en-US">Total record count</span>
 	 * <span class="zh-CN">总记录条数</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	Long queryTotal(@Nonnull final TableDefine tableDefine, final QueryInfo queryInfo) throws Exception;
+	Long queryTotal(@Nonnull final QueryInfo queryInfo) throws Exception;
 
 	/**
 	 * <h3 class="en-US">Initialize data table</h3>
 	 * <h3 class="zh-CN">初始化数据表</h3>
 	 *
-	 * @param ddlType           <span class="en-US">Enumeration value of DDL operate</span>
-	 *                          <span class="zh-CN">操作类型枚举值</span>
-	 * @param tableDefine       <span class="en-US">Table defines information</span>
-	 *                          <span class="zh-CN">数据表定义信息</span>
-     * @param initOptionsMap   <span class="en-US">Data column initialize option</span>
-     *                         <span class="zh-CN">数据列初始化选项</span>
+	 * @param ddlType        <span class="en-US">Enumeration value of DDL operate</span>
+	 *                       <span class="zh-CN">操作类型枚举值</span>
+	 * @param tableDefine    <span class="en-US">Table defines information</span>
+	 *                       <span class="zh-CN">数据表定义信息</span>
+	 * @param initOptionsMap <span class="en-US">Data column initialize option</span>
+	 *                       <span class="zh-CN">数据列初始化选项</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */

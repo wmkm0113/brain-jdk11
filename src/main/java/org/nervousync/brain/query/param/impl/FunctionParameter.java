@@ -33,33 +33,17 @@ import org.nervousync.brain.query.param.AbstractParameter;
 @XmlRootElement(name = "function_parameter", namespace = "https://nervousync.org/schemas/brain")
 public final class FunctionParameter extends AbstractParameter<FunctionItem> {
 
-    /**
-     * <span class="en-US">Serial version UID</span>
-     * <span class="zh-CN">序列化UID</span>
-     */
-    private static final long serialVersionUID = -2293421714573118396L;
-    /**
-     * <span class="en-US">Parameter value</span>
-     * <span class="zh-CN">参数值</span>
-     */
-    @XmlElement(name = "function_item", namespace = "https://nervousync.org/schemas/brain")
-    private FunctionItem itemValue;
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = -2293421714573118396L;
 
-    /**
-     * <h3 class="en-US">Constructor method for function parameter information define</h3>
-     * <h3 class="zh-CN">函数参数定义的构造方法</h3>
-     */
-    public FunctionParameter() {
-        super(ItemType.FUNCTION);
-    }
-
-    @Override
-    public FunctionItem getItemValue() {
-        return this.itemValue;
-    }
-
-    @Override
-    public void setItemValue(final FunctionItem itemValue) {
-        this.itemValue = itemValue;
-    }
+	/**
+	 * <h3 class="en-US">Constructor method for function parameter information define</h3>
+	 * <h3 class="zh-CN">函数参数定义的构造方法</h3>
+	 */
+	public FunctionParameter() {
+		super(ItemType.FUNCTION);
+	}
 }

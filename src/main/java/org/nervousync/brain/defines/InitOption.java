@@ -32,99 +32,99 @@ import java.util.*;
  */
 public final class InitOption implements Serializable {
 
-    /**
-     * <span class="en-US">Serial version UID</span>
-     * <span class="zh-CN">序列化UID</span>
-     */
-    private static final long serialVersionUID = 1000740115064213568L;
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = 1000740115064213568L;
 
-    /**
-     * <span class="en-US">Generation type</span>
-     * <span class="zh-CN">生成器类型</span>
-     */
-    private GenerationType generationType;
-    /**
-     * <span class="en-US">Generator name</span>
-     * <span class="zh-CN">生成器名称</span>
-     */
-    private String generatorName;
-    /**
-     * <span class="en-US">Column histories names list</span>
-     * <span class="zh-CN">历史列名列表</span>
-     */
-    private List<String> historiesNames = new ArrayList<>();
+	/**
+	 * <span class="en-US">Generation type</span>
+	 * <span class="zh-CN">生成器类型</span>
+	 */
+	private GenerationType generationType;
+	/**
+	 * <span class="en-US">Generator name</span>
+	 * <span class="zh-CN">生成器名称</span>
+	 */
+	private String generatorName;
+	/**
+	 * <span class="en-US">Column histories names list</span>
+	 * <span class="zh-CN">历史列名列表</span>
+	 */
+	private List<String> historiesNames = new ArrayList<>();
 
-    /**
-     * <h3 class="en-US">Constructor method for column data generator configure information</h3>
-     * <h3 class="zh-CN">列数据生成器配置信息的构造方法</h3>
-     */
-    public InitOption() {
-    }
+	/**
+	 * <h3 class="en-US">Constructor method for column data generator configure information</h3>
+	 * <h3 class="zh-CN">列数据生成器配置信息的构造方法</h3>
+	 */
+	public InitOption() {
+	}
 
-    /**
-     * <h3 class="en-US">Getter method for generation type</h3>
-     * <h3 class="zh-CN">生成器类型的Getter方法</h3>
-     *
-     * @return <span class="en-US">Generation type</span>
-     * <span class="zh-CN">生成器类型</span>
-     */
-    public GenerationType getGenerationType() {
-        return generationType;
-    }
+	/**
+	 * <h3 class="en-US">Getter method for generation type</h3>
+	 * <h3 class="zh-CN">生成器类型的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Generation type</span>
+	 * <span class="zh-CN">生成器类型</span>
+	 */
+	public GenerationType getGenerationType() {
+		return generationType;
+	}
 
-    /**
-     * <h3 class="en-US">Setter method for generation type</h3>
-     * <h3 class="zh-CN">生成器类型的Setter方法</h3>
-     *
-     * @param generationType <span class="en-US">Generation type</span>
-     *                       <span class="zh-CN">生成器类型</span>
-     */
-    public void setGenerationType(final GenerationType generationType) {
-        this.generationType = generationType;
-    }
+	/**
+	 * <h3 class="en-US">Setter method for generation type</h3>
+	 * <h3 class="zh-CN">生成器类型的Setter方法</h3>
+	 *
+	 * @param generationType <span class="en-US">Generation type</span>
+	 *                       <span class="zh-CN">生成器类型</span>
+	 */
+	public void setGenerationType(final GenerationType generationType) {
+		this.generationType = generationType;
+	}
 
-    /**
-     * <h3 class="en-US">Getter method for generator name</h3>
-     * <h3 class="zh-CN">生成器名称的Getter方法</h3>
-     *
-     * @return <span class="en-US">Generator name</span>
-     * <span class="zh-CN">生成器名称</span>
-     */
-    public String getGeneratorName() {
-        return generatorName;
-    }
+	/**
+	 * <h3 class="en-US">Getter method for generator name</h3>
+	 * <h3 class="zh-CN">生成器名称的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Generator name</span>
+	 * <span class="zh-CN">生成器名称</span>
+	 */
+	public String getGeneratorName() {
+		return generatorName;
+	}
 
-    /**
-     * <h3 class="en-US">Setter method for generator name</h3>
-     * <h3 class="zh-CN">生成器名称的Setter方法</h3>
-     *
-     * @param generatorName <span class="en-US">Generator name</span>
-     *                      <span class="zh-CN">生成器名称</span>
-     */
-    public void setGeneratorName(final String generatorName) {
-        this.generatorName = generatorName;
-    }
+	/**
+	 * <h3 class="en-US">Setter method for generator name</h3>
+	 * <h3 class="zh-CN">生成器名称的Setter方法</h3>
+	 *
+	 * @param generatorName <span class="en-US">Generator name</span>
+	 *                      <span class="zh-CN">生成器名称</span>
+	 */
+	public void setGeneratorName(final String generatorName) {
+		this.generatorName = generatorName;
+	}
 
-    /**
-     * <h3 class="en-US">Getter method for the column histories names list</h3>
-     * <h3 class="zh-CN">历史列名列表的Getter方法</h3>
-     *
-     * @return <span class="en-US">Column histories names list</span>
-     * <span class="zh-CN">历史列名列表</span>
-     */
-    @Nonnull
-    public List<String> getHistoriesNames() {
-        return (this.historiesNames == null) ? Collections.emptyList() : this.historiesNames;
-    }
+	/**
+	 * <h3 class="en-US">Getter method for the column histories names list</h3>
+	 * <h3 class="zh-CN">历史列名列表的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Column histories names list</span>
+	 * <span class="zh-CN">历史列名列表</span>
+	 */
+	@Nonnull
+	public List<String> getHistoriesNames() {
+		return (this.historiesNames == null) ? Collections.emptyList() : this.historiesNames;
+	}
 
-    /**
-     * <h3 class="en-US">Setter method for the column histories names list</h3>
-     * <h3 class="zh-CN">历史列名列表的Setter方法</h3>
-     *
-     * @param historiesNames    <span class="en-US">Column histories names list</span>
-     *                          <span class="zh-CN">历史列名列表</span>
-     */
-    public void setHistoriesNames(@Nonnull final List<String> historiesNames) {
-        this.historiesNames = historiesNames;
-    }
+	/**
+	 * <h3 class="en-US">Setter method for the column histories names list</h3>
+	 * <h3 class="zh-CN">历史列名列表的Setter方法</h3>
+	 *
+	 * @param historiesNames <span class="en-US">Column histories names list</span>
+	 *                       <span class="zh-CN">历史列名列表</span>
+	 */
+	public void setHistoriesNames(@Nonnull final List<String> historiesNames) {
+		this.historiesNames = historiesNames;
+	}
 }

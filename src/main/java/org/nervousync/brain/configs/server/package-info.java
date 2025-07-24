@@ -15,13 +15,20 @@
  * limitations under the License.
  */
 
+/**
+ * <h2 class="en-US">Data source configuration information definition</h2>
+ * <h2 class="zh-CN">数据源配置信息定义</h2>
+ *
+ * @author Steven Wee	<a href="mailto:wmkm0113@Hotmail.com">wmkm0113@Hotmail.com</a>
+ * @version $Revision: 1.0 $ $Date: Dec 20, 2018 15:43:52 $
+ */
 @XmlSchema(namespace = "https://nervousync.org/schemas/brain", elementFormDefault = XmlNsForm.QUALIFIED,
-        location = "https://nervousync.org/schemas/brain_config_1_0.xsd",
-        xmlns = {
-                @XmlNs(prefix = "xs", namespaceURI = "http://www.w3.org/2001/XMLSchema"),
-                @XmlNs(prefix = "xsi", namespaceURI = "http://www.w3.org/2001/XMLSchema-instance"),
-                @XmlNs(prefix = "brain", namespaceURI = "https://nervousync.org/schemas/brain")
-        })
+		location = "https://nervousync.org/schemas/brain_config_1_0.xsd",
+		xmlns = {
+				@XmlNs(prefix = "xs", namespaceURI = "http://www.w3.org/2001/XMLSchema"),
+				@XmlNs(prefix = "xsi", namespaceURI = "http://www.w3.org/2001/XMLSchema-instance"),
+				@XmlNs(prefix = "brain", namespaceURI = "https://nervousync.org/schemas/brain")
+		})
 package org.nervousync.brain.configs.server;
 
 import jakarta.xml.bind.annotation.XmlNs;

@@ -43,11 +43,6 @@ public final class BrainCommons {
 	 */
 	public static final int DEFAULT_PAGE_LIMIT = 20;
 	/**
-	 * <span class="en-US">The number of threads executed simultaneously by the default data import and export task</span>
-	 * <span class="zh-CN">默认数据导入导出任务同时执行的线程数</span>
-	 */
-	public static final int DEFAULT_PROCESS_THREAD_LIMIT = 20;
-	/**
 	 * <span class="en-US">Default minimum connection count</span>
 	 * <span class="zh-CN">默认的最小连接数</span>
 	 */
@@ -67,37 +62,6 @@ public final class BrainCommons {
 	 * <span class="zh-CN">默认的重试间隔时间（单位：毫秒）</span>
 	 */
 	public static final long DEFAULT_RETRY_PERIOD = 1000L;
-
-	/**
-	 * <span class="en-US">The default expiration time after the data import and export task is completed</span>
-	 * <span class="zh-CN">默认数据导入导出任务完成后的过期时间</span>
-	 */
-	public static final long DEFAULT_STORAGE_EXPIRE_TIME = 7 * 24 * 60 * 60 * 1000L;
-	/**
-	 * <span class="en-US">Data import and export task status: Create</span>
-	 * <span class="zh-CN">数据导入导出任务状态：创建</span>
-	 */
-	public static final int DATA_TASK_STATUS_CREATE = 0;
-	/**
-	 * <span class="en-US">Data import and export task status: Processing</span>
-	 * <span class="zh-CN">数据导入导出任务状态：处理中</span>
-	 */
-	public static final int DATA_TASK_STATUS_PROCESS = 1;
-	/**
-	 * <span class="en-US">Data import and export task status: Finished</span>
-	 * <span class="zh-CN">数据导入导出任务状态：已完成</span>
-	 */
-	public static final int DATA_TASK_STATUS_FINISH = 2;
-	/**
-	 * <span class="en-US">Data file extension</span>
-	 * <span class="zh-CN">数据文件的扩展名</span>
-	 */
-	public static final String DATA_FILE_EXTENSION_NAME = ".dat";
-	/**
-	 * <span class="en-US">Data file extension</span>
-	 * <span class="zh-CN">数据文件的扩展名</span>
-	 */
-	public static final String DATA_TMP_FILE_EXTENSION_NAME = ".tmp";
 
 	/**
 	 * <span class="en-US">Default remote database dialect name</span>

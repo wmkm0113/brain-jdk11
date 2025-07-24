@@ -19,6 +19,7 @@ package org.nervousync.brain.configs.schema.impl;
 
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.configs.schema.SchemaConfig;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.enumerations.remote.RemoteType;
 import org.nervousync.proxy.ProxyConfig;
 
@@ -70,6 +71,7 @@ public final class RemoteSchemaConfig extends SchemaConfig {
 	 * <h3 class="zh-CN">远端数据源配置信息的构造方法</h3>
 	 */
 	public RemoteSchemaConfig() {
+		super(DialectType.Remote);
 	}
 
 	/**

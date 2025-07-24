@@ -19,7 +19,7 @@ package org.nervousync.brain.query.item;
 
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.ItemType;
-import org.nervousync.brain.query.core.AbstractItem;
+import org.nervousync.brain.query.core.QueryItem;
 
 /**
  * <h2 class="en-US">Query constant information define</h2>
@@ -31,7 +31,7 @@ import org.nervousync.brain.query.core.AbstractItem;
 @XmlType(name = "constant_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "constant_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
-public final class ConstantItem extends AbstractItem {
+public final class ConstantItem extends QueryItem {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>
@@ -44,7 +44,7 @@ public final class ConstantItem extends AbstractItem {
 	 * <span class="zh-CN">常量值</span>
 	 */
 	@XmlElement(name = "constant_value")
-	private String constantValue;
+	private Object constantValue;
 
 	/**
 	 * <h3 class="en-US">Constructor method for constant column information defines</h3>
@@ -61,7 +61,7 @@ public final class ConstantItem extends AbstractItem {
 	 * @return <span class="en-US">Constant value</span>
 	 * <span class="zh-CN">常量值</span>
 	 */
-	public String getConstantValue() {
+	public Object getConstantValue() {
 		return this.constantValue;
 	}
 
@@ -72,7 +72,7 @@ public final class ConstantItem extends AbstractItem {
 	 * @param constantValue <span class="en-US">Constant value</span>
 	 *                      <span class="zh-CN">常量值</span>
 	 */
-	public void setConstantValue(final String constantValue) {
+	public void setConstantValue(final Object constantValue) {
 		this.constantValue = constantValue;
 	}
 }

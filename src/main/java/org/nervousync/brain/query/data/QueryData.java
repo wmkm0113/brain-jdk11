@@ -22,10 +22,13 @@ import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
 import org.nervousync.brain.query.condition.impl.GroupCondition;
-import org.nervousync.brain.query.core.AbstractItem;
-import org.nervousync.brain.query.item.ColumnItem;
-import org.nervousync.brain.query.item.FunctionItem;
-import org.nervousync.brain.query.item.QueryItem;
+import org.nervousync.brain.query.core.QueryItem;
+import org.nervousync.brain.query.core.SortedItem;
+import org.nervousync.brain.query.item.*;
+import org.nervousync.brain.query.join.QueryJoin;
+import org.nervousync.brain.query.join.SubQueryJoin;
+import org.nervousync.brain.query.join.TableQueryJoin;
+import org.nervousync.brain.query.sort.GroupBy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,8 +40,8 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 18:19:42 $
  */
-@XmlType(name = "query_data", namespace = "https://nervousync.org/schemas/brain")
-@XmlRootElement(name = "query_data", namespace = "https://nervousync.org/schemas/brain")
+@XmlType(name = "sub_query_data", namespace = "https://nervousync.org/schemas/brain")
+@XmlRootElement(name = "sub_query_data", namespace = "https://nervousync.org/schemas/brain")
 public final class QueryData extends BeanObject {
 
 	/**
@@ -54,40 +57,53 @@ public final class QueryData extends BeanObject {
 	@XmlElement(name = "table_name")
 	private String tableName;
 	/**
-	 * <span class="en-US">Query item instance</span>
-	 * <span class="zh-CN">查询项目实例对象</span>
+	 * <span class="en-US">Query item instance list</span>
+	 * <span class="zh-CN">查询项目实例对象列表</span>
 	 */
-	@XmlElementRefs({
-			@XmlElementRef(name = "column_item", type = ColumnItem.class, namespace = "https://nervousync.org/schemas/brain"),
-			@XmlElementRef(name = "function_item", type = FunctionItem.class, namespace = "https://nervousync.org/schemas/brain"),
-			@XmlElementRef(name = "query_item", type = QueryItem.class, namespace = "https://nervousync.org/schemas/brain"),
+	@XmlElements({
+			@XmlElement(name = "calculate_item", type = CalculateItem.class),
+			@XmlElement(name = "column_item", type = ColumnItem.class),
+			@XmlElement(name = "constant_item", type = ConstantItem.class),
+			@XmlElement(name = "function_item", type = FunctionItem.class),
+			@XmlElement(name = "sub_query_item", type = SubQueryItem.class)
 	})
-	private AbstractItem queryItem;
+	@XmlElementWrapper(name = "item_list")
+	private List<QueryItem> itemList;
+	/**
+	 * <span class="en-US">Related query information list</span>
+	 * <span class="zh-CN">关联查询信息列表</span>
+	 */
+	@XmlElements({
+			@XmlElement(name = "table_query_join", type = TableQueryJoin.class),
+			@XmlElement(name = "sub_query_join", type = SubQueryJoin.class)
+	})
+	@XmlElementWrapper(name = "join_list")
+	private List<QueryJoin> queryJoins;
 	/**
 	 * <span class="en-US">Query condition instance list</span>
 	 * <span class="zh-CN">查询条件实例对象列表</span>
 	 */
-    @XmlElements({
-            @XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/brain"),
-            @XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/brain")
-    })
+	@XmlElements({
+			@XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/brain")
+	})
 	@XmlElementWrapper(name = "conditions")
 	private List<Condition> conditions;
 	/**
 	 * <span class="en-US">Identify key</span>
 	 * <span class="zh-CN">分组识别代码列表</span>
 	 */
-	@XmlElement(name = "identify_key")
-	@XmlElementWrapper(name = "group_by")
-	private List<String> groupBy;
+	@XmlElement(name = "group_by")
+	@XmlElementWrapper(name = "group_list")
+	private List<GroupBy> groupBy;
 	/**
 	 * <span class="en-US">Group having condition instance list</span>
 	 * <span class="zh-CN">分组筛选条件实例对象列表</span>
 	 */
-    @XmlElements({
-            @XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/brain"),
-            @XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/brain")
-    })
+	@XmlElements({
+			@XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/brain")
+	})
 	@XmlElementWrapper(name = "having_list")
 	private List<Condition> havingList;
 
@@ -124,25 +140,48 @@ public final class QueryData extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for query item instance</h3>
-	 * <h3 class="zh-CN">查询项目实例对象的Getter方法</h3>
+	 * <h3 class="en-US">Getter method for the query item instance list</h3>
+	 * <h3 class="zh-CN">查询项目实例对象列表的Getter方法</h3>
 	 *
-	 * @return <span class="en-US">Query item instance</span>
-	 * <span class="zh-CN">查询项目实例对象</span>
+	 * @return <span class="en-US">Query item instance list</span>
+	 * <span class="zh-CN">查询项目实例对象列表</span>
 	 */
-	public AbstractItem getQueryItem() {
-		return this.queryItem;
+	public List<QueryItem> getItemList() {
+		return this.itemList;
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for query item instance</h3>
-	 * <h3 class="zh-CN">查询项目实例对象的Setter方法</h3>
+	 * <h3 class="en-US">Setter method for the query item instance list</h3>
+	 * <h3 class="zh-CN">查询项目实例对象列表的Setter方法</h3>
 	 *
-	 * @param queryItem <span class="en-US">Query item instance</span>
-	 *                  <span class="zh-CN">查询项目实例对象</span>
+	 * @param itemList <span class="en-US">Query item instance list</span>
+	 *                 <span class="zh-CN">查询项目实例对象列表</span>
 	 */
-	public void setQueryItem(final AbstractItem queryItem) {
-		this.queryItem = queryItem;
+	public void setItemList(final List<QueryItem> itemList) {
+		this.itemList = (itemList == null) ? new ArrayList<>() : itemList;
+		this.itemList.sort(SortedItem.desc());
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the related query information list</h3>
+	 * <h3 class="zh-CN">关联查询信息列表的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Related query information list</span>
+	 * <span class="zh-CN">关联查询信息列表</span>
+	 */
+	public List<QueryJoin> getQueryJoins() {
+		return this.queryJoins;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the related query information list</h3>
+	 * <h3 class="zh-CN">关联查询信息列表的Setter方法</h3>
+	 *
+	 * @param queryJoins <span class="en-US">Related query information list</span>
+	 *                   <span class="zh-CN">关联查询信息列表</span>
+	 */
+	public void setQueryJoins(final List<QueryJoin> queryJoins) {
+		this.queryJoins = queryJoins;
 	}
 
 	/**
@@ -174,7 +213,7 @@ public final class QueryData extends BeanObject {
 	 * @return <span class="en-US">Group identify key</span>
 	 * <span class="zh-CN">分组识别代码列表</span>
 	 */
-	public List<String> getGroupBy() {
+	public List<GroupBy> getGroupBy() {
 		return this.groupBy;
 	}
 
@@ -185,7 +224,7 @@ public final class QueryData extends BeanObject {
 	 * @param groupBy <span class="en-US">Group identify key</span>
 	 *                <span class="zh-CN">分组识别代码列表</span>
 	 */
-	public void setGroupBy(final List<String> groupBy) {
+	public void setGroupBy(final List<GroupBy> groupBy) {
 		this.groupBy = groupBy;
 	}
 

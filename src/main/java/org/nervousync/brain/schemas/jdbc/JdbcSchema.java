@@ -21,13 +21,10 @@ import jakarta.annotation.Nonnull;
 import jakarta.persistence.LockModeType;
 import org.nervousync.brain.command.GeneratedCommand;
 import org.nervousync.brain.commons.BrainCommons;
-import org.nervousync.brain.configs.auth.Authentication;
 import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
-import org.nervousync.brain.configs.secure.TrustStore;
 import org.nervousync.brain.configs.server.ServerInfo;
 import org.nervousync.brain.configs.sharding.StrategyConfig;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
-import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.InitOption;
 import org.nervousync.brain.defines.StrategyDefine;
 import org.nervousync.brain.defines.TableDefine;
@@ -43,7 +40,13 @@ import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
-import org.nervousync.brain.query.filter.OrderBy;
+import org.nervousync.brain.query.core.QueryFrom;
+import org.nervousync.brain.query.core.QueryItem;
+import org.nervousync.brain.query.data.QueryData;
+import org.nervousync.brain.query.from.FromSubQuery;
+import org.nervousync.brain.query.from.FromTable;
+import org.nervousync.brain.query.item.SubQueryItem;
+import org.nervousync.brain.query.sort.OrderBy;
 import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.*;
@@ -206,20 +209,17 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		}
 		this.testOnBorrow = schemaConfig.isTestOnBorrow();
 		this.testOnReturn = schemaConfig.isTestOnReturn();
-		if (schemaConfig.isServerArray()) {
-			List<ServerInfo> serverList = schemaConfig.getServerList();
-			if (serverList == null || serverList.isEmpty()) {
-				throw new SQLException("");
-			}
+		List<ServerInfo> serverList = schemaConfig.getServerList();
+		if (serverList == null || serverList.isEmpty()) {
+			this.serverList = Collections.emptyList();
+			this.serverInfo = null;
+		} else {
 			serverList.sort((o1, o2) -> Integer.compare(o2.getServerLevel(), o1.getServerLevel()));
 			this.serverInfo = serverList.get(0);
 			this.serverList = new ArrayList<>();
 			for (int i = 1; i < serverList.size(); i++) {
 				this.serverList.add(serverList.get(i));
 			}
-		} else {
-			this.serverList = Collections.emptyList();
-			this.serverInfo = null;
 		}
 		this.initPools();
 	}
@@ -231,9 +231,14 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * @return <span class="en-US">Connect properties instance object</span>
 	 * <span class="zh-CN">连接属性值</span>
 	 */
-	Properties properties(final TrustStore trustStore, final Authentication authentication) {
-		return this.dialect.properties((trustStore == null) ? this.trustStore : trustStore,
-				(authentication == null) ? this.authentication : authentication);
+	Properties properties(final ServerInfo serverInfo) {
+		if (serverInfo == null) {
+			return this.dialect.properties(this.trustStore, this.authentication);
+		} else {
+			return this.dialect.properties(
+					(serverInfo.getTrustStore() == null) ? this.trustStore : serverInfo.getTrustStore(),
+					(serverInfo.getAuthentication() == null) ? this.authentication : serverInfo.getAuthentication());
+		}
 	}
 
 	/**
@@ -536,14 +541,14 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 			throws SQLException, InsertException {
 		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
 		String catalog = strategyConfig.dbKey(dataMap);
-		String tableName = strategyConfig.tableKey(dataMap);
+		String shardingName = strategyConfig.tableKey(dataMap);
 		//  Initialize table
 		JdbcConnectionPool connectionPool = this.registeredPools.get(this.identifyCode(this.currentServer(Boolean.TRUE)));
 		if (connectionPool == null) {
 			throw new MultilingualSQLException(0x00DB00000027L);
 		}
-		connectionPool.initTable(tableDefine, catalog, tableName, strategyConfig.shardingTable(), Map.of());
-		GeneratedCommand sqlCommand = this.dialect.insertCommand(tableName, dataMap);
+		connectionPool.initTable(tableDefine, catalog, shardingName, strategyConfig.shardingTable(), Map.of());
+		GeneratedCommand sqlCommand = this.dialect.insertCommand(tableDefine, shardingName, dataMap);
 		try (Connection connection = this.obtainConnection(Boolean.TRUE, catalog);
 		     PreparedStatement statement =
 				     connection.prepareStatement(sqlCommand.getCommand(), Statement.RETURN_GENERATED_KEYS)) {
@@ -556,7 +561,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 			if (statement.executeUpdate() == 1) {
 				ResultSet resultSet = statement.getGeneratedKeys();
 				if (resultSet.next()) {
-					return this.parseResultSet(tableDefine, resultSet, this.dialect);
+					return this.parseResultSet(sqlCommand.getJdbcTypeMap(), resultSet, this.dialect);
 				}
 				return Map.of();
 			}
@@ -581,7 +586,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		String shardingTable = strategyConfig.tableKey(filterMap);
 		String queryColumns = StringUtils.isEmpty(columns) ? SELECT_ALL_COLUMNS : columns;
 		GeneratedCommand sqlCommand =
-				this.dialect.retrieveCommand(shardingTable, queryColumns, filterMap, forUpdate, lockOption);
+				this.dialect.retrieveCommand(tableDefine, shardingTable, queryColumns, filterMap, forUpdate, lockOption);
 		try (Connection connection = this.obtainConnection(forUpdate, catalog);
 		     PreparedStatement statement = connection.prepareStatement(sqlCommand.getCommand())) {
 			this.configTimeout(statement);
@@ -597,7 +602,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 					throw new RetrieveException(0x00DB00000028L, tableDefine.getTableName(),
 							StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.TRUE));
 				}
-				resultMap.putAll(this.parseResultSet(tableDefine, resultSet, this.dialect));
+				resultMap.putAll(this.parseResultSet(sqlCommand.getJdbcTypeMap(), resultSet, this.dialect));
 			}
 			return resultMap;
 		}
@@ -664,45 +669,10 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	}
 
 	@Override
-	public PartialCollection queryForUpdate(@Nonnull final TableDefine tableDefine,
-	                                        final List<Condition> conditionList, final LockModeType lockOption)
-			throws SQLException {
-		StringBuilder stringBuilder = new StringBuilder();
-		for (ColumnDefine columnDefine : tableDefine.getColumnDefines()) {
-			stringBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnDefine.getColumnName());
-		}
-		if (stringBuilder.length() == 0) {
-			throw new MultilingualSQLException(0x00DB00000011L);
-		}
-		String columns = stringBuilder.substring(BrainCommons.DEFAULT_SPLIT_CHARACTER.length());
-		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
-		String tableName = strategyConfig.tableKey(conditionList);
-		List<Map<String, Object>> resultList = new ArrayList<>();
-		for (String catalog : strategyConfig.dbKeys(conditionList)) {
-			resultList.addAll(
-					this.executeQuery(tableDefine, catalog,
-							this.dialect.queryCommand(tableName, columns, conditionList, lockOption),
-							Boolean.TRUE));
-		}
-		return new PartialCollection(resultList, resultList.size());
-	}
-
-	@Override
-	public Long queryTotal(@Nonnull final TableDefine tableDefine, final QueryInfo queryInfo) throws Exception {
-		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
-		String tableName;
-		if (strategyConfig.shardingTable()) {
-			tableName = this.dialect.viewName(tableDefine.getTableName());
-		} else {
-			tableName = strategyConfig.tableKey(queryInfo.getConditionList());
-		}
-		if (StringUtils.isEmpty(tableName)) {
-			tableName = tableDefine.getTableName();
-		}
-		GeneratedCommand sqlCommand =
-				this.dialect.queryTotalCommand(tableName, queryInfo.getQueryJoins(), queryInfo.getConditionList());
+	public Long queryTotal(final QueryInfo queryInfo) throws Exception {
+		GeneratedCommand sqlCommand = this.dialect.queryTotalCommand(queryInfo);
 		long totalCount = 0L;
-		for (String catalog : strategyConfig.dbKeys(queryInfo.getConditionList())) {
+		for (String catalog : this.dbKeys(queryInfo)) {
 			try (Connection connection = this.obtainConnection(Boolean.TRUE, catalog);
 			     PreparedStatement statement = connection.prepareStatement(sqlCommand.getCommand())) {
 				this.configTimeout(statement);
@@ -721,6 +691,57 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		return totalCount;
 	}
 
+	private List<String> dbKeys(@Nonnull final QueryInfo queryInfo) {
+		List<String> catalogs = new ArrayList<>();
+		for (QueryFrom queryFrom : queryInfo.getQueryFrom()) {
+			if (queryFrom instanceof FromTable) {
+				this.dbKeys(((FromTable) queryFrom).getTableName(), queryInfo.getConditionList())
+						.stream()
+						.filter(catalog -> !catalogs.contains(catalog))
+						.forEach(catalogs::add);
+			} else if (queryFrom instanceof FromSubQuery) {
+				this.dbKeys(((FromSubQuery) queryFrom).getQueryData())
+						.stream()
+						.filter(catalog -> !catalogs.contains(catalog))
+						.forEach(catalogs::add);
+			}
+		}
+		for (QueryItem queryItem : queryInfo.getItemList()) {
+			if (queryItem instanceof SubQueryItem) {
+				this.dbKeys(((SubQueryItem) queryItem).getQueryData())
+						.stream()
+						.filter(catalog -> !catalogs.contains(catalog))
+						.forEach(catalogs::add);
+			}
+		}
+		return catalogs;
+	}
+
+	@Nonnull
+	private List<String> dbKeys(@Nonnull final String tableName, @Nonnull final List<Condition> conditionList) {
+		return Optional.ofNullable(this.strategyConfigs.get(tableName))
+				.map(strategyConfig -> strategyConfig.dbKeys(conditionList))
+				.orElse(Collections.emptyList());
+	}
+
+	@Nonnull
+	private List<String> dbKeys(@Nonnull QueryData queryData) {
+		List<String> catalogs = new ArrayList<>();
+		this.dbKeys(queryData.getTableName(), queryData.getConditions())
+				.stream()
+				.filter(catalog -> !catalogs.contains(catalog))
+				.forEach(catalogs::add);
+		for (QueryItem queryItem : queryData.getItemList()) {
+			if (queryItem instanceof SubQueryItem) {
+				this.dbKeys(((SubQueryItem) queryItem).getQueryData())
+						.stream()
+						.filter(catalog -> !catalogs.contains(catalog))
+						.forEach(catalogs::add);
+			}
+		}
+		return catalogs;
+	}
+
 	@Override
 	public void clearTransactional() throws SQLException {
 		if (this.txConfig.get() != null
@@ -733,26 +754,21 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	}
 
 	@Override
-	public PartialCollection query(@Nonnull final TableDefine tableDefine,
-	                               @Nonnull final QueryInfo queryInfo) throws Exception {
-		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
-		String tableName = strategyConfig.shardingTable()
-				? this.dialect.viewName(tableDefine.getTableName())
-				: tableDefine.getTableName();
-		List<String> catalogs = strategyConfig.dbKeys(queryInfo.getConditionList());
+	public PartialCollection query(@Nonnull final QueryInfo queryInfo) throws Exception {
+		List<String> catalogs = this.dbKeys(queryInfo);
 		if (catalogs.isEmpty()) {
 			return new PartialCollection(Collections.emptyList(), 0L);
 		} else if (catalogs.size() == 1) {
-			long totalCount = this.queryTotal(tableDefine, queryInfo);
+			long totalCount = this.queryTotal(queryInfo);
 			return new PartialCollection(
-					this.executeQuery(tableDefine, strategyConfig.dbKey(queryInfo.getConditionList()),
-							this.dialect.queryCommand(tableName, queryInfo, Boolean.TRUE), Boolean.FALSE),
+					this.executeQuery(catalogs.get(0),
+							this.dialect.queryCommand(queryInfo, Boolean.TRUE), Boolean.FALSE),
 					totalCount);
 		} else {
 			List<Map<String, Object>> resultList = new ArrayList<>();
 			for (String catalog : catalogs) {
-				GeneratedCommand sqlCommand = this.dialect.queryCommand(tableName, queryInfo, Boolean.FALSE);
-				resultList.addAll(this.executeQuery(tableDefine, catalog, sqlCommand, Boolean.FALSE));
+				GeneratedCommand sqlCommand = this.dialect.queryCommand(queryInfo, Boolean.FALSE);
+				resultList.addAll(this.executeQuery(catalog, sqlCommand, queryInfo.isForUpdate()));
 			}
 
 			List<OrderBy> orderByList = queryInfo.getOrderByList();
@@ -792,16 +808,31 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 
 	@Override
 	public void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
-	                      final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy,
 	                      @Nonnull final Map<String, InitOption> initOptionsMap) throws Exception {
+		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
+		for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
+			connectionPool.initTable(ddlType, tableDefine, strategyConfig, initOptionsMap);
+		}
+	}
+
+	/**
+	 * <h3 class="en-US">Register strategy define information</h3>
+	 * <h3 class="zh-CN">注册分片配置信息</h3>
+	 *
+	 * @param tableDefine      <span class="en-US">Table defines information</span>
+	 *                         <span class="zh-CN">数据表定义信息</span>
+	 * @param databaseStrategy <span class="en-US">Database strategy defines information</span>
+	 *                         <span class="zh-CN">数据库分片规则定义信息</span>
+	 * @param tableStrategy    <span class="en-US">Data table strategy defines information</span>
+	 *                         <span class="zh-CN">数据表分片规则定义信息</span>
+	 */
+	public void registerStrategy(final TableDefine tableDefine, final StrategyDefine databaseStrategy,
+	                             final StrategyDefine tableStrategy) {
 		if (!this.strategyConfigs.containsKey(tableDefine.getTableName())) {
 			this.strategyConfigs.put(tableDefine.getTableName(),
 					new StrategyConfig(tableDefine, databaseStrategy, tableStrategy));
 		}
-		for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
-			connectionPool.initTable(ddlType, tableDefine, this.strategyConfigs.get(tableDefine.getTableName()),
-					initOptionsMap);
-		}
+
 	}
 
 	/**
@@ -863,20 +894,18 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * <h3 class="en-US">Execute data query</h3>
 	 * <h3 class="zh-CN">执行数据查询</h3>
 	 *
-	 * @param tableDefine <span class="en-US">Table defines information</span>
-	 *                    <span class="zh-CN">数据表定义信息</span>
-	 * @param catalog     <span class="en-US">Sharded database name</span>
-	 *                    <span class="zh-CN">分片数据库名</span>
-	 * @param sqlCommand  <span class="en-US">SQL command to execute</span>
-	 *                    <span class="zh-CN">要执行的SQL命令</span>
-	 * @param forUpdate   <span class="en-US">Retrieve result using for update record</span>
-	 *                    <span class="zh-CN">检索结果用于更新记录</span>
+	 * @param catalog    <span class="en-US">Sharded database name</span>
+	 *                   <span class="zh-CN">分片数据库名</span>
+	 * @param sqlCommand <span class="en-US">SQL command to execute</span>
+	 *                   <span class="zh-CN">要执行的SQL命令</span>
+	 * @param forUpdate  <span class="en-US">Retrieve result using for update record</span>
+	 *                   <span class="zh-CN">检索结果用于更新记录</span>
 	 * @return <span class="en-US">Query record list</span>
 	 * <span class="zh-CN">查询到的记录列表</span>
 	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
-	private List<Map<String, Object>> executeQuery(@Nonnull final TableDefine tableDefine, @Nonnull final String catalog,
+	private List<Map<String, Object>> executeQuery(@Nonnull final String catalog,
 	                                               @Nonnull final GeneratedCommand sqlCommand,
 	                                               final boolean forUpdate) throws SQLException {
 		try (Connection connection = this.obtainConnection(forUpdate, catalog);
@@ -890,7 +919,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 			ResultSet resultSet = statement.executeQuery();
 			List<Map<String, Object>> resultList = new ArrayList<>();
 			while (resultSet.next()) {
-				resultList.add(this.parseResultSet(tableDefine, resultSet, this.dialect));
+				resultList.add(this.parseResultSet(sqlCommand.getJdbcTypeMap(), resultSet, this.dialect));
 			}
 			return resultList;
 		}
@@ -909,7 +938,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * @throws SQLException <span class="en-US">If an error occurs while parse the result set</span>
 	 *                      <span class="zh-CN">如果解析时出错</span>
 	 */
-	private Map<String, Object> parseResultSet(@Nonnull final TableDefine tableDefine,
+	private Map<String, Object> parseResultSet(@Nonnull final Map<String, Integer> jdbcTypeMap,
 	                                           final ResultSet resultSet, final JdbcDialect jdbcDialect)
 			throws SQLException {
 		ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -917,11 +946,10 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		int columnCount = resultSetMetaData.getColumnCount();
 		for (int i = 1; i <= columnCount; i++) {
 			String columnLabel = jdbcDialect.nameCase(resultSetMetaData.getColumnLabel(i));
-			ColumnDefine columnDefine = tableDefine.column(columnLabel);
-			if (columnDefine == null) {
+			if (!jdbcTypeMap.containsKey(columnLabel)) {
 				continue;
 			}
-			switch (columnDefine.getJdbcType()) {
+			switch (jdbcTypeMap.get(columnLabel)) {
 				case Types.BLOB:
 				case Types.VARBINARY:
 				case Types.LONGVARBINARY:

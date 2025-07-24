@@ -24,14 +24,14 @@ package org.nervousync.brain.enumerations.query;
  * @version $Revision: 1.0.0 $ $Date: Oct 6, 2020 19:05:28 $
  */
 public enum OrderType {
-    /**
-     * <span class="en-US">ASC</span>
-     * <span class="zh-CN">升序</span>
-     */
-    ASC,
-    /**
-     * <span class="en-US">DESC</span>
-     * <span class="zh-CN">降序</span>
-     */
-    DESC
+	/**
+	 * <span class="en-US">ASC</span>
+	 * <span class="zh-CN">升序</span>
+	 */
+	ASC,
+	/**
+	 * <span class="en-US">DESC</span>
+	 * <span class="zh-CN">降序</span>
+	 */
+	DESC
 }

@@ -32,33 +32,17 @@ import org.nervousync.brain.query.param.AbstractParameter;
 @XmlRootElement(name = "constant_parameter", namespace = "https://nervousync.org/schemas/brain")
 public final class ConstantParameter extends AbstractParameter<Object> {
 
-    /**
-     * <span class="en-US">Serial version UID</span>
-     * <span class="zh-CN">序列化UID</span>
-     */
-    private static final long serialVersionUID = -6336574407972289006L;
-    /**
-     * <span class="en-US">Parameter value</span>
-     * <span class="zh-CN">参数值</span>
-     */
-    @XmlElement(name = "constant_data")
-    private Object itemValue;
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = -6336574407972289006L;
 
-    /**
-     * <h3 class="en-US">Constructor method for constant value parameter information define</h3>
-     * <h3 class="zh-CN">常量参数定义的构造方法</h3>
-     */
-    public ConstantParameter() {
-        super(ItemType.CONSTANT);
-    }
-
-    @Override
-    public Object getItemValue() {
-        return this.itemValue;
-    }
-
-    @Override
-    public void setItemValue(final Object itemValue) {
-        this.itemValue = itemValue;
-    }
+	/**
+	 * <h3 class="en-US">Constructor method for constant value parameter information define</h3>
+	 * <h3 class="zh-CN">常量参数定义的构造方法</h3>
+	 */
+	public ConstantParameter() {
+		super(ItemType.CONSTANT);
+	}
 }

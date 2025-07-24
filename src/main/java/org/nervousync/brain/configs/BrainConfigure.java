@@ -24,9 +24,7 @@ import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
-import org.nervousync.brain.configs.storage.StorageConfig;
 import org.nervousync.brain.enumerations.ddl.DDLType;
-import org.nervousync.cache.config.CacheConfig;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.StringUtils;
 
@@ -81,18 +79,6 @@ public final class BrainConfigure extends BeanObject {
 			@XmlElementRef(name = "remote_schema", type = RemoteSchemaConfig.class)
 	})
 	private List<SchemaConfig> schemaConfigs;
-	/**
-	 * <span class="en-US">Data import/export configure information</span>
-	 * <span class="zh-CN">数据导入导出配置</span>
-	 */
-	@XmlElement(name = "storage_config", namespace = "https://nervousync.org/schemas/brain")
-	private StorageConfig storageConfig = null;
-	/**
-	 * <span class="en-US">Cache configure information</span>
-	 * <span class="zh-CN">缓存配置信息</span>
-	 */
-	@XmlElement(name = "cache_config", namespace = "https://nervousync.org/schemas/cache")
-	private CacheConfig cacheConfig = null;
 	/**
 	 * <span class="en-US">Last modified timestamp</span>
 	 * <span class="zh-CN">最后修改时间戳</span>
@@ -194,50 +180,6 @@ public final class BrainConfigure extends BeanObject {
 	 */
 	public void setSchemaConfigs(final List<SchemaConfig> schemaConfigs) {
 		this.schemaConfigs = schemaConfigs;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for data import/export configure information</h3>
-	 * <h3 class="zh-CN">数据导入导出配置的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Data import/export configure information</span>
-	 * <span class="zh-CN">数据导入导出配置</span>
-	 */
-	public StorageConfig getStorageConfig() {
-		return this.storageConfig;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for data import/export configure information</h3>
-	 * <h3 class="zh-CN">数据导入导出配置的Setter方法</h3>
-	 *
-	 * @param storageConfig <span class="en-US">Data import/export configure information</span>
-	 *                      <span class="zh-CN">数据导入导出配置</span>
-	 */
-	public void setStorageConfig(final StorageConfig storageConfig) {
-		this.storageConfig = storageConfig;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for cache configure information</h3>
-	 * <h3 class="zh-CN">缓存配置信息的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Cache configure information</span>
-	 * <span class="zh-CN">缓存配置信息</span>
-	 */
-	public CacheConfig getCacheConfig() {
-		return this.cacheConfig;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for cache configure information</h3>
-	 * <h3 class="zh-CN">缓存配置信息的Setter方法</h3>
-	 *
-	 * @param cacheConfig <span class="en-US">Cache configure information</span>
-	 *                    <span class="zh-CN">缓存配置信息</span>
-	 */
-	public void setCacheConfig(final CacheConfig cacheConfig) {
-		this.cacheConfig = cacheConfig;
 	}
 
 	/**

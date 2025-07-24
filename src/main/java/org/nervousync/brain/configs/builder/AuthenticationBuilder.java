@@ -38,7 +38,8 @@ import java.security.cert.X509Certificate;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
  */
-public abstract class AuthenticationBuilder<T extends Authentication> extends AbstractBuilder<T> {
+public abstract class AuthenticationBuilder<P extends ParentBuilder, T extends Authentication>
+		extends AbstractBuilder<P, T> {
 
 	/**
 	 * <span class="en-US">The authentication information</span>
@@ -46,8 +47,8 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 	 */
 	protected final T authentication;
 	/**
-	 * <h2 class="en-US">Configure information modified flag</h2>
-	 * <h2 class="zh-CN">配置信息修改标记</h2>
+	 * <span class="en-US">Configure information modified flag</span>
+	 * <span class="zh-CN">配置信息修改标记</span>
 	 */
 	protected boolean modified = Boolean.FALSE;
 
@@ -60,13 +61,13 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 	 * @param authentication <span class="en-US">The authentication information</span>
 	 *                       <span class="zh-CN">认证信息</span>
 	 */
-	protected AuthenticationBuilder(final ParentBuilder parentBuilder, final T authentication) {
+	protected AuthenticationBuilder(final P parentBuilder, final T authentication) {
 		super(parentBuilder);
 		this.authentication = authentication;
 	}
 
 	@Override
-	public final T confirm() {
+	public final T build() {
 		if (this.modified) {
 			this.authentication.setLastModified(DateTimeUtils.currentUTCTimeMillis());
 		}
@@ -80,7 +81,8 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
 	 */
-	public static final class TrustStoreAuthenticationBuilder extends AuthenticationBuilder<TrustStoreAuthentication> {
+	public static final class TrustStoreAuthenticationBuilder<T extends ParentBuilder>
+			extends AuthenticationBuilder<T, TrustStoreAuthentication> {
 
 		/**
 		 * <h3 class="en-US">Constructor method for builder implementation class of use the authentication information of the X.509 certificate in the certificate store</h3>
@@ -91,8 +93,7 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 		 * @param authentication <span class="en-US">Use the authentication information of the X.509 certificate in the certificate store</span>
 		 *                       <span class="zh-CN">使用证书库中X.509证书的认证信息</span>
 		 */
-		TrustStoreAuthenticationBuilder(final ParentBuilder parentBuilder,
-		                                @Nonnull final TrustStoreAuthentication authentication) {
+		TrustStoreAuthenticationBuilder(final T parentBuilder, @Nonnull final TrustStoreAuthentication authentication) {
 			super(parentBuilder, authentication);
 		}
 
@@ -100,22 +101,22 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 		 * <h3 class="en-US">Configure trust store information</h3>
 		 * <h3 class="zh-CN">设置信任证书库</h3>
 		 *
-		 * @param trustStorePath     <span class="en-US">Trust certificate store path</span>
-		 *                           <span class="zh-CN">信任证书库地址</span>
-		 * @param trustStorePassword <span class="en-US">Trust certificate store password</span>
-		 *                           <span class="zh-CN">信任证书库密码</span>
+		 * @param storePath     <span class="en-US">Trust certificate store path</span>
+		 *                      <span class="zh-CN">信任证书库地址</span>
+		 * @param storePassword <span class="en-US">Trust certificate store password</span>
+		 *                      <span class="zh-CN">信任证书库密码</span>
 		 * @return <span class="en-US">The current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public TrustStoreAuthenticationBuilder trustStore(final String trustStorePath, final String trustStorePassword) {
-			if (StringUtils.notBlank(trustStorePath)
-					&& !ObjectUtils.nullSafeEquals(this.authentication.getTrustStorePath(), trustStorePath)) {
-				this.authentication.setTrustStorePath(trustStorePath);
+		public TrustStoreAuthenticationBuilder<T> trustStore(final String storePath, final String storePassword) {
+			if (StringUtils.notBlank(storePath)
+					&& !ObjectUtils.nullSafeEquals(this.authentication.getStorePath(), storePath)) {
+				this.authentication.setStorePath(storePath);
 				this.modified = Boolean.TRUE;
 			}
-			if (StringUtils.notBlank(trustStorePassword)
-					&& !ObjectUtils.nullSafeEquals(this.authentication.getTrustStorePassword(), trustStorePassword)) {
-				this.authentication.setTrustStorePassword(trustStorePassword);
+			if (StringUtils.notBlank(storePassword)
+					&& !ObjectUtils.nullSafeEquals(this.authentication.getStorePassword(), storePassword)) {
+				this.authentication.setStorePassword(storePassword);
 				this.modified = Boolean.TRUE;
 			}
 			return this;
@@ -130,7 +131,7 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 		 * @return <span class="en-US">The current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public TrustStoreAuthenticationBuilder certificate(final String certificateName) {
+		public TrustStoreAuthenticationBuilder<T> certificate(final String certificateName) {
 			if (StringUtils.isEmpty(certificateName)
 					|| ObjectUtils.nullSafeEquals(this.authentication.getCertificateName(), certificateName)) {
 				return this;
@@ -148,7 +149,8 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
 	 */
-	public static final class UserAuthenticationBuilder extends AuthenticationBuilder<UserAuthentication> {
+	public static final class UserAuthenticationBuilder<T extends ParentBuilder>
+			extends AuthenticationBuilder<T, UserAuthentication> {
 
 		/**
 		 * <h3 class="en-US">Constructor method for builder implementation class of basic authentication information</h3>
@@ -159,8 +161,7 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 		 * @param authentication <span class="en-US">Basic authentication information</span>
 		 *                       <span class="zh-CN">基本身份认证信息</span>
 		 */
-		UserAuthenticationBuilder(final ParentBuilder parentBuilder,
-		                          @Nonnull final UserAuthentication authentication) {
+		UserAuthenticationBuilder(final T parentBuilder, @Nonnull final UserAuthentication authentication) {
 			super(parentBuilder, authentication);
 		}
 
@@ -175,7 +176,7 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 		 * @return <span class="en-US">The current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public UserAuthenticationBuilder authenticate(final String userName, final String passWord) {
+		public UserAuthenticationBuilder<T> authenticate(final String userName, final String passWord) {
 			if (StringUtils.notBlank(userName)
 					&& !ObjectUtils.nullSafeEquals(userName, this.authentication.getUserName())) {
 				this.authentication.setUserName(userName);
@@ -197,7 +198,8 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
 	 */
-	public static final class X509AuthenticationBuilder extends AuthenticationBuilder<X509Authentication> {
+	public static final class X509AuthenticationBuilder<T extends ParentBuilder>
+			extends AuthenticationBuilder<T, X509Authentication> {
 
 		/**
 		 * <h3 class="en-US">Constructor method for X.509 certificate authentication information builder implementation class</h3>
@@ -208,7 +210,7 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 		 * @param authentication <span class="en-US">向09 certificate authentication information</span>
 		 *                       <span class="zh-CN">x509证书认证信息</span>
 		 */
-		X509AuthenticationBuilder(final ParentBuilder parentBuilder, final X509Authentication authentication) {
+		X509AuthenticationBuilder(final T parentBuilder, final X509Authentication authentication) {
 			super(parentBuilder, authentication);
 		}
 
@@ -223,7 +225,7 @@ public abstract class AuthenticationBuilder<T extends Authentication> extends Ab
 		 * @throws CertificateEncodingException <span class="en-US">Error while reading certificate</span>
 		 *                                      <span class="zh-CN">读取证书时出错</span>
 		 */
-		public X509AuthenticationBuilder x509(@Nonnull final X509Certificate x509Certificate)
+		public X509AuthenticationBuilder<T> x509(@Nonnull final X509Certificate x509Certificate)
 				throws CertificateEncodingException {
 			String certData = StringUtils.base64Encode(x509Certificate.getEncoded());
 			if (!ObjectUtils.nullSafeEquals(this.authentication.getCertData(), certData)) {

@@ -15,15 +15,27 @@
  * limitations under the License.
  */
 
-@XmlSchema(namespace = "https://nervousync.org/schemas/brain", elementFormDefault = XmlNsForm.QUALIFIED,
-        location = "https://nervousync.org/schemas/brain_config_1_0.xsd",
-        xmlns = {
-                @XmlNs(prefix = "xs", namespaceURI = "http://www.w3.org/2001/XMLSchema"),
-                @XmlNs(prefix = "xsi", namespaceURI = "http://www.w3.org/2001/XMLSchema-instance"),
-                @XmlNs(prefix = "brain", namespaceURI = "https://nervousync.org/schemas/brain")
-        })
-package org.nervousync.brain.configs.storage;
+package org.nervousync.brain.enumerations.query;
 
-import jakarta.xml.bind.annotation.XmlNs;
-import jakarta.xml.bind.annotation.XmlNsForm;
-import jakarta.xml.bind.annotation.XmlSchema;
+import jakarta.xml.bind.annotation.XmlEnum;
+
+/**
+ * <h2 class="en-US">Enumeration value of connection code</h2>
+ * <h2 class="zh-CN">条件连接代码的枚举值</h2>
+ *
+ * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
+ * @version $Revision: 1.0.0 $ $Date: Oct 6, 2020 18:48:59 $
+ */
+@XmlEnum
+public enum ConnectionCode {
+	/**
+	 * <span class="en-US">Connection 'and'</span>
+	 * <span class="zh-CN">连接与</span>
+	 */
+	AND,
+	/**
+	 * <span class="en-US">Connection 'or'</span>
+	 * <span class="zh-CN">连接或</span>
+	 */
+	OR
+}

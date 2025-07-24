@@ -18,8 +18,9 @@ package org.nervousync.brain.query.item;
 
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.ItemType;
-import org.nervousync.brain.query.core.AbstractItem;
+import org.nervousync.brain.query.core.QueryItem;
 import org.nervousync.brain.query.param.AbstractParameter;
+import org.nervousync.brain.query.param.impl.CalculateParameter;
 import org.nervousync.brain.query.param.impl.ColumnParameter;
 import org.nervousync.brain.query.param.impl.ConstantParameter;
 import org.nervousync.brain.query.param.impl.FunctionParameter;
@@ -36,82 +37,83 @@ import java.util.*;
 @XmlType(name = "function_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "function_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
-public final class FunctionItem extends AbstractItem {
+public final class FunctionItem extends QueryItem {
 
-    /**
-     * <span class="en-US">Serial version UID</span>
-     * <span class="zh-CN">序列化UID</span>
-     */
-    private static final long serialVersionUID = 4463684389449026498L;
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = 4463684389449026498L;
 
-    /**
-     * <span class="en-US">Function name</span>
-     * <span class="zh-CN">函数名</span>
-     */
-    @XmlElement(name = "function_name")
-    private String functionName = null;
-    /**
-     * <span class="en-US">Function arguments array</span>
-     * <span class="zh-CN">函数参数数组</span>
-     */
-    @XmlElements({
-            @XmlElement(name = "column_parameter", type = ColumnParameter.class, namespace = "https://nervousync.org/schemas/brain"),
-            @XmlElement(name = "constant_parameter", type = ConstantParameter.class, namespace = "https://nervousync.org/schemas/brain"),
-            @XmlElement(name = "function_parameter", type = FunctionParameter.class, namespace = "https://nervousync.org/schemas/brain")
-    })
-    @XmlElementWrapper(name = "function_parameter_list")
-    private List<AbstractParameter<?>> functionParams;
+	/**
+	 * <span class="en-US">Function name</span>
+	 * <span class="zh-CN">函数名</span>
+	 */
+	@XmlElement(name = "function_name")
+	private String functionName = null;
+	/**
+	 * <span class="en-US">Function arguments array</span>
+	 * <span class="zh-CN">函数参数数组</span>
+	 */
+	@XmlElements({
+			@XmlElement(name = "calculate_parameter", type = CalculateParameter.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "column_parameter", type = ColumnParameter.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "constant_parameter", type = ConstantParameter.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "function_parameter", type = FunctionParameter.class, namespace = "https://nervousync.org/schemas/brain")
+	})
+	@XmlElementWrapper(name = "function_parameter_list")
+	private List<AbstractParameter<?>> functionParams;
 
-    /**
-     * <h3 class="en-US">Constructor method for query function information define</h3>
-     * <h3 class="zh-CN">查询数据函数信息定义的构造方法</h3>
-     */
-    public FunctionItem() {
-        super(ItemType.FUNCTION);
-        this.functionParams = new ArrayList<>();
-    }
+	/**
+	 * <h3 class="en-US">Constructor method for query function information define</h3>
+	 * <h3 class="zh-CN">查询数据函数信息定义的构造方法</h3>
+	 */
+	public FunctionItem() {
+		super(ItemType.FUNCTION);
+		this.functionParams = new ArrayList<>();
+	}
 
-    /**
-     * <h3 class="en-US">Getter method for function name</h3>
-     * <h3 class="zh-CN">函数名的Getter方法</h3>
-     *
-     * @return <span class="en-US">Function name</span>
-     * <span class="zh-CN">函数名</span>
-     */
-    public String getFunctionName() {
-        return this.functionName;
-    }
+	/**
+	 * <h3 class="en-US">Getter method for function name</h3>
+	 * <h3 class="zh-CN">函数名的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Function name</span>
+	 * <span class="zh-CN">函数名</span>
+	 */
+	public String getFunctionName() {
+		return this.functionName;
+	}
 
-    /**
-     * <h3 class="en-US">Setter method for function name</h3>
-     * <h3 class="zh-CN">函数名的Setter方法</h3>
-     *
-     * @param functionName <span class="en-US">Function name</span>
-     *                    <span class="zh-CN">函数名</span>
-     */
-    public void setFunctionName(final String functionName) {
-        this.functionName = functionName;
-    }
+	/**
+	 * <h3 class="en-US">Setter method for function name</h3>
+	 * <h3 class="zh-CN">函数名的Setter方法</h3>
+	 *
+	 * @param functionName <span class="en-US">Function name</span>
+	 *                     <span class="zh-CN">函数名</span>
+	 */
+	public void setFunctionName(final String functionName) {
+		this.functionName = functionName;
+	}
 
-    /**
-     * <h3 class="en-US">Getter method for function arguments array</h3>
-     * <h3 class="zh-CN">函数参数数组的Getter方法</h3>
-     *
-     * @return <span class="en-US">Function arguments array</span>
-     * <span class="zh-CN">函数参数数组</span>
-     */
-    public List<AbstractParameter<?>> getFunctionParams() {
-        return this.functionParams;
-    }
+	/**
+	 * <h3 class="en-US">Getter method for function arguments array</h3>
+	 * <h3 class="zh-CN">函数参数数组的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Function arguments array</span>
+	 * <span class="zh-CN">函数参数数组</span>
+	 */
+	public List<AbstractParameter<?>> getFunctionParams() {
+		return this.functionParams;
+	}
 
-    /**
-     * <h3 class="en-US">Setter method for function arguments array</h3>
-     * <h3 class="zh-CN">函数参数数组的Setter方法</h3>
-     *
-     * @param functionParams <span class="en-US">Function arguments array</span>
-     *                       <span class="zh-CN">函数参数数组</span>
-     */
-    public void setFunctionParams(final List<AbstractParameter<?>> functionParams) {
-        this.functionParams = functionParams;
-    }
+	/**
+	 * <h3 class="en-US">Setter method for function arguments array</h3>
+	 * <h3 class="zh-CN">函数参数数组的Setter方法</h3>
+	 *
+	 * @param functionParams <span class="en-US">Function arguments array</span>
+	 *                       <span class="zh-CN">函数参数数组</span>
+	 */
+	public void setFunctionParams(final List<AbstractParameter<?>> functionParams) {
+		this.functionParams = functionParams;
+	}
 }

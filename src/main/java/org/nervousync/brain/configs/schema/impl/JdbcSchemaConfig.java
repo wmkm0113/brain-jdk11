@@ -21,8 +21,8 @@ import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.server.ServerInfo;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.FileUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,12 +45,6 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	 */
 	private static final long serialVersionUID = -553668725998373198L;
 
-	/**
-	 * <span class="en-US">Using server array</span>
-	 * <span class="zh-CN">使用服务器组</span>
-	 */
-	@XmlElement(name = "server_array")
-	private boolean serverArray = Boolean.FALSE;
 	/**
 	 * <span class="en-US">Database server info list</span>
 	 * <span class="zh-CN">数据库服务器列表</span>
@@ -118,28 +112,7 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	 * <h3 class="zh-CN">关系型数据源配置信息的构造方法</h3>
 	 */
 	public JdbcSchemaConfig() {
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for using server array</h3>
-	 * <h3 class="zh-CN">使用服务器组的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Using server array</span>
-	 * <span class="zh-CN">使用服务器组</span>
-	 */
-	public boolean isServerArray() {
-		return this.serverArray;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for using server array</h3>
-	 * <h3 class="zh-CN">使用服务器组的Setter方法</h3>
-	 *
-	 * @param serverArray <span class="en-US">Using server array</span>
-	 *                    <span class="zh-CN">使用服务器组</span>
-	 */
-	public void setServerArray(final boolean serverArray) {
-		this.serverArray = serverArray;
+		super(DialectType.Relational);
 	}
 
 	/**
@@ -360,27 +333,5 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	 */
 	public void setDatabaseParameters(final String databaseParameters) {
 		this.databaseParameters = databaseParameters;
-	}
-
-	/**
-	 * <h3 class="en-US">Convert the database server list to the configuration information text</h3>
-	 * <h3 class="zh-CN">转换数据库服务器列表为配置信息文本</h3>
-	 *
-	 * @return <span class="en-US">Configuration information text</span>
-	 * <span class="zh-CN">配置信息文本</span>
-	 */
-	public String serverInfo() {
-		StringBuilder stringBuilder = new StringBuilder();
-		if (this.serverArray) {
-			this.serverList.forEach(serverInfo -> {
-				if (stringBuilder.length() > 0) {
-					stringBuilder.append(FileUtils.LF);
-				}
-				stringBuilder.append(serverInfo.getServerAddress())
-						.append("|").append(serverInfo.getServerPort())
-						.append("|").append(serverInfo.getServerLevel());
-			});
-		}
-		return stringBuilder.toString();
 	}
 }

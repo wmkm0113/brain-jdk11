@@ -22,6 +22,7 @@ import org.nervousync.brain.configs.BrainConfigure;
 import org.nervousync.brain.exceptions.data.DataParseException;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.StringUtils;
+import org.nervousync.utils.SystemUtils;
 
 import javax.naming.*;
 import javax.naming.spi.ObjectFactory;
@@ -76,13 +77,13 @@ public final class DataSourceFactory implements ObjectFactory {
 			}
 			dataSource = BrainDataSource.getInstance();
 			context.bind(lookupName, dataSource);
-			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			SystemUtils.registerShutdownHook(() -> {
 				try {
 					context.unbind(lookupName);
 				} catch (NamingException ignore) {
 				}
 				BrainDataSource.destroy();
-			}));
+			});
 			dataSource.initialize(configure);
 		}
 		return dataSource;

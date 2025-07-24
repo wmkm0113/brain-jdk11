@@ -19,12 +19,8 @@ package org.nervousync.brain.configs.schema.impl;
 
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.configs.schema.SchemaConfig;
-import org.nervousync.brain.configs.server.ServerInfo;
+import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.FileUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * <h2 class="en-US">Distribute data source configuration information</h2>
@@ -44,13 +40,6 @@ public final class DistributeSchemaConfig extends SchemaConfig {
 	 */
 	private static final long serialVersionUID = -4563321804255865973L;
 
-	/**
-	 * <span class="en-US">Database server info list</span>
-	 * <span class="zh-CN">数据库服务器列表</span>
-	 */
-	@XmlElementWrapper(name = "server_list")
-	@XmlElement(name = "server_info")
-	private List<ServerInfo> serverList = new ArrayList<>();
 	/**
 	 * <span class="en-US">Database name</span>
 	 * <span class="zh-CN">数据库名称</span>
@@ -81,28 +70,7 @@ public final class DistributeSchemaConfig extends SchemaConfig {
 	 * <h3 class="zh-CN">分布式数据源配置信息的构造方法</h3>
 	 */
 	public DistributeSchemaConfig() {
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for database server info list</h3>
-	 * <h3 class="zh-CN">数据库服务器列表的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Database server info list</span>
-	 * <span class="zh-CN">数据库服务器列表</span>
-	 */
-	public List<ServerInfo> getServerList() {
-		return this.serverList;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for database server info list</h3>
-	 * <h3 class="zh-CN">数据库服务器列表的Setter方法</h3>
-	 *
-	 * @param serverList <span class="en-US">Database server info list</span>
-	 *                   <span class="zh-CN">数据库服务器列表</span>
-	 */
-	public void setServerList(final List<ServerInfo> serverList) {
-		this.serverList = serverList;
+		super(DialectType.Distribute);
 	}
 
 	/**
@@ -191,26 +159,5 @@ public final class DistributeSchemaConfig extends SchemaConfig {
 	 */
 	public void setCachedLimitSize(final int cachedLimitSize) {
 		this.cachedLimitSize = cachedLimitSize;
-	}
-
-	/**
-	 * <h3 class="en-US">Convert the database server list to the configuration information text</h3>
-	 * <h3 class="zh-CN">转换数据库服务器列表为配置信息文本</h3>
-	 *
-	 * @return <span class="en-US">Configuration information text</span>
-	 * <span class="zh-CN">配置信息文本</span>
-	 */
-	public String serverInfo() {
-		StringBuilder stringBuilder = new StringBuilder();
-		this.serverList.forEach(serverInfo -> {
-			if (stringBuilder.length() > 0) {
-				stringBuilder.append(FileUtils.LF);
-			}
-			stringBuilder.append(serverInfo.getServerName())
-					.append("|").append(serverInfo.getServerAddress())
-					.append("|").append(serverInfo.getServerPort())
-					.append("|").append(serverInfo.getServerLevel());
-		});
-		return stringBuilder.toString();
 	}
 }

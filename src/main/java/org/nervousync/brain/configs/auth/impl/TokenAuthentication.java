@@ -22,6 +22,13 @@ import org.nervousync.annotations.configs.Password;
 import org.nervousync.brain.configs.auth.Authentication;
 import org.nervousync.brain.enumerations.auth.AuthType;
 
+/**
+ * <h2 class="en-US">Use the authentication information of the token</h2>
+ * <h2 class="zh-CN">使用凭证的认证信息</h2>
+ *
+ * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
+ * @version $Revision: 1.0.0 $ $Date: Apr 10, 2024 15:48:19 $
+ */
 @XmlType(name = "token_authentication", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "token_authentication", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -52,6 +59,7 @@ public final class TokenAuthentication extends Authentication {
 	 */
 	@XmlElement(name = "session_token")
 	private String sessionToken;
+
 	/**
 	 * <h3 class="en-US">Constructor method for token authentication information implementation class</h3>
 	 * <h3 class="zh-CN">Token认证信息实现类的构造方法</h3>
@@ -64,8 +72,7 @@ public final class TokenAuthentication extends Authentication {
 	 * <h3 class="en-US">Getter method for identify Key ID</h3>
 	 * <h3 class="zh-CN">识别ID的Getter方法</h3>
 	 *
-	 * @return
-	 * <span class="en-US">Identify Key ID</span>
+	 * @return <span class="en-US">Identify Key ID</span>
 	 * <span class="zh-CN">识别ID</span>
 	 */
 	public String getKeyId() {
@@ -76,9 +83,8 @@ public final class TokenAuthentication extends Authentication {
 	 * <h3 class="en-US">Setter method for identify Key ID</h3>
 	 * <h3 class="zh-CN">识别ID的Setter方法</h3>
 	 *
-	 * @param keyId
-	 * <span class="en-US">Identify Key ID</span>
-	 * <span class="zh-CN">识别ID</span>
+	 * @param keyId <span class="en-US">Identify Key ID</span>
+	 *              <span class="zh-CN">识别ID</span>
 	 */
 	public void setKeyId(final String keyId) {
 		this.keyId = keyId;
@@ -88,8 +94,7 @@ public final class TokenAuthentication extends Authentication {
 	 * <h3 class="en-US">Getter method for identify secret key</h3>
 	 * <h3 class="zh-CN">识别密钥的Getter方法</h3>
 	 *
-	 * @return
-	 * <span class="en-US">Identify secret key</span>
+	 * @return <span class="en-US">Identify secret key</span>
 	 * <span class="zh-CN">识别密钥</span>
 	 */
 	public String getSecretKey() {
@@ -100,9 +105,8 @@ public final class TokenAuthentication extends Authentication {
 	 * <h3 class="en-US">Setter method for identify secret key</h3>
 	 * <h3 class="zh-CN">识别密钥的Setter方法</h3>
 	 *
-	 * @param secretKey
-	 * <span class="en-US">Identify secret key</span>
-	 * <span class="zh-CN">识别密钥</span>
+	 * @param secretKey <span class="en-US">Identify secret key</span>
+	 *                  <span class="zh-CN">识别密钥</span>
 	 */
 	public void setSecretKey(final String secretKey) {
 		this.secretKey = secretKey;
@@ -112,8 +116,7 @@ public final class TokenAuthentication extends Authentication {
 	 * <h3 class="en-US">Getter method for session token</h3>
 	 * <h3 class="zh-CN">会话Token的Getter方法</h3>
 	 *
-	 * @return
-	 * <span class="en-US">Session token</span>
+	 * @return <span class="en-US">Session token</span>
 	 * <span class="zh-CN">会话Token</span>
 	 */
 	public String getSessionToken() {
@@ -124,9 +127,8 @@ public final class TokenAuthentication extends Authentication {
 	 * <h3 class="en-US">Setter method for session token</h3>
 	 * <h3 class="zh-CN">会话Token的Setter方法</h3>
 	 *
-	 * @param sessionToken
-	 * <span class="en-US">Session token</span>
-	 * <span class="zh-CN">会话Token</span>
+	 * @param sessionToken <span class="en-US">Session token</span>
+	 *                     <span class="zh-CN">会话Token</span>
 	 */
 	public void setSessionToken(final String sessionToken) {
 		this.sessionToken = sessionToken;

@@ -36,50 +36,50 @@ import java.util.List;
 @XmlAccessorType(XmlAccessType.NONE)
 public final class GroupCondition extends Condition {
 
-    /**
-     * <span class="en-US">Serial version UID</span>
-     * <span class="zh-CN">序列化UID</span>
-     */
-    private static final long serialVersionUID = 2863865753436845711L;
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = 2863865753436845711L;
 
-    /**
-     * <span class="en-US">Match condition list</span>
-     * <span class="zh-CN">匹配条件列表</span>
-     */
-    @XmlElements({
-            @XmlElement(name = "column_condition", type = ColumnCondition.class),
-            @XmlElement(name = "group_condition", type = GroupCondition.class)
-    })
-    @XmlElementWrapper(name = "condition_list")
-    private List<Condition> conditionList = new ArrayList<>();
+	/**
+	 * <span class="en-US">Match condition list</span>
+	 * <span class="zh-CN">匹配条件列表</span>
+	 */
+	@XmlElements({
+			@XmlElement(name = "column_condition", type = ColumnCondition.class),
+			@XmlElement(name = "group_condition", type = GroupCondition.class)
+	})
+	@XmlElementWrapper(name = "condition_list")
+	private List<Condition> conditionList = new ArrayList<>();
 
-    /**
-     * <h3 class="en-US">Constructor method for the query column condition information group define</h3>
-     * <h3 class="zh-CN">查询匹配条件组定义的构造方法</h3>
-     */
-    public GroupCondition() {
+	/**
+	 * <h3 class="en-US">Constructor method for the query column condition information group define</h3>
+	 * <h3 class="zh-CN">查询匹配条件组定义的构造方法</h3>
+	 */
+	public GroupCondition() {
 		super(ConditionType.GROUP);
-    }
+	}
 
-    /**
-     * <h3 class="en-US">Getter method for the match condition list</h3>
-     * <h3 class="zh-CN">匹配条件列表的Getter方法</h3>
-     *
-     * @return <span class="en-US">Match condition list</span>
-     * <span class="zh-CN">匹配条件列表</span>
-     */
-    public List<Condition> getConditionList() {
-        return conditionList;
-    }
+	/**
+	 * <h3 class="en-US">Getter method for the match condition list</h3>
+	 * <h3 class="zh-CN">匹配条件列表的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Match condition list</span>
+	 * <span class="zh-CN">匹配条件列表</span>
+	 */
+	public List<Condition> getConditionList() {
+		return conditionList;
+	}
 
-    /**
-     * <h3 class="en-US">Setter method for the match condition list</h3>
-     * <h3 class="zh-CN">匹配条件列表的Setter方法</h3>
-     *
-     * @param conditionList <span class="en-US">Match condition list</span>
-     *                      <span class="zh-CN">匹配条件列表</span>
-     */
-    public void setConditionList(List<Condition> conditionList) {
-        this.conditionList = conditionList;
-    }
+	/**
+	 * <h3 class="en-US">Setter method for the match condition list</h3>
+	 * <h3 class="zh-CN">匹配条件列表的Setter方法</h3>
+	 *
+	 * @param conditionList <span class="en-US">Match condition list</span>
+	 *                      <span class="zh-CN">匹配条件列表</span>
+	 */
+	public void setConditionList(List<Condition> conditionList) {
+		this.conditionList = conditionList;
+	}
 }

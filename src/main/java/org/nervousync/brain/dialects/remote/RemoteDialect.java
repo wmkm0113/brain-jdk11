@@ -43,63 +43,63 @@ import java.util.Map;
 @SchemaDialect(supportJoin = true, types = {})
 public final class RemoteDialect extends BaseDialect {
 
-    /**
-     * <h3 class="en-US">Constructor method for remote database dialect implementation class</h3>
-     * <h3 class="zh-CN">远程数据库方言实现类的构造方法</h3>
-     *
-     * @throws DialectException <span class="en-US">If the implementation class does not find the SchemaDialect annotation</span>
-     *                          <span class="zh-CN">如果实现类未找到 SchemaDialect 注解</span>
-     */
-    public RemoteDialect() throws DialectException {
-        super(DialectType.Remote);
-    }
+	/**
+	 * <h3 class="en-US">Constructor method for remote database dialect implementation class</h3>
+	 * <h3 class="zh-CN">远程数据库方言实现类的构造方法</h3>
+	 *
+	 * @throws DialectException <span class="en-US">If the implementation class does not find the SchemaDialect annotation</span>
+	 *                          <span class="zh-CN">如果实现类未找到 SchemaDialect 注解</span>
+	 */
+	public RemoteDialect() throws DialectException {
+		super(DialectType.Remote);
+	}
 
-    @Override
-    protected String parameterValue(final Map<String, String> aliasMap, final AbstractParameter<?> abstractParameter,
-                                    final List<Object> values) {
-        return Globals.DEFAULT_VALUE_STRING;
-    }
+	@Override
+	protected String parameterValue(final Map<String, String> aliasMap, final AbstractParameter<?> abstractParameter,
+	                                final List<Object> values) {
+		return Globals.DEFAULT_VALUE_STRING;
+	}
 
-    @Override
-    public String nameCase(final String name) {
-        return name;
-    }
+	@Override
+	public String nameCase(final String name) {
+		return name;
+	}
 
-    /**
-     * <h3 class="en-US">Generate SOAP client instance object</h3>
-     * <h3 class="zh-CN">生成SOAP请求客户端</h3>
-     *
-     * @param targetAddress <span class="en-US">Remote address</span>
-     *                      <span class="zh-CN">远端地址</span>
-     * @param configMap     <span class="en-US">Request configure information map</span>
-     *                      <span class="zh-CN">请求配置信息映射</span>
-     * @return <span class="en-US">Generated client instance</span>
-     * <span class="zh-CN">生成的客户端实例对象</span>
-     * @throws MalformedURLException <span class="en-US">if no protocol is specified, or an unknown protocol is found, or spec is null.</span>
-     *                               <span class="zh-CN">如果没有指定协议，或者发现未知协议，或者spec为空。</span>
-     */
-    public RemoteClient SOAPClient(final String targetAddress, final Map<String, String> configMap)
-            throws MalformedURLException {
-        return ServiceUtils.SOAPClient(targetAddress, RemoteClient.class, configMap);
-    }
+	/**
+	 * <h3 class="en-US">Generate SOAP client instance object</h3>
+	 * <h3 class="zh-CN">生成SOAP请求客户端</h3>
+	 *
+	 * @param targetAddress <span class="en-US">Remote address</span>
+	 *                      <span class="zh-CN">远端地址</span>
+	 * @param configMap     <span class="en-US">Request configure information map</span>
+	 *                      <span class="zh-CN">请求配置信息映射</span>
+	 * @return <span class="en-US">Generated client instance</span>
+	 * <span class="zh-CN">生成的客户端实例对象</span>
+	 * @throws MalformedURLException <span class="en-US">if no protocol is specified, or an unknown protocol is found, or spec is null.</span>
+	 *                               <span class="zh-CN">如果没有指定协议，或者发现未知协议，或者spec为空。</span>
+	 */
+	public RemoteClient SOAPClient(final String targetAddress, final Map<String, String> configMap)
+			throws MalformedURLException {
+		return ServiceUtils.SOAPClient(targetAddress, RemoteClient.class, configMap);
+	}
 
-    /**
-     * <h3 class="en-US">Generate Restful client instance object</h3>
-     * <h3 class="zh-CN">生成Restful请求客户端</h3>
-     *
-     * @param targetAddress <span class="en-US">Remote address</span>
-     *                      <span class="zh-CN">远端地址</span>
-     * @param clientBuilder <span class="en-US">Configured client generator</span>
-     *                      <span class="zh-CN">配置好的客户端生成器</span>
-     * @param headerMap     <span class="en-US">Request configure information map</span>
-     *                      <span class="zh-CN">请求配置信息映射</span>
-     * @return <span class="en-US">Generated client instance</span>
-     * <span class="zh-CN">生成的客户端实例对象</span>
-     * @throws MalformedURLException <span class="en-US">if no protocol is specified, or an unknown protocol is found, or spec is null.</span>
-     *                               <span class="zh-CN">如果没有指定协议，或者发现未知协议，或者spec为空。</span>
-     */
-    public RemoteClient restfulClient(final String targetAddress, final ClientBuilder clientBuilder,
-                                      final Map<String, String> headerMap) throws MalformedURLException {
-        return ServiceUtils.RestfulClient(targetAddress, clientBuilder, RemoteClient.class, headerMap);
-    }
+	/**
+	 * <h3 class="en-US">Generate Restful client instance object</h3>
+	 * <h3 class="zh-CN">生成Restful请求客户端</h3>
+	 *
+	 * @param targetAddress <span class="en-US">Remote address</span>
+	 *                      <span class="zh-CN">远端地址</span>
+	 * @param clientBuilder <span class="en-US">Configured client generator</span>
+	 *                      <span class="zh-CN">配置好的客户端生成器</span>
+	 * @param headerMap     <span class="en-US">Request configure information map</span>
+	 *                      <span class="zh-CN">请求配置信息映射</span>
+	 * @return <span class="en-US">Generated client instance</span>
+	 * <span class="zh-CN">生成的客户端实例对象</span>
+	 * @throws MalformedURLException <span class="en-US">if no protocol is specified, or an unknown protocol is found, or spec is null.</span>
+	 *                               <span class="zh-CN">如果没有指定协议，或者发现未知协议，或者spec为空。</span>
+	 */
+	public RemoteClient restfulClient(final String targetAddress, final ClientBuilder clientBuilder,
+	                                  final Map<String, String> headerMap) throws MalformedURLException {
+		return ServiceUtils.RestfulClient(targetAddress, clientBuilder, RemoteClient.class, headerMap);
+	}
 }

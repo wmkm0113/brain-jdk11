@@ -18,7 +18,7 @@ package org.nervousync.brain.query.item;
 
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.ItemType;
-import org.nervousync.brain.query.core.AbstractItem;
+import org.nervousync.brain.query.core.QueryItem;
 
 /**
  * <h2 class="en-US">Query column information defines</h2>
@@ -30,7 +30,7 @@ import org.nervousync.brain.query.core.AbstractItem;
 @XmlType(name = "column_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "column_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
-public final class ColumnItem extends AbstractItem {
+public final class ColumnItem extends QueryItem {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>
@@ -55,7 +55,7 @@ public final class ColumnItem extends AbstractItem {
 	 * <span class="zh-CN">数据列去重</span>
 	 */
 	@XmlElement
-	private boolean distinct;
+	private boolean distinct = Boolean.FALSE;
 
 	/**
 	 * <h3 class="en-US">Constructor method for query column information define</h3>

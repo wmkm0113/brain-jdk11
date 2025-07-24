@@ -18,15 +18,15 @@
 package org.nervousync.brain.query.param;
 
 import jakarta.annotation.Nonnull;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlSeeAlso;
-import jakarta.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.ItemType;
-import org.nervousync.brain.query.core.AbstractItem;
 import org.nervousync.brain.query.core.SortedItem;
 import org.nervousync.brain.query.data.ArrayData;
 import org.nervousync.brain.query.data.QueryData;
 import org.nervousync.brain.query.data.RangesData;
+import org.nervousync.brain.query.item.CalculateItem;
+import org.nervousync.brain.query.item.ColumnItem;
+import org.nervousync.brain.query.item.FunctionItem;
 import org.nervousync.brain.query.param.impl.*;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.ClassUtils;
@@ -39,6 +39,8 @@ import java.sql.Wrapper;
  * <h2 class="en-US">Abstract class for parameter information define</h2>
  * <h2 class="zh-CN">参数信息定义抽象类</h2>
  *
+ * @param <T> <span class="en-US">Parameter information generic type class</span>
+ *            <span class="zh-CN">参数信息类型泛型类</span>
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:42:46 $
  */
@@ -58,6 +60,20 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 */
 	@XmlElement(name = "item_type")
 	private final ItemType itemType;
+	/**
+	 * <span class="en-US">Parameter value</span>
+	 * <span class="zh-CN">参数值</span>
+	 */
+	@XmlElements({
+			@XmlElement(name = "constant_data", type = Object.class),
+			@XmlElement(name = "array_data", type = ArrayData.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "calculate_item", type = CalculateItem.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "column_item", type = ColumnItem.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "function_item", type = FunctionItem.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "query_data", type = QueryData.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "ranges_data", type = RangesData.class, namespace = "https://nervousync.org/schemas/brain")
+	})
+	private T itemValue;
 
 	/**
 	 * <h3 class="en-US">Protect constructor method for abstract class for parameter information define</h3>
@@ -88,7 +104,9 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 * @return <span class="en-US">Parameter value</span>
 	 * <span class="zh-CN">参数值</span>
 	 */
-	public abstract T getItemValue();
+	public final T getItemValue() {
+		return this.itemValue;
+	}
 
 	/**
 	 * <h3 class="en-US">Setter method for parameter value</h3>
@@ -97,7 +115,9 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 * @param itemValue <span class="en-US">Parameter value</span>
 	 *                  <span class="zh-CN">参数值</span>
 	 */
-	public abstract void setItemValue(final T itemValue);
+	public final void setItemValue(@Nonnull final T itemValue) {
+		this.itemValue = itemValue;
+	}
 
 	@Override
 	public final <C> C unwrap(final Class<C> clazz) throws SQLException {
@@ -111,62 +131,6 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	@Override
 	public final boolean isWrapperFor(final Class<?> clazz) {
 		return ClassUtils.isAssignable(clazz, this.getClass());
-	}
-
-	/**
-	 * <h3 class="en-US">Static method for generate function parameter instance</h3>
-	 * <h3 class="zh-CN">静态方法用于生成函数参数实例对象</h3>
-	 *
-	 * @param sqlFunction    <span class="en-US">Function name</span>
-	 *                       <span class="zh-CN">函数名称</span>
-	 * @param functionParams <span class="en-US">Function parameter values</span>
-	 *                       <span class="zh-CN">函数参数值</span>
-	 * @return <span class="en-US">Generated object instance</span>
-	 * <span class="zh-CN">生成的对象实例</span>
-	 */
-	public static FunctionParameter function(final String sqlFunction, final AbstractParameter<?>... functionParams) {
-		return function(Globals.DEFAULT_VALUE_STRING, sqlFunction, functionParams);
-	}
-
-	/**
-	 * <h3 class="en-US">Static method for generate function parameter instance</h3>
-	 * <h3 class="zh-CN">静态方法用于生成函数参数实例对象</h3>
-	 *
-	 * @param aliasName      <span class="en-US">Item alias name</span>
-	 *                       <span class="zh-CN">查询项别名</span>
-	 * @param sqlFunction    <span class="en-US">Function name</span>
-	 *                       <span class="zh-CN">函数名称</span>
-	 * @param functionParams <span class="en-US">Function parameter values</span>
-	 *                       <span class="zh-CN">函数参数值</span>
-	 * @return <span class="en-US">Generated object instance</span>
-	 * <span class="zh-CN">生成的对象实例</span>
-	 */
-	public static FunctionParameter function(final String aliasName, final String sqlFunction,
-	                                         final AbstractParameter<?>... functionParams) {
-		return function(aliasName, sqlFunction, Globals.DEFAULT_VALUE_INT, functionParams);
-	}
-
-	/**
-	 * <h3 class="en-US">Static method for generate function parameter instance</h3>
-	 * <h3 class="zh-CN">静态方法用于生成函数参数实例对象</h3>
-	 *
-	 * @param aliasName      <span class="en-US">Item alias name</span>
-	 *                       <span class="zh-CN">查询项别名</span>
-	 * @param sqlFunction    <span class="en-US">Function name</span>
-	 *                       <span class="zh-CN">函数名称</span>
-	 * @param sortCode       <span class="en-US">Sort code</span>
-	 *                       <span class="zh-CN">排序代码</span>
-	 * @param functionParams <span class="en-US">Function parameter values</span>
-	 *                       <span class="zh-CN">函数参数值</span>
-	 * @return <span class="en-US">Generated object instance</span>
-	 * <span class="zh-CN">生成的对象实例</span>
-	 */
-	public static FunctionParameter function(final String aliasName, final String sqlFunction, final int sortCode,
-	                                         final AbstractParameter<?>... functionParams) {
-		FunctionParameter functionParameter = new FunctionParameter();
-		functionParameter.setItemValue(AbstractItem.function(aliasName, sqlFunction, functionParams));
-		functionParameter.setSortCode(sortCode);
-		return functionParameter;
 	}
 
 	/**
@@ -192,8 +156,8 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 *                   <span class="zh-CN">数据表名</span>
 	 * @param columnName <span class="en-US">Data column name</span>
 	 *                   <span class="zh-CN">数据列名</span>
-	 * @param aliasName   <span class="en-US">Item alias name</span>
-	 *                    <span class="zh-CN">查询项别名</span>
+	 * @param aliasName  <span class="en-US">Item alias name</span>
+	 *                   <span class="zh-CN">查询项别名</span>
 	 * @return <span class="en-US">Generated object instance</span>
 	 * <span class="zh-CN">生成的对象实例</span>
 	 */
@@ -220,7 +184,12 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	public static ColumnParameter column(final String tableName, final String columnName,
 	                                     final String aliasName, final int sortCode) {
 		ColumnParameter columnParameter = new ColumnParameter();
-		columnParameter.setItemValue(AbstractItem.column(tableName, columnName, aliasName));
+		ColumnItem queryColumn = new ColumnItem();
+		queryColumn.setTableName(tableName.trim());
+		queryColumn.setColumnName(columnName.trim());
+		queryColumn.setAliasName(StringUtils.isEmpty(aliasName) ? Globals.DEFAULT_VALUE_STRING : aliasName.trim());
+		queryColumn.setSortCode(sortCode);
+		columnParameter.setItemValue(queryColumn);
 		columnParameter.setSortCode(sortCode);
 		return columnParameter;
 	}
@@ -335,8 +304,11 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 */
 	public static RangesParameter ranges(@Nonnull final Object beginValue, @Nonnull final Object endValue,
 	                                     final int sortCode) {
+		RangesData rangesData = new RangesData();
+		rangesData.setBeginValue(beginValue);
+		rangesData.setEndValue(endValue);
 		RangesParameter rangesParameter = new RangesParameter();
-		rangesParameter.setItemValue(new RangesData(beginValue, endValue));
+		rangesParameter.setItemValue(rangesData);
 		rangesParameter.setSortCode(sortCode);
 		return rangesParameter;
 	}
@@ -351,8 +323,10 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 * <span class="zh-CN">生成的对象实例</span>
 	 */
 	public static ArraysParameter arrays(final Object... matchValues) {
+		ArrayData arrayData = new ArrayData();
+		arrayData.setArrayObject(matchValues);
 		ArraysParameter arraysParameter = new ArraysParameter();
-		arraysParameter.setItemValue(new ArrayData(matchValues));
+		arraysParameter.setItemValue(arrayData);
 		return arraysParameter;
 	}
 }

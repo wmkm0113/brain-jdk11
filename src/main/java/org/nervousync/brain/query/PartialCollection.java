@@ -55,6 +55,7 @@ public final class PartialCollection implements Serializable {
 	 * <span class="en-US">Collection of entities (part of some another collection)</span>
 	 * <span class="zh-CN">结果集列表</span>
 	 */
+	@Nonnull
 	private final List<Map<String, Object>> resultList;
 
 	/**
@@ -117,6 +118,7 @@ public final class PartialCollection implements Serializable {
 	 * @return <span class="en-US">Collection of entities (part of some another collection)</span>
 	 * <span class="zh-CN">结果集列表</span>
 	 */
+	@Nonnull
 	public List<Map<String, Object>> asList() {
 		return this.resultList;
 	}
@@ -132,6 +134,7 @@ public final class PartialCollection implements Serializable {
 	 * @return <span class="en-US">Collection of entities (part of some another collection)</span>
 	 * <span class="zh-CN">结果集列表</span>
 	 */
+	@Nonnull
 	public <T> List<T> asList(@Nonnull final Class<T> clazz) {
 		List<T> resultList = new ArrayList<>();
 		for (Map<String, Object> resultMap : this.resultList) {

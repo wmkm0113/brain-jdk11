@@ -16,10 +16,12 @@
  */
 package org.nervousync.brain.query.join;
 
+import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.beans.core.BeanObject;
-import org.nervousync.enumerations.core.ConnectionCode;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.brain.enumerations.query.ConditionCode;
+import org.nervousync.brain.enumerations.query.ConnectionCode;
+import org.nervousync.utils.ObjectUtils;
 
 /**
  * <h2 class="en-US">Join column define</h2>
@@ -45,11 +47,29 @@ public final class JoinInfo extends BeanObject {
 	@XmlElement(name = "connection_code")
 	private ConnectionCode connectionCode;
 	/**
+	 * <span class="en-US">Query condition code</span>
+	 * <span class="zh-CN">查询条件运算代码</span>
+	 */
+	@XmlElement(name = "condition_code")
+	private ConditionCode conditionCode;
+	/**
+	 * <span class="en-US">Left table identify code</span>
+	 * <span class="zh-CN">左表识别代码</span>
+	 */
+	@XmlElement(name = "left_identify")
+	private String leftIdentify;
+	/**
 	 * <span class="en-US">Left table data column identify code</span>
 	 * <span class="zh-CN">左表数据列识别代码</span>
 	 */
 	@XmlElement(name = "left_key")
 	private String leftKey;
+	/**
+	 * <span class="en-US">Right table identify code</span>
+	 * <span class="zh-CN">右表识别代码</span>
+	 */
+	@XmlElement(name = "right_identify")
+	private String rightIdentify;
 	/**
 	 * <span class="en-US">Right table data column identify code</span>
 	 * <span class="zh-CN">右表数据列识别代码</span>
@@ -62,54 +82,6 @@ public final class JoinInfo extends BeanObject {
 	 * <h3 class="zh-CN">关联列信息定义的构造方法</h3>
 	 */
 	public JoinInfo() {
-	}
-
-	/**
-	 * <h3 class="en-US">Static method is used to generate join column information instance objects</h3>
-	 * <h3 class="zh-CN">静态方法用于生成关联列信息实例对象</h3>
-	 *
-	 * @param leftKey   <span class="en-US">Left table data column identify code</span>
-	 *                  <span class="zh-CN">左表数据列识别代码</span>
-	 * @param rightKey  <span class="en-US">Right table data column identify code</span>
-	 *                  <span class="zh-CN">右表数据列识别代码</span>
-	 * @return <span class="en-US">
-	 * The generated associated column information instance object. If the data column
-	 * identification code cannot find the corresponding data column definition,
-	 * <code>null</code> will be returned.
-	 * </span>
-	 * <span class="zh-CN">生成的关联列信息实例对象，如果数据列识别代码不能找到对应的数据列定义则返回<code>null</code></span>
-	 */
-	public static JoinInfo newInstance(final String leftKey, final String rightKey) {
-		return newInstance(ConnectionCode.AND, leftKey, rightKey);
-	}
-
-	/**
-	 * <h3 class="en-US">Static method is used to generate join column information instance objects</h3>
-	 * <h3 class="zh-CN">静态方法用于生成关联列信息实例对象</h3>
-	 *
-	 * @param connectionCode <span class="en-US">Query connection code</span>
-	 *                       <span class="zh-CN">查询条件连接代码</span>
-	 * @param leftKey        <span class="en-US">Left table data column identify code</span>
-	 *                       <span class="zh-CN">左表数据列识别代码</span>
-	 * @param rightKey       <span class="en-US">Right table data column identify code</span>
-	 *                       <span class="zh-CN">右表数据列识别代码</span>
-	 * @return <span class="en-US">
-	 * The generated associated column information instance object. If the data column
-	 * identification code cannot find the corresponding data column definition,
-	 * <code>null</code> will be returned.
-	 * </span>
-	 * <span class="zh-CN">生成的关联列信息实例对象，如果数据列识别代码不能找到对应的数据列定义则返回<code>null</code></span>
-	 */
-	public static JoinInfo newInstance(final ConnectionCode connectionCode,
-	                                   final String leftKey, final String rightKey) {
-		JoinInfo joinInfo = null;
-		if (StringUtils.notBlank(leftKey) && StringUtils.notBlank(rightKey)) {
-			joinInfo = new JoinInfo();
-			joinInfo.setConnectionCode(connectionCode);
-			joinInfo.setLeftKey(leftKey);
-			joinInfo.setRightKey(rightKey);
-		}
-		return joinInfo;
 	}
 
 	/**
@@ -135,6 +107,50 @@ public final class JoinInfo extends BeanObject {
 	}
 
 	/**
+	 * <h3 class="en-US">Getter method for query condition code</h3>
+	 * <h3 class="zh-CN">查询条件运算代码的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Query condition code</span>
+	 * <span class="zh-CN">查询条件运算代码</span>
+	 */
+	public ConditionCode getConditionCode() {
+		return conditionCode;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for query condition code</h3>
+	 * <h3 class="zh-CN">查询条件运算代码的Setter方法</h3>
+	 *
+	 * @param conditionCode <span class="en-US">Query condition code</span>
+	 *                      <span class="zh-CN">查询条件运算代码</span>
+	 */
+	public void setConditionCode(final ConditionCode conditionCode) {
+		this.conditionCode = conditionCode;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the left table identify code</h3>
+	 * <h3 class="zh-CN">左表识别代码的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Left table identify code</span>
+	 * <span class="zh-CN">左表识别代码</span>
+	 */
+	public String getLeftIdentify() {
+		return this.leftIdentify;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the left table identify code</h3>
+	 * <h3 class="zh-CN">左表识别代码的Setter方法</h3>
+	 *
+	 * @param leftIdentify <span class="en-US">Left table identify code</span>
+	 *                     <span class="zh-CN">左表识别代码</span>
+	 */
+	public void setLeftIdentify(final String leftIdentify) {
+		this.leftIdentify = leftIdentify;
+	}
+
+	/**
 	 * <h3 class="en-US">Getter method for the left table data column identify code</h3>
 	 * <h3 class="zh-CN">左表数据列识别代码的Getter方法</h3>
 	 *
@@ -157,6 +173,28 @@ public final class JoinInfo extends BeanObject {
 	}
 
 	/**
+	 * <h3 class="en-US">Getter method for the right table identify code</h3>
+	 * <h3 class="zh-CN">右表识别代码的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Right table identify code</span>
+	 * <span class="zh-CN">右表识别代码</span>
+	 */
+	public String getRightIdentify() {
+		return this.rightIdentify;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the right table identify code</h3>
+	 * <h3 class="zh-CN">右表识别代码的Setter方法</h3>
+	 *
+	 * @param rightIdentify <span class="en-US">Right table identify code</span>
+	 *                      <span class="zh-CN">右表识别代码</span>
+	 */
+	public void setRightIdentify(final String rightIdentify) {
+		this.rightIdentify = rightIdentify;
+	}
+
+	/**
 	 * <h3 class="en-US">Getter method for the right table data column identify code</h3>
 	 * <h3 class="zh-CN">右表数据列识别代码的Getter方法</h3>
 	 *
@@ -176,5 +214,32 @@ public final class JoinInfo extends BeanObject {
 	 */
 	public void setRightKey(final String rightKey) {
 		this.rightKey = rightKey;
+	}
+
+	/**
+	 * <h3 class="en-US">Checks whether the given association information is consistent with the current association information</h3>
+	 * <h3 class="zh-CN">检查给定的关联信息是否与当前关联信息一致</h3>
+	 *
+	 * @param conditionCode <span class="en-US">Query condition code</span>
+	 *                      <span class="zh-CN">查询条件运算代码</span>
+	 * @param leftIdentify  <span class="en-US">Left table identify code</span>
+	 *                      <span class="zh-CN">左表识别代码</span>
+	 * @param leftKey       <span class="en-US">Left table data column identify code</span>
+	 *                      <span class="zh-CN">左表数据列识别代码</span>
+	 * @param rightIdentify <span class="en-US">Right table identify code</span>
+	 *                      <span class="zh-CN">右表识别代码</span>
+	 * @param rightKey      <span class="en-US">Right table data column identify code</span>
+	 *                      <span class="zh-CN">右表数据列识别代码</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
+	 */
+	public boolean match(final ConditionCode conditionCode,
+	                     @Nonnull final String leftIdentify, @Nonnull final String leftKey,
+	                     @Nonnull final String rightIdentify, @Nonnull final String rightKey) {
+		return ObjectUtils.nullSafeEquals(this.conditionCode, conditionCode)
+				&& ObjectUtils.nullSafeEquals(this.leftIdentify, leftIdentify)
+				&& ObjectUtils.nullSafeEquals(this.leftKey, leftKey)
+				&& ObjectUtils.nullSafeEquals(this.rightIdentify, rightIdentify)
+				&& ObjectUtils.nullSafeEquals(this.rightKey, rightKey);
 	}
 }

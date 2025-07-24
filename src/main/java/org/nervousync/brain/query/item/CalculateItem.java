@@ -20,7 +20,7 @@ package org.nervousync.brain.query.item;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.CalculateCode;
 import org.nervousync.brain.enumerations.query.ItemType;
-import org.nervousync.brain.query.core.AbstractItem;
+import org.nervousync.brain.query.core.QueryItem;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,7 +36,7 @@ import java.util.List;
 @XmlType(name = "calculate_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "calculate_item", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
-public final class CalculateItem extends AbstractItem {
+public final class CalculateItem extends QueryItem {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>
@@ -64,7 +64,7 @@ public final class CalculateItem extends AbstractItem {
 			@XmlElementRef(name = "column_item", type = ColumnItem.class),
 			@XmlElementRef(name = "function_item", type = FunctionItem.class)
 	})
-	private List<AbstractItem> calculateItems;
+	private List<QueryItem> calculateItems;
 
 	/**
 	 * <h3 class="en-US">Constructor method for calculate result value information define</h3>
@@ -104,7 +104,7 @@ public final class CalculateItem extends AbstractItem {
 	 * @return <span class="en-US">List of query items participating in the calculation</span>
 	 * <span class="zh-CN">参与计算的查询项信息列表</span>
 	 */
-	public List<AbstractItem> getCalculateItems() {
+	public List<QueryItem> getCalculateItems() {
 		return this.calculateItems;
 	}
 
@@ -115,7 +115,7 @@ public final class CalculateItem extends AbstractItem {
 	 * @param calculateItems <span class="en-US">List of query items participating in the calculation</span>
 	 *                       <span class="zh-CN">参与计算的查询项信息列表</span>
 	 */
-	public void setCalculateItems(final List<AbstractItem> calculateItems) {
+	public void setCalculateItems(final List<QueryItem> calculateItems) {
 		if (calculateItems != null && calculateItems.stream()
 				.allMatch(abstractItem -> CALCULATE_ITEM_TYPES.contains(abstractItem.getItemType()))) {
 			this.calculateItems = calculateItems;

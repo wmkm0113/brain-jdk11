@@ -46,14 +46,14 @@ public final class TrustStoreAuthentication extends Authentication {
 	 * <span class="zh-CN">信任证书库地址</span>
 	 */
 	@XmlElement(name = "store_path")
-	private String trustStorePath = Globals.DEFAULT_VALUE_STRING;
+	private String storePath = Globals.DEFAULT_VALUE_STRING;
 	/**
 	 * <span class="en-US">Trust certificate store password</span>
 	 * <span class="zh-CN">信任证书库密码</span>
 	 */
 	@XmlElement(name = "store_password")
 	@Password
-	private String trustStorePassword = Globals.DEFAULT_VALUE_STRING;
+	private String storePassword = Globals.DEFAULT_VALUE_STRING;
 	/**
 	 * <span class="en-US">Certificate name</span>
 	 * <span class="zh-CN">证书名称</span>
@@ -76,19 +76,19 @@ public final class TrustStoreAuthentication extends Authentication {
 	 * @return <span class="en-US">Trust certificate store path</span>
 	 * <span class="zh-CN">信任证书库地址</span>
 	 */
-	public String getTrustStorePath() {
-		return this.trustStorePath;
+	public String getStorePath() {
+		return this.storePath;
 	}
 
 	/**
 	 * <h3 class="en-US">Setter method for the trust certificate store path</h3>
 	 * <h3 class="zh-CN">信任证书库地址的Setter方法</h3>
 	 *
-	 * @param trustStorePath <span class="en-US">Trust certificate store path</span>
+	 * @param storePath <span class="en-US">Trust certificate store path</span>
 	 *                       <span class="zh-CN">信任证书库地址</span>
 	 */
-	public void setTrustStorePath(String trustStorePath) {
-		this.trustStorePath = trustStorePath;
+	public void setStorePath(String storePath) {
+		this.storePath = storePath;
 	}
 
 	/**
@@ -98,19 +98,19 @@ public final class TrustStoreAuthentication extends Authentication {
 	 * @return <span class="en-US">Trust certificate store password</span>
 	 * <span class="zh-CN">信任证书库密码</span>
 	 */
-	public String getTrustStorePassword() {
-		return this.trustStorePassword;
+	public String getStorePassword() {
+		return this.storePassword;
 	}
 
 	/**
 	 * <h3 class="en-US">Setter method for trust certificate store password</h3>
 	 * <h3 class="zh-CN">信任证书库密码的Setter方法</h3>
 	 *
-	 * @param trustStorePassword <span class="en-US">Trust certificate store password</span>
+	 * @param storePassword <span class="en-US">Trust certificate store password</span>
 	 *                           <span class="zh-CN">信任证书库密码</span>
 	 */
-	public void setTrustStorePassword(String trustStorePassword) {
-		this.trustStorePassword = trustStorePassword;
+	public void setStorePassword(String storePassword) {
+		this.storePassword = storePassword;
 	}
 
 	/**

@@ -24,58 +24,57 @@ package org.nervousync.brain.enumerations.ddl;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Sep 12, 2023 15:16:08 $
  * Defines the types of primary key generation strategies.
- *
  * @since 1.0
  */
 public enum GenerationType {
-    /**
-     * <span class="en-US">Generate automatically</span>
-     * <span class="zh-CN">自动生成</span>
-     */
-    GENERATE,
-    /**
-     * <span class="en-US">Sequence generator</span>
-     * <span class="zh-CN">序列生成器</span>
-     */
-    SEQUENCE,
-    /**
-     * <span class="en-US">Assigned value</span>
-     * <span class="zh-CN">手动填写</span>
-     */
-    ASSIGNED,
-    /**
-     * <span class="en-US">Database auto increment</span>
-     * <span class="zh-CN">数据库自增主键</span>
-     */
-    AUTO_INCREMENT,
-    /**
-     * <span class="en-US">Current date</span>
-     * <span class="zh-CN">当前日期</span>
-     */
-    CURRENT_DATE,
-    /**
-     * <span class="en-US">Current time</span>
-     * <span class="zh-CN">当前时间</span>
-     */
-    CURRENT_TIME,
-    /**
-     * <span class="en-US">Current timestamp</span>
-     * <span class="zh-CN">当前时间戳</span>
-     */
-    CURRENT_TIMESTAMP,
-    /**
-     * <span class="en-US">Write the current date every time it is updated</span>
-     * <span class="zh-CN">每次更新时写入当前日期</span>
-     */
-    UPDATE_DATE,
-    /**
-     * <span class="en-US">Write the current time every time it is updated</span>
-     * <span class="zh-CN">每次更新时写入当前时间</span>
-     */
-    UPDATE_TIME,
-    /**
-     * <span class="en-US">Write the current timestamp every time it is updated</span>
-     * <span class="zh-CN">每次更新时写入当前时间戳</span>
-     */
-    UPDATE_TIMESTAMP
+	/**
+	 * <span class="en-US">Generate automatically</span>
+	 * <span class="zh-CN">自动生成</span>
+	 */
+	GENERATE,
+	/**
+	 * <span class="en-US">Sequence generator</span>
+	 * <span class="zh-CN">序列生成器</span>
+	 */
+	SEQUENCE,
+	/**
+	 * <span class="en-US">Assigned value</span>
+	 * <span class="zh-CN">手动填写</span>
+	 */
+	ASSIGNED,
+	/**
+	 * <span class="en-US">Database auto increment</span>
+	 * <span class="zh-CN">数据库自增主键</span>
+	 */
+	AUTO_INCREMENT,
+	/**
+	 * <span class="en-US">Current date</span>
+	 * <span class="zh-CN">当前日期</span>
+	 */
+	CURRENT_DATE,
+	/**
+	 * <span class="en-US">Current time</span>
+	 * <span class="zh-CN">当前时间</span>
+	 */
+	CURRENT_TIME,
+	/**
+	 * <span class="en-US">Current timestamp</span>
+	 * <span class="zh-CN">当前时间戳</span>
+	 */
+	CURRENT_TIMESTAMP,
+	/**
+	 * <span class="en-US">Write the current date every time it is updated</span>
+	 * <span class="zh-CN">每次更新时写入当前日期</span>
+	 */
+	UPDATE_DATE,
+	/**
+	 * <span class="en-US">Write the current time every time it is updated</span>
+	 * <span class="zh-CN">每次更新时写入当前时间</span>
+	 */
+	UPDATE_TIME,
+	/**
+	 * <span class="en-US">Write the current timestamp every time it is updated</span>
+	 * <span class="zh-CN">每次更新时写入当前时间戳</span>
+	 */
+	UPDATE_TIMESTAMP
 }

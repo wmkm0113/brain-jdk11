@@ -24,12 +24,9 @@ import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
-import org.nervousync.brain.configs.storage.StorageConfig;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.builder.AbstractBuilder;
 import org.nervousync.builder.ParentBuilder;
-import org.nervousync.cache.builder.CacheConfigBuilder;
-import org.nervousync.cache.config.CacheConfig;
 import org.nervousync.exceptions.builder.BuilderException;
 import org.nervousync.utils.ClassUtils;
 import org.nervousync.utils.DateTimeUtils;
@@ -41,10 +38,12 @@ import java.util.List;
  * <h2 class="en-US">Implementation class of configuring information builder</h2>
  * <h2 class="zh-CN">配置信息构建器的实现类</h2>
  *
+ * @param <P> <span class="en-US">Generics Type instance</span>
+ *            <span class="zh-CN">泛型类实例对象</span>
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
  */
-public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure> implements ParentBuilder {
+public final class BrainConfigureBuilder<P extends ParentBuilder> extends AbstractBuilder<P, BrainConfigure> {
 
 	/**
 	 * <span class="en-US">Data source configuration information instance object</span>
@@ -52,8 +51,8 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 	 */
 	private final BrainConfigure configure;
 	/**
-	 * <h2 class="en-US">Configure information modified flag</h2>
-	 * <h2 class="zh-CN">配置信息修改标记</h2>
+	 * <span class="en-US">Configure information modified flag</span>
+	 * <span class="zh-CN">配置信息修改标记</span>
 	 */
 	private boolean modified = Boolean.FALSE;
 
@@ -61,37 +60,28 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 	 * <h3 class="en-US">Private constructor method for configure information builder implementation class</h3>
 	 * <h3 class="zh-CN">配置信息构建器实现类的构造函数</h3>
 	 *
-	 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
-	 *                      <span class="zh-CN">父构建器实例对象</span>
+	 * @param parentBuilder <span class="en-US">Generics Type instance</span>
+	 *                      <span class="zh-CN">泛型类实例对象</span>
 	 * @param configure     <span class="en-US">Data source configuration information instance object</span>
 	 *                      <span class="zh-CN">数据源配置信息实例对象</span>
 	 */
-	private BrainConfigureBuilder(final ParentBuilder parentBuilder, @Nonnull final BrainConfigure configure) {
+	private BrainConfigureBuilder(final P parentBuilder, final BrainConfigure configure) {
 		super(parentBuilder);
-		this.configure = configure;
+		this.configure = (configure == null) ? new BrainConfigure() : configure;
 	}
 
 	/**
 	 * <h3 class="en-US">Static method is used to initialize the current class of configuration information builder</h3>
 	 * <h3 class="zh-CN">静态方法用于初始化配置信息构建器实现类</h3>
 	 *
-	 * @return <span class="en-US">Configuration information instance object</span>
-	 * <span class="zh-CN">配置信息构建器实现类实例对象</span>
-	 */
-	public static BrainConfigureBuilder newBuilder() {
-		return newBuilder((BrainConfigure) null);
-	}
-
-	/**
-	 * <h3 class="en-US">Static method is used to initialize the current class of configuration information builder</h3>
-	 * <h3 class="zh-CN">静态方法用于初始化配置信息构建器实现类</h3>
-	 *
+	 * @param <P>       <span class="en-US">Generics Type instance</span>
+	 *                  <span class="zh-CN">泛型类实例对象</span>
 	 * @param configure <span class="en-US">Data source configuration information instance object</span>
 	 *                  <span class="zh-CN">数据源配置信息实例对象</span>
 	 * @return <span class="en-US">Configuration information instance object</span>
 	 * <span class="zh-CN">配置信息构建器实现类实例对象</span>
 	 */
-	public static BrainConfigureBuilder newBuilder(final BrainConfigure configure) {
+	public static <P extends ParentBuilder> BrainConfigureBuilder<P> newBuilder(final BrainConfigure configure) {
 		return newBuilder(null, configure);
 	}
 
@@ -99,28 +89,18 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 	 * <h3 class="en-US">Static method is used to initialize the current class of configuration information builder</h3>
 	 * <h3 class="zh-CN">静态方法用于初始化配置信息构建器实现类</h3>
 	 *
-	 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
-	 *                      <span class="zh-CN">父构建器实例对象</span>
-	 * @return <span class="en-US">Configuration information instance object</span>
-	 * <span class="zh-CN">配置信息构建器实现类实例对象</span>
-	 */
-	public static BrainConfigureBuilder newBuilder(final ParentBuilder parentBuilder) {
-		return newBuilder(parentBuilder, null);
-	}
-
-	/**
-	 * <h3 class="en-US">Static method is used to initialize the current class of configuration information builder</h3>
-	 * <h3 class="zh-CN">静态方法用于初始化配置信息构建器实现类</h3>
-	 *
-	 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
-	 *                      <span class="zh-CN">父构建器实例对象</span>
+	 * @param <P>           <span class="en-US">Generics Type instance</span>
+	 *                      <span class="zh-CN">泛型类实例对象</span>
+	 * @param parentBuilder <span class="en-US">Generics Type instance</span>
+	 *                      <span class="zh-CN">泛型类实例对象</span>
 	 * @param configure     <span class="en-US">Data source configuration information instance object</span>
 	 *                      <span class="zh-CN">数据源配置信息实例对象</span>
 	 * @return <span class="en-US">Configuration information instance object</span>
 	 * <span class="zh-CN">配置信息构建器实现类实例对象</span>
 	 */
-	public static BrainConfigureBuilder newBuilder(final ParentBuilder parentBuilder, final BrainConfigure configure) {
-		return new BrainConfigureBuilder(parentBuilder, (configure == null) ? new BrainConfigure() : configure);
+	public static <P extends ParentBuilder> BrainConfigureBuilder<P> newBuilder(final P parentBuilder,
+	                                                                            final BrainConfigure configure) {
+		return new BrainConfigureBuilder<>(parentBuilder, configure);
 	}
 
 	/**
@@ -130,7 +110,7 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public BrainConfigureBuilder enableLazyInit() {
+	public BrainConfigureBuilder<P> enableLazyInit() {
 		if (!this.configure.isLazyInitialize()) {
 			this.configure.setLazyInitialize(Boolean.TRUE);
 			this.modified = Boolean.TRUE;
@@ -145,7 +125,7 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public BrainConfigureBuilder disableLazyInit() {
+	public BrainConfigureBuilder<P> disableLazyInit() {
 		if (this.configure.isLazyInitialize()) {
 			this.configure.setLazyInitialize(Boolean.FALSE);
 			this.modified = Boolean.TRUE;
@@ -160,7 +140,7 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public BrainConfigureBuilder enableJmxMonitor() {
+	public BrainConfigureBuilder<P> enableJmxMonitor() {
 		if (!this.configure.isJmxMonitor()) {
 			this.configure.setJmxMonitor(Boolean.TRUE);
 			this.modified = Boolean.TRUE;
@@ -175,7 +155,7 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public BrainConfigureBuilder disableJmxMonitor() {
+	public BrainConfigureBuilder<P> disableJmxMonitor() {
 		if (this.configure.isJmxMonitor()) {
 			this.configure.setJmxMonitor(Boolean.FALSE);
 			this.modified = Boolean.TRUE;
@@ -192,7 +172,7 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public BrainConfigureBuilder configDDL(final DDLType ddlType) {
+	public BrainConfigureBuilder<P> ddlMode(final DDLType ddlType) {
 		if (!ObjectUtils.nullSafeEquals(this.configure.getDdlType(), ddlType)) {
 			this.configure.setDdlType(ddlType);
 			this.modified = Boolean.TRUE;
@@ -209,7 +189,7 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public BrainConfigureBuilder defaultSchema(final String schemaName) {
+	public BrainConfigureBuilder<P> defaultSchema(final String schemaName) {
 		this.configure.getSchemaConfigs().replaceAll(schemaConfig -> {
 			boolean defaultSchema = schemaConfig.getSchemaName().equalsIgnoreCase(schemaName);
 			if (!ObjectUtils.nullSafeEquals(defaultSchema, schemaConfig.isDefaultSchema())) {
@@ -218,32 +198,6 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 			schemaConfig.setDefaultSchema(defaultSchema);
 			return schemaConfig;
 		});
-		return this;
-	}
-
-	/**
-	 * <h3 class="en-US">Initialize cache configuration information builder</h3>
-	 * <h3 class="zh-CN">初始化缓存配置信息构建器</h3>
-	 *
-	 * @return <span class="en-US">Cache configuration information builder instance object</span>
-	 * <span class="zh-CN">缓存配置信息构建器实例对象</span>
-	 */
-	public CacheConfigBuilder cacheConfig() {
-		return CacheConfigBuilder.newBuilder(this, this.configure.getCacheConfig());
-	}
-
-	/**
-	 * <h3 class="en-US">Delete current cache configure information</h3>
-	 * <h3 class="zh-CN">删除当前的缓存配置信息</h3>
-	 *
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public BrainConfigureBuilder removeCacheConfig() {
-		if (this.configure.getCacheConfig() != null) {
-			this.configure.setCacheConfig(null);
-			this.modified = Boolean.TRUE;
-		}
 		return this;
 	}
 
@@ -298,36 +252,6 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 	}
 
 	/**
-	 * <h3 class="en-US">Initialize the data import and export tool configuration information builder instance object</h3>
-	 * <h3 class="zh-CN">初始化数据导入导出工具配置信息构建器实例对象</h3>
-	 *
-	 * @return <span class="en-US">Configure information builder instance object</span>
-	 * <span class="zh-CN">配置信息构建器实例对象</span>
-	 */
-	public StorageConfigBuilder storageConfig() {
-		StorageConfig storageConfig = this.configure.getStorageConfig();
-		if (storageConfig == null) {
-			storageConfig = new StorageConfig();
-		}
-		return new StorageConfigBuilder(this, storageConfig);
-	}
-
-	/**
-	 * <h3 class="en-US">Delete current data import and export tool configure information</h3>
-	 * <h3 class="zh-CN">删除当前的导入导出工具配置信息</h3>
-	 *
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public BrainConfigureBuilder removeStorageConfig() {
-		if (this.configure.getStorageConfig() != null) {
-			this.configure.setStorageConfig(null);
-			this.modified = Boolean.TRUE;
-		}
-		return this;
-	}
-
-	/**
 	 * <h3 class="en-US">Read configuration information for the given data source name</h3>
 	 * <h3 class="zh-CN">读取给定数据源名称的配置信息</h3>
 	 *
@@ -365,7 +289,7 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 	}
 
 	@Override
-	public BrainConfigure confirm() {
+	public BrainConfigure build() {
 		if (this.modified) {
 			this.configure.setLastModified(DateTimeUtils.currentUTCTimeMillis());
 		}
@@ -393,18 +317,6 @@ public final class BrainConfigureBuilder extends AbstractBuilder<BrainConfigure>
 				this.modified = Boolean.TRUE;
 			}
 			this.configure.setSchemaConfigs(schemaList);
-		} else if (object instanceof StorageConfig) {
-			if (this.configure.getStorageConfig() == null
-					|| this.configure.getStorageConfig().getLastModified() != ((StorageConfig) object).getLastModified()) {
-				this.configure.setStorageConfig((StorageConfig) object);
-				this.modified = Boolean.TRUE;
-			}
-		} else if (object instanceof CacheConfig) {
-			if (this.configure.getCacheConfig() == null
-					|| this.configure.getCacheConfig().getLastModified() != ((CacheConfig) object).getLastModified()) {
-				this.configure.setCacheConfig((CacheConfig) object);
-				this.modified = Boolean.TRUE;
-			}
 		}
 	}
 }

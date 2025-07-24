@@ -28,41 +28,41 @@ import org.nervousync.exceptions.AbstractException;
  */
 public final class DialectException extends AbstractException {
 
-    /**
-     * <span class="en-US">Serial version UID</span>
-     * <span class="zh-CN">序列化UID</span>
-     */
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
 	private static final long serialVersionUID = 1125087183468025016L;
 
 	/**
-     * <h3 class="en-US">Constructor method for DialectException</h3>
-     * <span class="en-US">Create a new DialectException with the specified message.</span>
-     * <h3 class="zh-CN">DialectException构造方法</h3>
-     * <span class="zh-CN">使用特定的信息创建DialectException实例对象。</span>
-     *
-     * @param errorCode   <span class="en-US">Error identified code</span>
-     *                    <span class="zh-CN">错误识别代码</span>
-     * @param collections <span class="en-US">given parameters of information formatter</span>
-     *                    <span class="zh-CN">用于资源信息格式化的参数</span>
-     */
-    public DialectException(final long errorCode, final Object... collections) {
-        super(errorCode, collections);
-    }
+	 * <h3 class="en-US">Constructor method for DialectException</h3>
+	 * <span class="en-US">Create a new DialectException with the specified message.</span>
+	 * <h3 class="zh-CN">DialectException构造方法</h3>
+	 * <span class="zh-CN">使用特定的信息创建DialectException实例对象。</span>
+	 *
+	 * @param errorCode   <span class="en-US">Error identified code</span>
+	 *                    <span class="zh-CN">错误识别代码</span>
+	 * @param collections <span class="en-US">given parameters of information formatter</span>
+	 *                    <span class="zh-CN">用于资源信息格式化的参数</span>
+	 */
+	public DialectException(final long errorCode, final Object... collections) {
+		super(errorCode, collections);
+	}
 
-    /**
-     * <h3 class="en-US">Constructor method for DialectException</h3>
-     * <span class="en-US">Create a new DialectException with the specified message and root cause.</span>
-     * <h3 class="zh-CN">DialectException构造方法</h3>
-     * <span class="zh-CN">使用特定的信息以及异常信息对象实例创建DialectException实例对象。</span>
-     *
-     * @param errorCode   <span class="en-US">Error identified code</span>
-     *                    <span class="zh-CN">错误识别代码</span>
-     * @param cause       <span class="en-US">The root cause</span>
-     *                    <span class="zh-CN">异常信息对象实例</span>
-     * @param collections <span class="en-US">given parameters of information formatter</span>
-     *                    <span class="zh-CN">用于资源信息格式化的参数</span>
-     */
-    public DialectException(final long errorCode, final Throwable cause, final Object... collections) {
-        super(errorCode, cause, collections);
-    }
+	/**
+	 * <h3 class="en-US">Constructor method for DialectException</h3>
+	 * <span class="en-US">Create a new DialectException with the specified message and root cause.</span>
+	 * <h3 class="zh-CN">DialectException构造方法</h3>
+	 * <span class="zh-CN">使用特定的信息以及异常信息对象实例创建DialectException实例对象。</span>
+	 *
+	 * @param errorCode   <span class="en-US">Error identified code</span>
+	 *                    <span class="zh-CN">错误识别代码</span>
+	 * @param cause       <span class="en-US">The root cause</span>
+	 *                    <span class="zh-CN">异常信息对象实例</span>
+	 * @param collections <span class="en-US">given parameters of information formatter</span>
+	 *                    <span class="zh-CN">用于资源信息格式化的参数</span>
+	 */
+	public DialectException(final long errorCode, final Throwable cause, final Object... collections) {
+		super(errorCode, cause, collections);
+	}
 }

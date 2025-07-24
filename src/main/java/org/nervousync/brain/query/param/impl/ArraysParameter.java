@@ -33,33 +33,17 @@ import org.nervousync.brain.query.param.AbstractParameter;
 @XmlRootElement(name = "arrays_parameter", namespace = "https://nervousync.org/schemas/brain")
 public final class ArraysParameter extends AbstractParameter<ArrayData> {
 
-    /**
-     * <span class="en-US">Serial version UID</span>
-     * <span class="zh-CN">序列化UID</span>
-     */
-    private static final long serialVersionUID = -2063549662005019056L;
-    /**
-     * <span class="en-US">Parameter value</span>
-     * <span class="zh-CN">参数值</span>
-     */
-    @XmlElement(name = "array_data", namespace = "https://nervousync.org/schemas/brain")
-    private ArrayData itemValue;
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = -2063549662005019056L;
 
-    /**
-     * <h3 class="en-US">Constructor method for condition data array parameter information define</h3>
-     * <h3 class="zh-CN">匹配值数组参数定义的构造方法</h3>
-     */
-    public ArraysParameter() {
-        super(ItemType.ARRAY);
-    }
-
-    @Override
-    public ArrayData getItemValue() {
-        return this.itemValue;
-    }
-
-    @Override
-    public void setItemValue(final ArrayData itemValue) {
-        this.itemValue = itemValue;
-    }
+	/**
+	 * <h3 class="en-US">Constructor method for condition data array parameter information define</h3>
+	 * <h3 class="zh-CN">匹配值数组参数定义的构造方法</h3>
+	 */
+	public ArraysParameter() {
+		super(ItemType.ARRAY);
+	}
 }

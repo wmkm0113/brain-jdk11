@@ -47,6 +47,12 @@ import java.util.List;
 public final class TableDefine extends BeanObject {
 
 	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = 6112553906517055871L;
+
+	/**
 	 * <span class="en-US">Data source name</span>
 	 * <span class="zh-CN">数据源名称</span>
 	 */

@@ -7,10 +7,6 @@
       "key": "Dialect_Not_Registered"
     },
     {
-      "code": "0x00DB00000002",
-      "key": "Sharding_Column_Not_Found"
-    },
-    {
       "code": "0x00DB00000003",
       "key": "Table_Not_Found"
     },
@@ -21,10 +17,6 @@
     {
       "code": "0x00DB00000005",
       "key": "Dialect_Annotation_Not_Found"
-    },
-    {
-      "code": "0x00DB00000006",
-      "key": "Unknown_Column_Type"
     },
     {
       "code": "0x00DB00000007",
@@ -79,10 +71,6 @@
       "key": "Condition_Range_Not_Found"
     },
     {
-      "code": "0x00DB00000020",
-      "key": "Sharding_Default_Is_Null"
-    },
-    {
       "code": "0x00DB00000021",
       "key": "Database_Server_List_Empty"
     },
@@ -131,10 +119,6 @@
       "key": "No_Schema_Found"
     },
     {
-      "code": "0x00DB00000033",
-      "key": "Server_Exists"
-    },
-    {
       "code": "0x00DB00000034",
       "key": "No_Table_Found"
     },
@@ -177,6 +161,18 @@
     {
       "code": "0x00DB00000044",
       "key": "SSL_Context_Error"
+    },
+    {
+      "code": "0x00DB00000045",
+      "key": "Dialect_Type_Not_Matched"
+    },
+    {
+      "code": "0x00DB00000047",
+      "key": "Query_From_Empty"
+    },
+    {
+      "code": "0x00DB00000048",
+      "key": "Query_Alias_Exists"
     }
   ],
   "languages": [
@@ -195,10 +191,6 @@
         {
           "key": "Dialect_Not_Registered",
           "content": "Database dialect not registered! Dialect name: {0}"
-        },
-        {
-          "key": "Sharding_Column_Not_Found",
-          "content": "Sharding column not found! Table name: {0}, column name: {1}"
         },
         {
           "key": "Table_Not_Found",
@@ -227,10 +219,6 @@
         {
           "key": "Read_Lob_Error",
           "content": "Read {0} data error! "
-        },
-        {
-          "key": "Unknown_Column_Type",
-          "content": "Unknown column type! Column name: {0}, JDBC type: {1}"
         },
         {
           "key": "Insert_Columns_Not_Found",
@@ -283,14 +271,6 @@
         {
           "key": "Condition_Range_Not_Found",
           "content": "Condition range parameter not found! "
-        },
-        {
-          "key": "Sharding_Default_Is_Null",
-          "content": "Default sharding value is empty! "
-        },
-        {
-          "key": "Registered_Sharding_Configure",
-          "content": "Override exists sharding configure information, table name: {0}"
         },
         {
           "key": "Database_Server_List_Empty",
@@ -369,10 +349,6 @@
           "content": "Sharding template string not found parameter: {catalog}! JDBC url: {0}"
         },
         {
-          "key": "Initialize_Schema_Error",
-          "content": "Initialize schema error!"
-        },
-        {
           "key": "Database_Server_Error",
           "content": "Database server information invalid! "
         },
@@ -425,10 +401,6 @@
           "content": "Close data source error! "
         },
         {
-          "key": "Server_Exists",
-          "content": "Current server info was exists! Server address: {0}, server port: {1}"
-        },
-        {
           "key": "Read_Configure_Error",
           "content": "Read configure information error! Configure file path: {0}, configure name: {1}"
         },
@@ -465,16 +437,24 @@
           "content": "Initialize ssl context error! "
         },
         {
-          "key": "Query_Cache_Key_Data",
-          "content": "Query information cache key data map: {0}"
-        },
-        {
           "key": "Remote_Dialect_Title",
           "content": "Simple remote dialect "
         },
         {
           "key": "Remote_Dialect_Description",
           "content": "Simple remote dialect, only support username/password authenticator and pass clear text password information"
+        },
+        {
+          "key": "Dialect_Type_Not_Matched",
+          "content": "Database dialect type not matched! Dialect type: {0}, configure dialect type: {1}"
+        },
+        {
+          "key": "Query_From_Empty",
+          "content": "Query from command is null"
+        },
+        {
+          "key": "Query_Alias_Exists",
+          "content": "Query alias name was existed"
         }
       ]
     },
@@ -493,10 +473,6 @@
         {
           "key": "Dialect_Not_Registered",
           "content": "数据库方言未注册！方言名称：{0}"
-        },
-        {
-          "key": "Sharding_Column_Not_Found",
-          "content": "分片数据列未找到！数据表：{0}，数据列：{1}"
         },
         {
           "key": "Table_Not_Found",
@@ -525,10 +501,6 @@
         {
           "key": "Read_Lob_Error",
           "content": "读取{0}数据出错！"
-        },
-        {
-          "key": "Unknown_Column_Type",
-          "content": "未知的数据列类型！数据列名：{0}，JDBC类型代码：{1}"
         },
         {
           "key": "Insert_Columns_Not_Found",
@@ -581,14 +553,6 @@
         {
           "key": "Condition_Range_Not_Found",
           "content": "匹配条件范围值未找到！"
-        },
-        {
-          "key": "Sharding_Default_Is_Null",
-          "content": "默认的分片值为空！"
-        },
-        {
-          "key": "Registered_Sharding_Configure",
-          "content": "覆盖已存在分片信息，数据表名：{0}"
         },
         {
           "key": "Database_Server_List_Empty",
@@ -667,10 +631,6 @@
           "content": "分片模板字符串未找到参数：{shardingKey}！JDBC连接字符串：{0}"
         },
         {
-          "key": "Initialize_Schema_Error",
-          "content": "初始化数据源出错！"
-        },
-        {
           "key": "Database_Server_Error",
           "content": "数据库服务器信息错误！"
         },
@@ -723,10 +683,6 @@
           "content": "关闭数据源时出错！"
         },
         {
-          "key": "Server_Exists",
-          "content": "当前数据库服务器信息已存在！服务器地址：{0}，端口号：{1}"
-        },
-        {
           "key": "Read_Configure_Error",
           "content": "读取配置信息出错！配置信息文件地址：{0}，配置文件名：{1}"
         },
@@ -763,16 +719,24 @@
           "content": "初始化SSL环境出错！"
         },
         {
-          "key": "Query_Cache_Key_Data",
-          "content": "查询信息缓存识别信息映射表：{0}"
-        },
-        {
           "key": "Remote_Dialect_Title",
           "content": "简单远程调用方言"
         },
         {
           "key": "Remote_Dialect_Description",
           "content": "简单远程调用方言，仅支持用户名/密码的身份认证方式，且使用明文传递"
+        },
+        {
+          "key": "Dialect_Type_Not_Matched",
+          "content": "数据库方言类型不匹配！方言类型：{0}，配置方言类型：{1}"
+        },
+        {
+          "key": "Query_From_Empty",
+          "content": "查询From字句为空"
+        },
+        {
+          "key": "Query_Alias_Exists",
+          "content": "查询别名已存在"
         }
       ]
     }

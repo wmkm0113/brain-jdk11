@@ -25,19 +25,19 @@ package org.nervousync.brain.enumerations.query;
  * @version $Revision: 1.0.0 $ $Date: Oct 6, 2020 18:47:52 $
  */
 public enum ConditionType {
-    /**
-     * <span class="en-US">Data column condition</span>
-     * <span class="zh-CN">数据列条件</span>
-     */
+	/**
+	 * <span class="en-US">Data column condition</span>
+	 * <span class="zh-CN">数据列条件</span>
+	 */
 	COLUMN,
-    /**
-     * <span class="en-US">Condition group</span>
-     * <span class="zh-CN">条件组</span>
-     */
+	/**
+	 * <span class="en-US">Condition group</span>
+	 * <span class="zh-CN">条件组</span>
+	 */
 	GROUP,
-    /**
-     * <span class="en-US">Condition constant</span>
-     * <span class="zh-CN">固定值</span>
-     */
+	/**
+	 * <span class="en-US">Condition constant</span>
+	 * <span class="zh-CN">固定值</span>
+	 */
 	CONSTANT
 }

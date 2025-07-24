@@ -75,13 +75,13 @@ public final class StrategyConfig {
 	                      final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy) {
 		this.tableName = tableDefine.getTableName();
 		this.defaultCatalog = tableDefine.getCatalog();
-		this.databaseStrategy = Optional.ofNullable(databaseStrategy)
-				.map(StrategyDetails::new)
-				.orElse(null);
-		if (StringUtils.containsIgnoreCase(this.tableName, "{sharding}")) {
-			this.tableStrategy = Optional.ofNullable(tableStrategy)
-					.map(StrategyDetails::new)
-					.orElse(null);
+		if (databaseStrategy == null) {
+			this.databaseStrategy = null;
+		} else {
+			this.databaseStrategy = new StrategyDetails(databaseStrategy);
+		}
+		if (tableStrategy != null && StringUtils.containsIgnoreCase(this.tableName, "{sharding}")) {
+			this.tableStrategy = new StrategyDetails(tableStrategy);
 		} else {
 			this.tableStrategy = null;
 		}
@@ -98,19 +98,6 @@ public final class StrategyConfig {
 	 */
 	public String dbKey(@Nonnull final Map<String, Object> dataMap) {
 		return (this.databaseStrategy == null) ? this.defaultCatalog : this.databaseStrategy.result(dataMap);
-	}
-
-	/**
-	 * <h3 class="en-US">Calculate sharding result</h3>
-	 * <h3 class="zh-CN">计算分片值</h3>
-	 *
-	 * @param conditionList <span class="en-US">Query condition instance list</span>
-	 *                      <span class="zh-CN">查询条件实例对象列表</span>
-	 * @return <span class="en-US">Calculate result</span>
-	 * <span class="zh-CN">计算结果</span>
-	 */
-	public String dbKey(@Nonnull final List<Condition> conditionList) {
-		return (this.databaseStrategy == null) ? this.defaultCatalog : this.databaseStrategy.result(conditionList);
 	}
 
 	/**
@@ -136,7 +123,9 @@ public final class StrategyConfig {
 	 * <span class="zh-CN">分片值列表</span>
 	 */
 	public List<String> dbKeys(@Nonnull final List<Condition> conditionList) {
-		return (this.databaseStrategy == null) ? Collections.singletonList(this.defaultCatalog) : this.databaseStrategy.keys(conditionList);
+		return (this.databaseStrategy == null)
+				? Collections.singletonList(this.defaultCatalog)
+				: this.databaseStrategy.keys(conditionList);
 	}
 
 	/**
@@ -207,6 +196,13 @@ public final class StrategyConfig {
 		return (this.tableStrategy == null) ? ObjectUtils.nullSafeEquals(this.tableName, string) : this.tableStrategy.match(string);
 	}
 
+	/**
+	 * <h3 class="en-US">Data table sharding flag</h3>
+	 * <h3 class="zh-CN">数据表分片标记</h3>
+	 *
+	 * @return <span class="en-US">Matches result</span>
+	 * <span class="zh-CN">匹配结果</span>
+	 */
 	public boolean shardingTable() {
 		return this.tableStrategy != null;
 	}

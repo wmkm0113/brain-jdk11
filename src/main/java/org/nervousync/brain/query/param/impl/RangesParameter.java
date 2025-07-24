@@ -33,33 +33,17 @@ import org.nervousync.brain.query.param.AbstractParameter;
 @XmlRootElement(name = "ranges_parameter", namespace = "https://nervousync.org/schemas/brain")
 public final class RangesParameter extends AbstractParameter<RangesData> {
 
-    /**
-     * <span class="en-US">Serial version UID</span>
-     * <span class="zh-CN">序列化UID</span>
-     */
-    private static final long serialVersionUID = 654320131256596275L;
-    /**
-     * <span class="en-US">Parameter value</span>
-     * <span class="zh-CN">参数值</span>
-     */
-    @XmlElement(name = "ranges_data", namespace = "https://nervousync.org/schemas/brain")
-    private RangesData itemValue;
+	/**
+	 * <span class="en-US">Serial version UID</span>
+	 * <span class="zh-CN">序列化UID</span>
+	 */
+	private static final long serialVersionUID = 654320131256596275L;
 
-    /**
-     * <h3 class="en-US">Constructor method for ranges data parameter information define</h3>
-     * <h3 class="zh-CN">范围值参数定义的构造方法</h3>
-     */
-    public RangesParameter() {
-        super(ItemType.RANGE);
-    }
-
-    @Override
-    public RangesData getItemValue() {
-        return this.itemValue;
-    }
-
-    @Override
-    public void setItemValue(final RangesData itemValue) {
-        this.itemValue = itemValue;
-    }
+	/**
+	 * <h3 class="en-US">Constructor method for ranges data parameter information define</h3>
+	 * <h3 class="zh-CN">范围值参数定义的构造方法</h3>
+	 */
+	public RangesParameter() {
+		super(ItemType.RANGE);
+	}
 }

@@ -36,7 +36,6 @@ import org.nervousync.exceptions.builder.BuilderException;
 import org.nervousync.proxy.ProxyConfig;
 import org.nervousync.proxy.ProxyConfigBuilder;
 import org.nervousync.utils.DateTimeUtils;
-import org.nervousync.utils.FileUtils;
 import org.nervousync.utils.ObjectUtils;
 import org.nervousync.utils.StringUtils;
 
@@ -53,1204 +52,1218 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
  */
-public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends AbstractBuilder<T> implements ParentBuilder {
-
-    /**
-     * <span class="en-US">Configure information instance object</span>
-     * <span class="zh-CN">配置信息实例对象</span>
-     */
-    protected final T schemaConfig;
-    /**
-     * <h2 class="en-US">Configure information modified flag</h2>
-     * <h2 class="zh-CN">配置信息修改标记</h2>
-     */
-    protected boolean modified = Boolean.FALSE;
-
-    /**
-     * <h3 class="en-US">Constructor method for abstract class of data schema configure information builder</h3>
-     * <h3 class="zh-CN">数据源配置信息构建器抽象类的构造方法</h3>
-     *
-     * @param parentBuilder <span class="en-US">Parent builder instance object</span>
-     *                      <span class="zh-CN">父构建器实例对象</span>
-     * @param schemaConfig  <span class="en-US">Configure information instance object</span>
-     *                      <span class="zh-CN">配置信息实例对象</span>
-     */
-    protected SchemaConfigBuilder(final BrainConfigureBuilder parentBuilder, final T schemaConfig) {
-        super(parentBuilder);
-        this.schemaConfig = schemaConfig;
-    }
-
-    /**
-     * <h3 class="en-US">Generate basic identity authentication information builder instance object based on existing identity authentication information</h3>
-     * <h3 class="zh-CN">根据现有的身份认证信息生成基本身份认证信息构建器实例对象</h3>
-     *
-     * @return <span class="en-US">Builder implementation class of basic authentication information instance object</span>
-     * <span class="zh-CN">基本身份认证信息构建器实例对象</span>
-     */
-    public final AuthenticationBuilder.UserAuthenticationBuilder userAuthenticationBuilder() {
-        return new AuthenticationBuilder.UserAuthenticationBuilder(this,
-                Optional.ofNullable(this.schemaConfig.getAuthentication())
-                        .filter(authentication -> authentication instanceof UserAuthentication)
-                        .map(authentication -> (UserAuthentication) authentication)
-                        .orElse(new UserAuthentication()));
-    }
-
-    /**
-     * <h3 class="en-US">Generate a builder instance object that uses the trust store authentication information
-     * in the certificate store based on the existing authentication information.</h3>
-     * <h3 class="zh-CN">根据现有的身份认证信息生成使用证书库中X.509证书认证信息的构建器实例对象</h3>
-     *
-     * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate in the certificate store</span>
-     * <span class="zh-CN">使用证书库中X.509证书的认证信息的构建器</span>
-     */
-    public final AuthenticationBuilder.TrustStoreAuthenticationBuilder trustStoreAuthenticationBuilder() {
-        return new AuthenticationBuilder.TrustStoreAuthenticationBuilder(this,
-                Optional.ofNullable(this.schemaConfig.getAuthentication())
-                        .filter(authentication -> authentication instanceof TrustStoreAuthentication)
-                        .map(authentication -> (TrustStoreAuthentication) authentication)
-                        .orElse(new TrustStoreAuthentication()));
-    }
-
-    /**
-     * <h3 class="en-US">Generate a builder instance object that uses the X.509 certificate authentication information.</h3>
-     * <h3 class="zh-CN">根据现有的身份认证信息生成X.509证书认证信息的构建器实例对象</h3>
-     *
-     * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate</span>
-     * <span class="zh-CN">使用X.509证书的认证信息的构建器</span>
-     */
-    public final AuthenticationBuilder.X509AuthenticationBuilder x509AuthenticationBuilder() {
-        return new AuthenticationBuilder.X509AuthenticationBuilder(this,
-                Optional.ofNullable(this.schemaConfig.getAuthentication())
-                        .filter(authentication -> authentication instanceof X509Authentication)
-                        .map(authentication -> (X509Authentication) authentication)
-                        .orElse(new X509Authentication()));
-    }
-
-    @Override
-    public void confirm(final Object object) {
-        if (object instanceof Authentication) {
-            Authentication authentication = this.schemaConfig.getAuthentication();
-            if (authentication == null
-                    || !ObjectUtils.nullSafeEquals(authentication.getAuthType(), ((Authentication) object).getAuthType())
-                    || authentication.getLastModified() != ((Authentication) object).getLastModified()) {
-                this.schemaConfig.setAuthentication((Authentication) object);
-                this.modified = Boolean.TRUE;
-            }
-        }
-    }
-
-    @Override
-    public final T confirm() {
-        if (this.modified) {
-            this.schemaConfig.setLastModified(DateTimeUtils.currentUTCTimeMillis());
-        }
-        return this.schemaConfig;
-    }
-
-    /**
-     * <h3 class="en-US">Set the dialect name used</h3>
-     * <h3 class="zh-CN">设置使用的方言名称</h3>
-     *
-     * @param dialectName  <span class="en-US">Data source dialect name</span>
-     *                     <span class="zh-CN">数据源方言名称</span>
-     * @param builderClass <span class="en-US">Returned object type</span>
-     *                     <span class="zh-CN">返回的对象类型</span>
-     * @param <B>          <span class="en-US">Generic class that returns the object type</span>
-     *                     <span class="zh-CN">返回对象类型的泛型类</span>
-     * @return <span class="en-US">Instance object of specified return type</span>
-     * <span class="zh-CN">指定返回类型的实例对象</span>
-     */
-    protected final <B> B dialect(final String dialectName, final Class<B> builderClass) {
-        if (StringUtils.isEmpty(dialectName)
-                || ObjectUtils.nullSafeEquals(this.schemaConfig.getDialectName(), dialectName)) {
-            return builderClass.cast(this);
-        }
-        this.schemaConfig.setDialectName(dialectName);
-        this.modified = Boolean.TRUE;
-        return builderClass.cast(this);
-    }
-
-    /**
-     * <h3 class="en-US">Set the trust store information</h3>
-     * <h3 class="zh-CN">设置信任证书库信息</h3>
-     *
-     * @param storePath     <span class="en-US">Trust certificate store path</span>
-     *                      <span class="zh-CN">信任证书库地址</span>
-     * @param storePassword <span class="en-US">Trust certificate store password</span>
-     *                      <span class="zh-CN">信任证书库密码</span>
-     * @param builderClass  <span class="en-US">Returned object type</span>
-     *                      <span class="zh-CN">返回的对象类型</span>
-     * @param <B>           <span class="en-US">Generic class that returns the object type</span>
-     *                      <span class="zh-CN">返回对象类型的泛型类</span>
-     * @return <span class="en-US">Instance object of specified return type</span>
-     * <span class="zh-CN">指定返回类型的实例对象</span>
-     */
-    protected final <B> B trustStore(final String storePath, final String storePassword, final Class<B> builderClass) {
-        if (StringUtils.notBlank(storePath)) {
-            TrustStore trustStore = this.schemaConfig.getTrustStore();
-            if (trustStore == null) {
-                trustStore = new TrustStore();
-                this.modified = Boolean.TRUE;
-            }
-
-            if (!ObjectUtils.nullSafeEquals(trustStore.getTrustStorePath(), storePath)) {
-                trustStore.setTrustStorePath(storePath);
-                this.modified = Boolean.TRUE;
-            }
-
-            if (StringUtils.notBlank(storePassword)
-                    && !ObjectUtils.nullSafeEquals(trustStore.getTrustStorePassword(), storePassword)) {
-                trustStore.setTrustStorePassword(storePassword);
-                this.modified = Boolean.TRUE;
-            }
-
-            this.schemaConfig.setTrustStore(trustStore);
-        }
-        return builderClass.cast(this);
-    }
-
-    /**
-     * <h3 class="en-US">Set slow query-critical time</h3>
-     * <h3 class="zh-CN">设置慢查询临界时间</h3>
-     *
-     * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
-     *                        <span class="zh-CN">慢查询的临界时间（单位：毫秒）</span>
-     * @param builderClass    <span class="en-US">Returned object type</span>
-     *                        <span class="zh-CN">返回的对象类型</span>
-     * @param <B>             <span class="en-US">Generic class that returns the object type</span>
-     *                        <span class="zh-CN">返回对象类型的泛型类</span>
-     * @return <span class="en-US">Instance object of specified return type</span>
-     * <span class="zh-CN">指定返回类型的实例对象</span>
-     */
-    protected final <B> B lowQuery(final long lowQueryTimeout, final Class<B> builderClass) {
-        if (lowQueryTimeout > 0 && this.schemaConfig.getLowQueryTimeout() != lowQueryTimeout) {
-            this.schemaConfig.setLowQueryTimeout(lowQueryTimeout);
-            this.modified = Boolean.TRUE;
-        }
-        return builderClass.cast(this);
-    }
-
-    /**
-     * <h3 class="en-US">Set value of timeout</h3>
-     * <h3 class="zh-CN">设置超时时间</h3>
-     *
-     * @param validateTimeout <span class="en-US">Timeout value of connection validate (Unit: seconds)</span>
-     *                        <span class="zh-CN">连接检查超时时间（单位：秒）</span>
-     * @param connectTimeout  <span class="en-US">Timeout value of create connection (Unit: seconds)</span>
-     *                        <span class="zh-CN">建立连接超时时间（单位：秒）</span>
-     * @param builderClass    <span class="en-US">Returned object type</span>
-     *                        <span class="zh-CN">返回的对象类型</span>
-     * @param <B>             <span class="en-US">Generic class that returns the object type</span>
-     *                        <span class="zh-CN">返回对象类型的泛型类</span>
-     * @return <span class="en-US">Instance object of specified return type</span>
-     * <span class="zh-CN">指定返回类型的实例对象</span>
-     */
-    protected final <B> B timeout(final int validateTimeout, final int connectTimeout, final Class<B> builderClass) {
-        if (validateTimeout > 0 && this.schemaConfig.getValidateTimeout() != validateTimeout) {
-            this.schemaConfig.setValidateTimeout(validateTimeout);
-            this.modified = Boolean.TRUE;
-        }
-        if (connectTimeout > 0 && this.schemaConfig.getConnectTimeout() != connectTimeout) {
-            this.schemaConfig.setConnectTimeout(connectTimeout);
-            this.modified = Boolean.TRUE;
-        }
-        return builderClass.cast(this);
-    }
-
-    /**
-     * <h3 class="en-US">Set connection pool configure information</h3>
-     * <h3 class="zh-CN">设置连接池配置信息</h3>
-     *
-     * @param pooled         <span class="en-US">Data source allows connection pooling</span>
-     *                       <span class="zh-CN">数据源允许连接池</span>
-     * @param minConnections <span class="en-US">Minimum number of connections in the connection pool</span>
-     *                       <span class="zh-CN">连接池的最小连接数</span>
-     * @param maxConnections <span class="en-US">Maximum number of connections in the connection pool</span>
-     *                       <span class="zh-CN">连接池的最大连接数</span>
-     * @param builderClass   <span class="en-US">Returned object type</span>
-     *                       <span class="zh-CN">返回的对象类型</span>
-     * @param <B>            <span class="en-US">Generic class that returns the object type</span>
-     *                       <span class="zh-CN">返回对象类型的泛型类</span>
-     * @return <span class="en-US">Instance object of specified return type</span>
-     * <span class="zh-CN">指定返回类型的实例对象</span>
-     */
-    protected final <B> B connectionPool(final boolean pooled, final int minConnections, final int maxConnections,
-                                         final Class<B> builderClass) {
-        this.schemaConfig.setPooled(pooled);
-        if (pooled) {
-            this.schemaConfig.setMinConnections(minConnections);
-            this.schemaConfig.setMaxConnections(maxConnections);
-        } else {
-            this.schemaConfig.setMinConnections(Globals.DEFAULT_VALUE_INT);
-            this.schemaConfig.setMaxConnections(Globals.DEFAULT_VALUE_INT);
-        }
-        return builderClass.cast(this);
-    }
-
-    /**
-     * <h3 class="en-US">Update or insert server information</h3>
-     * <h3 class="zh-CN">修改或新增服务器等级信息</h3>
-     *
-     * @param serverList <span class="en-US">Exists server information list</span>
-     *                   <span class="zh-CN">现有服务器列表</span>
-     * @param server     <span class="en-US">Database server configure information</span>
-     *                   <span class="zh-CN">数据库服务器配置信息</span>
-     * @return      <span class="en-US">Updated information return <code>true</code>, not modified return <code>false</code></span>
-     *                   <span class="zh-CN">更新信息返回<code>true</code>，未更新返回<code>false</code></span>
-     */
-    protected final boolean upsertServer(@Nonnull final List<ServerInfo> serverList, @Nonnull final ServerInfo server) {
-        AtomicBoolean modified = new AtomicBoolean(Boolean.FALSE);
-        if (serverList.stream().noneMatch(serverInfo -> serverInfo.match(server.getServerAddress(), server.getServerPort()))) {
-            serverList.add(server);
-            modified.set(Boolean.TRUE);
-        } else {
-            serverList.replaceAll(serverInfo -> {
-                if (serverInfo.match(server.getServerAddress(), server.getServerPort())) {
-                    if (serverInfo.getLastModified() != server.getLastModified()) {
-                        modified.set(Boolean.TRUE);
-                    }
-                    return server;
-                }
-                return serverInfo;
-            });
-        }
-        if (modified.get()) {
-            this.modified = Boolean.TRUE;
-        }
-        return modified.get();
-    }
-
-    /**
-     * <h2 class="en-US">Implementation class of database server configure information builder</h2>
-     * <h2 class="zh-CN">数据库服务器配置信息构建器实现类</h2>
-     *
-     * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
-     * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:56:28 $
-     */
-    public static final class ServerInfoBuilder extends AbstractBuilder<ServerInfo> implements ParentBuilder {
-
-        /**
-         * <h2 class="en-US">Server information</h2>
-         * <h2 class="zh-CN">服务器信息</h2>
-         */
-        private final ServerInfo serverInfo;
-        /**
-         * <h2 class="en-US">Configure information modified flag</h2>
-         * <h2 class="zh-CN">配置信息修改标记</h2>
-         */
-        private boolean modified = Boolean.FALSE;
-
-        /**
-         * <h3 class="en-US">Constructor method for implementation class of database server configure information builder</h3>
-         * <h3 class="zh-CN">数据库服务器配置信息构建器实现类的构造函数</h3>
-         *
-         * @param parentBuilder <span class="en-US">Parent builder instance object</span>
-         *                      <span class="zh-CN">父构建器实例对象</span>
-         * @param serverInfo    <h2 class="en-US">Server information</h2>
-         *                      <h2 class="zh-CN">服务器信息</h2>
-         */
-        ServerInfoBuilder(@Nonnull final ParentBuilder parentBuilder, @Nonnull final ServerInfo serverInfo) {
-            super(parentBuilder);
-            this.serverInfo = serverInfo;
-        }
-
-        /**
-         * <h3 class="en-US">Generate basic identity authentication information builder instance object based on existing identity authentication information</h3>
-         * <h3 class="zh-CN">根据现有的身份认证信息生成基本身份认证信息构建器实例对象</h3>
-         *
-         * @return <span class="en-US">Builder implementation class of basic authentication information instance object</span>
-         * <span class="zh-CN">基本身份认证信息构建器实例对象</span>
-         */
-        public AuthenticationBuilder.UserAuthenticationBuilder userAuthenticationBuilder() {
-            return new AuthenticationBuilder.UserAuthenticationBuilder(this,
-                    Optional.ofNullable(this.serverInfo.getAuthentication())
-                            .filter(authentication -> authentication instanceof UserAuthentication)
-                            .map(authentication -> (UserAuthentication) authentication)
-                            .orElse(new UserAuthentication()));
-        }
-
-        /**
-         * <h3 class="en-US">Generate a builder instance object that uses the trust store authentication information
-         * in the certificate store based on the existing authentication information.</h3>
-         * <h3 class="zh-CN">根据现有的身份认证信息生成使用证书库中X.509证书认证信息的构建器实例对象</h3>
-         *
-         * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate in the certificate store</span>
-         * <span class="zh-CN">使用证书库中X.509证书的认证信息的构建器</span>
-         */
-        public AuthenticationBuilder.TrustStoreAuthenticationBuilder trustStoreAuthenticationBuilder() {
-            return new AuthenticationBuilder.TrustStoreAuthenticationBuilder(this,
-                    Optional.ofNullable(this.serverInfo.getAuthentication())
-                            .filter(authentication -> authentication instanceof TrustStoreAuthentication)
-                            .map(authentication -> (TrustStoreAuthentication) authentication)
-                            .orElse(new TrustStoreAuthentication()));
-        }
-
-        /**
-         * <h3 class="en-US">Generate a builder instance object that uses the X.509 certificate authentication information.</h3>
-         * <h3 class="zh-CN">根据现有的身份认证信息生成X.509证书认证信息的构建器实例对象</h3>
-         *
-         * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate</span>
-         * <span class="zh-CN">使用X.509证书的认证信息的构建器</span>
-         */
-        public AuthenticationBuilder.X509AuthenticationBuilder x509AuthenticationBuilder() {
-            return new AuthenticationBuilder.X509AuthenticationBuilder(this,
-                    Optional.ofNullable(this.serverInfo.getAuthentication())
-                            .filter(authentication -> authentication instanceof X509Authentication)
-                            .map(authentication -> (X509Authentication) authentication)
-                            .orElse(new X509Authentication()));
-        }
-
-        /**
-         * <h3 class="en-US">Set the trust store information</h3>
-         * <h3 class="zh-CN">设置信任证书库信息</h3>
-         *
-         * @param storePath     <span class="en-US">Trust certificate store path</span>
-         *                      <span class="zh-CN">信任证书库地址</span>
-         * @param storePassword <span class="en-US">Trust certificate store password</span>
-         *                      <span class="zh-CN">信任证书库密码</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public ServerInfoBuilder trustStore(final String storePath, final String storePassword) {
-            if (StringUtils.notBlank(storePath)) {
-                TrustStore trustStore = this.serverInfo.getTrustStore();
-                if (trustStore == null) {
-                    trustStore = new TrustStore();
-                    this.modified = Boolean.TRUE;
-                }
-
-                if (!ObjectUtils.nullSafeEquals(trustStore.getTrustStorePath(), storePath)) {
-                    trustStore.setTrustStorePath(storePath);
-                    this.modified = Boolean.TRUE;
-                }
-
-                if (StringUtils.notBlank(storePassword)
-                        && !ObjectUtils.nullSafeEquals(trustStore.getTrustStorePassword(), storePassword)) {
-                    trustStore.setTrustStorePassword(storePassword);
-                    this.modified = Boolean.TRUE;
-                }
-
-                this.serverInfo.setTrustStore(trustStore);
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Update server name</h3>
-         * <h3 class="zh-CN">修改服务器名称</h3>
-         *
-         * @param serverName <span class="en-US">Server name</span>
-         *                   <span class="zh-CN">服务器名称</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public ServerInfoBuilder name(final String serverName) {
-            if (ObjectUtils.nullSafeEquals(this.serverInfo.getServerName(), serverName)) {
-                this.serverInfo.setServerName(serverName);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Update server level information</h3>
-         * <h3 class="zh-CN">修改服务器等级信息</h3>
-         *
-         * @param serverLevel <span class="en-US">Server level</span>
-         *                    <span class="zh-CN">服务器等级</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public ServerInfoBuilder level(final int serverLevel) {
-            if (this.serverInfo.getServerLevel() != serverLevel) {
-                this.serverInfo.setServerLevel(serverLevel);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        @Override
-        public ServerInfo confirm() throws BuilderException {
-            if (this.modified) {
-                this.serverInfo.setLastModified(DateTimeUtils.currentUTCTimeMillis());
-            }
-            return this.serverInfo;
-        }
-
-        @Override
-        public void confirm(final Object object) throws BuilderException {
-            if (object instanceof Authentication) {
-                Authentication authentication = this.serverInfo.getAuthentication();
-                if (authentication == null
-                        || !ObjectUtils.nullSafeEquals(authentication.getAuthType(), ((Authentication) object).getAuthType())
-                        || authentication.getLastModified() != ((Authentication) object).getLastModified()) {
-                    this.serverInfo.setAuthentication((Authentication) object);
-                    this.modified = Boolean.TRUE;
-                }
-            }
-        }
-    }
-
-    /**
-     * <h3 class="en-US">Generate database server configure information</h3>
-     * <h3 class="zh-CN">生成数据库服务器配置信息</h3>
-     *
-     * @param serverAddress <span class="en-US">Server address</span>
-     *                      <span class="zh-CN">服务器地址</span>
-     * @param serverPort    <span class="en-US">Server port number</span>
-     *                      <span class="zh-CN">服务器端口号</span>
-     * @return <span class="en-US">Database server configure information</span>
-     * <span class="zh-CN">数据库服务器配置信息</span>
-     */
-    private static ServerInfo newInstance(final String serverAddress, final int serverPort) {
-        ServerInfo serverInfo = new ServerInfo();
-        serverInfo.setServerAddress(serverAddress);
-        serverInfo.setServerPort(serverPort);
-        return serverInfo;
-    }
-
-    /**
-     * <h3 class="en-US">Generate database server configure information</h3>
-     * <h3 class="zh-CN">生成数据库服务器配置信息</h3>
-     *
-     * @param serverAddress <span class="en-US">Server address</span>
-     *                      <span class="zh-CN">服务器地址</span>
-     * @param serverPort    <span class="en-US">Server port number</span>
-     *                      <span class="zh-CN">服务器端口号</span>
-     * @return <span class="en-US">Database server configure information</span>
-     * <span class="zh-CN">数据库服务器配置信息</span>
-     */
-    private static ServerInfo newInstance(final String serverName, final String serverAddress,
-                                          final int serverPort, final int serverLevel) {
-        ServerInfo serverInfo = new ServerInfo();
-        serverInfo.setServerAddress(serverAddress);
-        serverInfo.setServerPort(serverPort);
-        if (StringUtils.notBlank(serverName)) {
-            serverInfo.setServerName(serverName);
-        }
-        if (serverLevel > 0) {
-            serverInfo.setServerLevel(serverLevel);
-        }
-        return serverInfo;
-    }
-
-    /**
-     * <h2 class="en-US">Implementation class of distribute data schema configure information builder</h2>
-     * <h2 class="zh-CN">分布式数据源配置信息构建器实现类</h2>
-     *
-     * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
-     * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
-     */
-    public static final class DistributeConfigBuilder extends SchemaConfigBuilder<DistributeSchemaConfig> {
-
-        /**
-         * <h3 class="en-US">Constructor method for implementation class of distribute data schema configure information builder</h3>
-         * <h3 class="zh-CN">分布式数据源配置信息构建器实现类的构造方法</h3>
-         *
-         * @param parentBuilder <span class="en-US">Parent builder instance object</span>
-         *                      <span class="zh-CN">父构建器实例对象</span>
-         * @param schemaConfig  <span class="en-US">Configure information instance object</span>
-         *                      <span class="zh-CN">配置信息实例对象</span>
-         */
-        DistributeConfigBuilder(final BrainConfigureBuilder parentBuilder,
-                                final DistributeSchemaConfig schemaConfig) {
-            super(parentBuilder, schemaConfig);
-        }
-
-        /**
-         * <h3 class="en-US">Set the dialect name used</h3>
-         * <h3 class="zh-CN">设置使用的方言名称</h3>
-         *
-         * @param dialectName <span class="en-US">Data source dialect name</span>
-         *                    <span class="zh-CN">数据源方言名称</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public DistributeConfigBuilder dialect(final String dialectName) {
-            return super.dialect(dialectName, DistributeConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Set the trust store information</h3>
-         * <h3 class="zh-CN">设置信任证书库信息</h3>
-         *
-         * @param storePath     <span class="en-US">Trust certificate store path</span>
-         *                      <span class="zh-CN">信任证书库地址</span>
-         * @param storePassword <span class="en-US">Trust certificate store password</span>
-         *                      <span class="zh-CN">信任证书库密码</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public DistributeConfigBuilder trustStore(final String storePath, final String storePassword) {
-            return super.trustStore(storePath, storePassword, DistributeConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Set slow query-critical time</h3>
-         * <h3 class="zh-CN">设置慢查询临界时间</h3>
-         *
-         * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
-         *                        <span class="zh-CN">慢查询的临界时间（单位：毫秒）</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public DistributeConfigBuilder lowQuery(final long lowQueryTimeout) {
-            return super.lowQuery(lowQueryTimeout, DistributeConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Set request timeout</h3>
-         * <h3 class="zh-CN">设置请求超时时间</h3>
-         *
-         * @param requestTimeout <span class="en-US">Request timeout value</span>
-         *                       <span class="zh-CN">请求超时时间</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public DistributeConfigBuilder request(final int requestTimeout) {
-            if (requestTimeout > 0 && this.schemaConfig.getRequestTimeout() != requestTimeout) {
-                this.schemaConfig.setRequestTimeout(requestTimeout);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Set value of timeout</h3>
-         * <h3 class="zh-CN">设置超时时间</h3>
-         *
-         * @param validateTimeout <span class="en-US">Timeout value of connection validate (Unit: seconds)</span>
-         *                        <span class="zh-CN">连接检查超时时间（单位：秒）</span>
-         * @param connectTimeout  <span class="en-US">Timeout value of create connection (Unit: seconds)</span>
-         *                        <span class="zh-CN">建立连接超时时间（单位：秒）</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public DistributeConfigBuilder timeout(final int validateTimeout, final int connectTimeout) {
-            return super.timeout(validateTimeout, connectTimeout, DistributeConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Set connection pool configure information</h3>
-         * <h3 class="zh-CN">设置连接池配置信息</h3>
-         *
-         * @param pooled         <span class="en-US">Data source allows connection pooling</span>
-         *                       <span class="zh-CN">数据源允许连接池</span>
-         * @param minConnections <span class="en-US">Minimum number of connections in the connection pool</span>
-         *                       <span class="zh-CN">连接池的最小连接数</span>
-         * @param maxConnections <span class="en-US">Maximum number of connections in the connection pool</span>
-         *                       <span class="zh-CN">连接池的最大连接数</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public DistributeConfigBuilder connectionPool(final boolean pooled, final int minConnections,
-                                                      final int maxConnections) {
-            return super.connectionPool(pooled, minConnections, maxConnections, DistributeConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Database server configure information builder</h3>
-         * <h3 class="zh-CN">数据库服务器配置信息构建器</h3>
-         *
-         * @param serverAddress <span class="en-US">Server address</span>
-         *                      <span class="zh-CN">服务器地址</span>
-         * @param serverPort    <span class="en-US">Server port number</span>
-         *                      <span class="zh-CN">服务器端口号</span>
-         * @return <span class="en-US">Database server configure information builder instance object</span>
-         * <span class="zh-CN">数据库服务器配置信息构建器实例对象</span>
-         */
-        public ServerInfoBuilder serverBuilder(final String serverAddress, final int serverPort) {
-            ServerInfo serverInfo = this.schemaConfig.getServerList()
-                    .stream()
-                    .filter(server -> server.match(serverAddress, serverPort))
-                    .findFirst()
-                    .orElse(newInstance(serverAddress, serverPort));
-            return new ServerInfoBuilder(this, serverInfo);
-        }
-
-        /**
-         * <h3 class="en-US">Configure server information</h3>
-         * <h3 class="zh-CN">设置服务器相关信息</h3>
-         *
-         * @param serverInfo <span class="en-US">Database server information</span>
-         *                   <span class="zh-CN">数据库服务器信息</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public DistributeConfigBuilder servers(final String serverInfo) {
-            List<ServerInfo> serverList = this.schemaConfig.getServerList();
-            for (String serverData : StringUtils.tokenizeToStringArray(serverInfo, Character.toString(FileUtils.LF))) {
-                String[] dataInfo = StringUtils.tokenizeToStringArray(serverData, "|");
-                if (dataInfo.length >= 3) {
-                    String serverName = dataInfo[0], serverAddress = dataInfo[1];
-                    int serverPort = Integer.parseInt(dataInfo[2]);
-                    int serverLevel = dataInfo.length == 4 ? Integer.parseInt(dataInfo[3]) : Globals.DEFAULT_VALUE_INT;
-                    if (super.upsertServer(serverList,
-                            newInstance(serverName, serverAddress, serverPort, serverLevel))) {
-                        this.modified = Boolean.TRUE;
-                    }
-                }
-            }
-            this.schemaConfig.setServerList(serverList);
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Delete server level information</h3>
-         * <h3 class="zh-CN">删除服务器等级信息</h3>
-         *
-         * @param serverAddress <span class="en-US">Server address</span>
-         *                      <span class="zh-CN">服务器地址</span>
-         * @param serverPort    <span class="en-US">Server port number</span>
-         *                      <span class="zh-CN">服务器端口号</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public DistributeConfigBuilder removeServer(final String serverAddress, final int serverPort) {
-            List<ServerInfo> serverList = this.schemaConfig.getServerList();
-            if (serverList.removeIf(serverInfo -> serverInfo.match(serverAddress, serverPort))) {
-                this.schemaConfig.setServerList(serverList);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        @Override
-        public void confirm(final Object object) {
-            if (object instanceof Authentication) {
-                super.confirm(object);
-            }
-            if (object instanceof ServerInfo) {
-                List<ServerInfo> serverList = this.schemaConfig.getServerList();
-                if (super.upsertServer(serverList, (ServerInfo) object)) {
-                    this.schemaConfig.setServerList(serverList);
-                    this.modified = Boolean.TRUE;
-                }
-            }
-        }
-
-        /**
-         * <h3 class="en-US">Set database name</h3>
-         * <h3 class="zh-CN">设置数据库名称</h3>
-         *
-         * @param databaseName <span class="en-US">Database name</span>
-         *                     <span class="zh-CN">数据库名称</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public DistributeConfigBuilder databaseName(final String databaseName) {
-            if (StringUtils.notBlank(databaseName)
-                    && !ObjectUtils.nullSafeEquals(this.schemaConfig.getDatabaseName(), databaseName)) {
-                this.schemaConfig.setDatabaseName(databaseName);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Set using SSL when connect to server</h3>
-         * <h3 class="zh-CN">设置使用SSL连接</h3>
-         *
-         * @param useSsl <span class="en-US">Using SSL when connect to server</span>
-         *               <span class="zh-CN">使用SSL连接</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public DistributeConfigBuilder useSsl(final boolean useSsl) {
-            if (!ObjectUtils.nullSafeEquals(this.schemaConfig.isUseSsl(), useSsl)) {
-                this.schemaConfig.setUseSsl(useSsl);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Set the maximum size of the prepared statement</h3>
-         * <h3 class="zh-CN">设置查询分析器的最大缓存结果</h3>
-         *
-         * @param cachedLimitSize <span class="en-US">Maximum size of prepared statement</span>
-         *                        <span class="zh-CN">查询分析器的最大缓存结果</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public DistributeConfigBuilder cacheSize(final int cachedLimitSize) {
-            if (cachedLimitSize > 0 && this.schemaConfig.getCachedLimitSize() != cachedLimitSize) {
-                this.schemaConfig.setCachedLimitSize(cachedLimitSize);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-    }
-
-    /**
-     * <h2 class="en-US">Implementation class of JDBC data schema configure information builder</h2>
-     * <h2 class="zh-CN">JDBC数据源配置信息构建器实现类</h2>
-     *
-     * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
-     * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
-     */
-    public static final class JdbcConfigBuilder extends SchemaConfigBuilder<JdbcSchemaConfig> {
-
-        /**
-         * <h3 class="en-US">Constructor method for implementation class of JDBC data schema configure information builder</h3>
-         * <h3 class="zh-CN">JDBC数据源配置信息构建器实现类的构造函数</h3>
-         *
-         * @param parentBuilder <span class="en-US">Parent builder instance object</span>
-         *                      <span class="zh-CN">父构建器实例对象</span>
-         * @param schemaConfig  <span class="en-US">Configure information instance object</span>
-         *                      <span class="zh-CN">配置信息实例对象</span>
-         */
-        JdbcConfigBuilder(final BrainConfigureBuilder parentBuilder, final JdbcSchemaConfig schemaConfig) {
-            super(parentBuilder, schemaConfig);
-        }
-
-        /**
-         * <h3 class="en-US">Set the dialect name used</h3>
-         * <h3 class="zh-CN">设置使用的方言名称</h3>
-         *
-         * @param dialectName <span class="en-US">Data source dialect name</span>
-         *                    <span class="zh-CN">数据源方言名称</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public JdbcConfigBuilder dialect(final String dialectName) {
-            return super.dialect(dialectName, JdbcConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Set the trust store information</h3>
-         * <h3 class="zh-CN">设置信任证书库信息</h3>
-         *
-         * @param storePath     <span class="en-US">Trust certificate store path</span>
-         *                      <span class="zh-CN">信任证书库地址</span>
-         * @param storePassword <span class="en-US">Trust certificate store password</span>
-         *                      <span class="zh-CN">信任证书库密码</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public JdbcConfigBuilder trustStore(final String storePath, final String storePassword) {
-            return super.trustStore(storePath, storePassword, JdbcConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Set slow query-critical time</h3>
-         * <h3 class="zh-CN">设置慢查询临界时间</h3>
-         *
-         * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
-         *                        <span class="zh-CN">慢查询的临界时间（单位：毫秒）</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public JdbcConfigBuilder lowQuery(final long lowQueryTimeout) {
-            return super.lowQuery(lowQueryTimeout, JdbcConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Set value of timeout</h3>
-         * <h3 class="zh-CN">设置超时时间</h3>
-         *
-         * @param validateTimeout <span class="en-US">Timeout value of connection validate (Unit: seconds)</span>
-         *                        <span class="zh-CN">连接检查超时时间（单位：秒）</span>
-         * @param connectTimeout  <span class="en-US">Timeout value of create connection (Unit: seconds)</span>
-         *                        <span class="zh-CN">建立连接超时时间（单位：秒）</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public JdbcConfigBuilder timeout(final int validateTimeout, final int connectTimeout) {
-            return super.timeout(validateTimeout, connectTimeout, JdbcConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Set connection pool configure information</h3>
-         * <h3 class="zh-CN">设置连接池配置信息</h3>
-         *
-         * @param pooled         <span class="en-US">Data source allows connection pooling</span>
-         *                       <span class="zh-CN">数据源允许连接池</span>
-         * @param minConnections <span class="en-US">Minimum number of connections in the connection pool</span>
-         *                       <span class="zh-CN">连接池的最小连接数</span>
-         * @param maxConnections <span class="en-US">Maximum number of connections in the connection pool</span>
-         *                       <span class="zh-CN">连接池的最大连接数</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public JdbcConfigBuilder connectionPool(final boolean pooled, final int minConnections,
-                                                final int maxConnections) {
-            return super.connectionPool(pooled, minConnections, maxConnections, JdbcConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Database server configure information builder</h3>
-         * <h3 class="zh-CN">数据库服务器配置信息构建器</h3>
-         *
-         * @param serverAddress <span class="en-US">Server address</span>
-         *                      <span class="zh-CN">服务器地址</span>
-         * @param serverPort    <span class="en-US">Server port number</span>
-         *                      <span class="zh-CN">服务器端口号</span>
-         * @return <span class="en-US">Database server configure information builder instance object</span>
-         * <span class="zh-CN">数据库服务器配置信息构建器实例对象</span>
-         */
-        public ServerInfoBuilder serverBuilder(final String serverAddress, final int serverPort) {
-            ServerInfo serverInfo = this.schemaConfig.getServerList()
-                    .stream()
-                    .filter(server -> server.match(serverAddress, serverPort))
-                    .findFirst()
-                    .orElse(newInstance(serverAddress, serverPort));
-            return new ServerInfoBuilder(this, serverInfo);
-        }
-
-        /**
-         * <h3 class="en-US">Configure server information</h3>
-         * <h3 class="zh-CN">设置服务器相关信息</h3>
-         *
-         * @param serverInfo  <span class="en-US">Database server information</span>
-         *                    <span class="zh-CN">数据库服务器信息</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public JdbcConfigBuilder servers(final String serverInfo) {
-            List<ServerInfo> serverList = this.schemaConfig.getServerList();
-            String[] serverArray = StringUtils.tokenizeToStringArray(serverInfo, Character.toString(FileUtils.LF));
-            if (serverArray.length == 0) {
-                return this;
-            }
-            for (String serverData : serverArray) {
-                String[] dataInfo = StringUtils.tokenizeToStringArray(serverData, "|");
-                if (dataInfo.length >= 3) {
-                    String serverName = dataInfo[0], serverAddress = dataInfo[1];
-                    int serverPort = Integer.parseInt(dataInfo[2]);
-                    int serverLevel = dataInfo.length == 4 ? Integer.parseInt(dataInfo[3]) : Globals.DEFAULT_VALUE_INT;
-                    if (super.upsertServer(serverList,
-                            newInstance(serverName, serverAddress, serverPort, serverLevel))) {
-                        this.modified = Boolean.TRUE;
-                    }
-                }
-            }
-            this.schemaConfig.setServerList(serverList);
-            if (!ObjectUtils.nullSafeEquals(this.schemaConfig.isServerArray(), serverArray.length > 1)) {
-                this.schemaConfig.setServerArray(serverArray.length > 1);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Delete server level information</h3>
-         * <h3 class="zh-CN">删除服务器等级信息</h3>
-         *
-         * @param serverAddress <span class="en-US">Server address</span>
-         *                      <span class="zh-CN">服务器地址</span>
-         * @param serverPort    <span class="en-US">Server port number</span>
-         *                      <span class="zh-CN">服务器端口号</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public JdbcConfigBuilder removeServer(final String serverAddress, final int serverPort) {
-            List<ServerInfo> serverList = this.schemaConfig.getServerList();
-            if (serverList.removeIf(serverInfo -> serverInfo.match(serverAddress, serverPort))) {
-                this.schemaConfig.setServerList(serverList);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Set JDBC connection url</h3>
-         * <h3 class="zh-CN">设置JDBC连接字符串</h3>
-         *
-         * @param jdbcUrl <span class="en-US">JDBC connection url</span>
-         *                <span class="zh-CN">JDBC连接字符串</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public JdbcConfigBuilder jdbcUrl(final String jdbcUrl) {
-            if (StringUtils.notBlank(jdbcUrl) && !ObjectUtils.nullSafeEquals(this.schemaConfig.getJdbcUrl(), jdbcUrl)) {
-                this.schemaConfig.setJdbcUrl(jdbcUrl);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Set connection retry</h3>
-         * <h3 class="zh-CN">设置连接重试</h3>
-         *
-         * @param retryCount  <span class="en-US">Maximum number of connection retries</span>
-         *                    <span class="zh-CN">连接最大重试次数</span>
-         * @param retryPeriod <span class="en-US">Retry count if obtains connection has error</span>
-         *                    <span class="zh-CN">获取连接的重试次数</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public JdbcConfigBuilder retry(final int retryCount, final long retryPeriod) {
-            if (retryCount > 0 && this.schemaConfig.getRetryCount() != retryCount) {
-                this.schemaConfig.setRetryCount(retryCount);
-                this.modified = Boolean.TRUE;
-            }
-            if (retryPeriod > 0 && this.schemaConfig.getRetryPeriod() != retryPeriod) {
-                this.schemaConfig.setRetryPeriod(retryPeriod);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Set the maximum size of the prepared statement</h3>
-         * <h3 class="zh-CN">设置查询分析器的最大缓存结果</h3>
-         *
-         * @param cachedLimitSize <span class="en-US">Maximum size of prepared statement</span>
-         *                        <span class="zh-CN">查询分析器的最大缓存结果</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public JdbcConfigBuilder cacheSize(final int cachedLimitSize) {
-            if (cachedLimitSize > 0 && this.schemaConfig.getCachedLimitSize() != cachedLimitSize) {
-                this.schemaConfig.setCachedLimitSize(cachedLimitSize);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Set connection test</h3>
-         * <h3 class="zh-CN">设置连接检查</h3>
-         *
-         * @param testOnBorrow <span class="en-US">Check connection validate when obtains database connection</span>
-         *                     <span class="zh-CN">在获取连接时检查连接是否有效</span>
-         * @param testOnReturn <span class="en-US">Check connection validate when return database connection</span>
-         *                     <span class="zh-CN">在归还连接时检查连接是否有效</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public JdbcConfigBuilder testConnection(final boolean testOnBorrow, final boolean testOnReturn) {
-            if (!ObjectUtils.nullSafeEquals(this.schemaConfig.isTestOnBorrow(), testOnBorrow)) {
-                this.schemaConfig.setTestOnBorrow(testOnBorrow);
-                this.modified = Boolean.TRUE;
-            }
-            if (!ObjectUtils.nullSafeEquals(this.schemaConfig.isTestOnReturn(), testOnReturn)) {
-                this.schemaConfig.setTestOnReturn(testOnReturn);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Set sharding configure information</h3>
-         * <h3 class="zh-CN">设置分片配置信息</h3>
-         *
-         * @param sharding        <span class="en-US">Data source support sharding</span>
-         *                        <span class="zh-CN">数据源是否支持分片</span>
-         * @param shardingDefault <span class="en-US">Default database sharding value</span>
-         *                        <span class="zh-CN">默认数据库分片值</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public JdbcConfigBuilder sharding(final boolean sharding, final String shardingDefault) {
-            if (sharding && this.schemaConfig.getJdbcUrl().contains("{catalog}")) {
-                if (!this.schemaConfig.isSharding()) {
-                    this.schemaConfig.setSharding(sharding);
-                    this.modified = Boolean.TRUE;
-                }
-                if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getShardingDefault(), shardingDefault)) {
-                    this.schemaConfig.setShardingDefault(shardingDefault);
-                    this.modified = Boolean.TRUE;
-                }
-            } else {
-                if (this.schemaConfig.isSharding()) {
-                    this.schemaConfig.setSharding(Boolean.FALSE);
-                    this.modified = Boolean.TRUE;
-                }
-                if (StringUtils.notBlank(this.schemaConfig.getShardingDefault())) {
-                    this.schemaConfig.setShardingDefault(Globals.DEFAULT_VALUE_STRING);
-                    this.modified = Boolean.TRUE;
-                }
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Set the parameter value of create databases</h3>
-         * <h3 class="zh-CN">设置创建数据库时使用的参数信息</h3>
-         *
-         * @param databaseParameters <span class="en-US">Parameter value of create databases</span>
-         *                           <span class="zh-CN">创建数据库时使用的参数信息</span>
-         */
-        public JdbcConfigBuilder databaseParameters(final String databaseParameters) {
-            if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getDatabaseParameters(), databaseParameters)) {
-                this.schemaConfig.setDatabaseParameters(databaseParameters);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        @Override
-        public void confirm(final Object object) {
-            if (object instanceof Authentication) {
-                super.confirm(object);
-            }
-            if (object instanceof ServerInfo) {
-                List<ServerInfo> serverList = this.schemaConfig.getServerList();
-                if (super.upsertServer(serverList, (ServerInfo) object)) {
-                    this.schemaConfig.setServerList(serverList);
-                    this.modified = Boolean.TRUE;
-                }
-            }
-        }
-    }
-
-    /**
-     * <h2 class="en-US">Implementation class of Remote data schema configure information builder</h2>
-     * <h2 class="zh-CN">远程数据源配置信息构建器实现类</h2>
-     *
-     * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
-     * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
-     */
-    public static final class RemoteConfigBuilder extends SchemaConfigBuilder<RemoteSchemaConfig> {
-
-        /**
-         * <h3 class="en-US">Constructor method for implementation class of Remote data schema configure information builder</h3>
-         * <h3 class="zh-CN">远程数据源配置信息构建器实现类的构造函数</h3>
-         *
-         * @param parentBuilder <span class="en-US">Parent builder instance object</span>
-         *                      <span class="zh-CN">父构建器实例对象</span>
-         * @param schemaConfig  <span class="en-US">Configure information instance object</span>
-         *                      <span class="zh-CN">配置信息实例对象</span>
-         */
-        RemoteConfigBuilder(final BrainConfigureBuilder parentBuilder, final RemoteSchemaConfig schemaConfig) {
-            super(parentBuilder, schemaConfig);
-        }
-
-        /**
-         * <h3 class="en-US">Set the trust store information</h3>
-         * <h3 class="zh-CN">设置信任证书库信息</h3>
-         *
-         * @param storePath     <span class="en-US">Trust certificate store path</span>
-         *                      <span class="zh-CN">信任证书库地址</span>
-         * @param storePassword <span class="en-US">Trust certificate store password</span>
-         *                      <span class="zh-CN">信任证书库密码</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public RemoteConfigBuilder trustStore(final String storePath, final String storePassword) {
-            return super.trustStore(storePath, storePassword, RemoteConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Set slow query-critical time</h3>
-         * <h3 class="zh-CN">设置慢查询临界时间</h3>
-         *
-         * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
-         *                        <span class="zh-CN">慢查询的临界时间（单位：毫秒）</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public RemoteConfigBuilder lowQuery(final long lowQueryTimeout) {
-            return super.lowQuery(lowQueryTimeout, RemoteConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Set value of timeout</h3>
-         * <h3 class="zh-CN">设置超时时间</h3>
-         *
-         * @param validateTimeout <span class="en-US">Timeout value of connection validate (Unit: seconds)</span>
-         *                        <span class="zh-CN">连接检查超时时间（单位：秒）</span>
-         * @param connectTimeout  <span class="en-US">Timeout value of create connection (Unit: seconds)</span>
-         *                        <span class="zh-CN">建立连接超时时间（单位：秒）</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public RemoteConfigBuilder timeout(final int validateTimeout, final int connectTimeout) {
-            return super.timeout(validateTimeout, connectTimeout, RemoteConfigBuilder.class);
-        }
-
-        /**
-         * <h3 class="en-US">Set remote type</h3>
-         * <h3 class="zh-CN">设置远程类型</h3>
-         *
-         * @param remoteType <span class="en-US">Remote type</span>
-         *                   <span class="zh-CN">远程类型</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public RemoteConfigBuilder type(final RemoteType remoteType) {
-            if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getRemoteType(), remoteType)) {
-                this.schemaConfig.setRemoteType(remoteType);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Set remote address</h3>
-         * <h3 class="zh-CN">设置远端地址</h3>
-         *
-         * @param remoteAddress <span class="en-US">Remote address</span>
-         *                      <span class="zh-CN">远端地址</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public RemoteConfigBuilder address(final String remoteAddress) {
-            if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getRemoteAddress(), remoteAddress)) {
-                this.schemaConfig.setRemoteAddress(remoteAddress);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Set keep-alive timeout</h3>
-         * <h3 class="zh-CN">设置长连接超时时间</h3>
-         *
-         * @param keepAlive <span class="en-US">Keep-alive timeout (Unit: seconds)</span>
-         *                  <span class="zh-CN">长连接超时时间（单位：秒）</span>
-         * @return <span class="en-US">Current builder instance object</span>
-         * <span class="zh-CN">当前构建器实例对象</span>
-         */
-        public RemoteConfigBuilder keepAlive(final int keepAlive) {
-            if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getKeepAlive(), keepAlive)) {
-                this.schemaConfig.setKeepAlive(keepAlive);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        /**
-         * <h3 class="en-US">Using current proxy configure information to create ProxyConfigBuilder instance</h3>
-         * <h3 class="zh-CN">使用当前的代理服务器配置信息生成代理服务器配置构建器实例对象</h3>
-         *
-         * @return <span class="en-US">ProxyConfigBuilder instance</span>
-         * <span class="zh-CN">代理服务器配置构建器实例对象</span>
-         */
-        public ProxyConfigBuilder proxyConfig() {
-            return new ProxyConfigBuilder(this,
-                    Optional.ofNullable(this.schemaConfig.getProxyConfig()).orElse(new ProxyConfig()));
-        }
-
-        /**
-         * <h3 class="en-US">Delete current proxy configure information</h3>
-         * <h3 class="zh-CN">删除代理服务器配置信息</h3>
-         *
-         * @return <span class="en-US">Current builder instance</span>
-         * <span class="zh-CN">当前构造器实例对象</span>
-         */
-        public RemoteConfigBuilder removeProxyConfig() {
-            if (this.schemaConfig.getProxyConfig() != null) {
-                this.schemaConfig.setProxyConfig(null);
-                this.modified = Boolean.TRUE;
-            }
-            return this;
-        }
-
-        @Override
-        public void confirm(final Object object) {
-            if (object instanceof ProxyConfig) {
-                if (this.schemaConfig.getProxyConfig() == null
-                        || this.schemaConfig.getProxyConfig().getLastModified() != ((ProxyConfig) object).getLastModified()) {
-                    this.schemaConfig.setProxyConfig((ProxyConfig) object);
-                    this.modified = Boolean.TRUE;
-                }
-            } else {
-                super.confirm(object);
-            }
-        }
-    }
+public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends AbstractBuilder<BrainConfigureBuilder<?>, T> {
+
+	/**
+	 * <span class="en-US">Configure information instance object</span>
+	 * <span class="zh-CN">配置信息实例对象</span>
+	 */
+	protected final T schemaConfig;
+	/**
+	 * <span class="en-US">Configure information modified flag</span>
+	 * <span class="zh-CN">配置信息修改标记</span>
+	 */
+	protected boolean modified = Boolean.FALSE;
+
+	/**
+	 * <h3 class="en-US">Constructor method for abstract class of data schema configure information builder</h3>
+	 * <h3 class="zh-CN">数据源配置信息构建器抽象类的构造方法</h3>
+	 *
+	 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
+	 *                      <span class="zh-CN">父构建器实例对象</span>
+	 * @param schemaConfig  <span class="en-US">Configure information instance object</span>
+	 *                      <span class="zh-CN">配置信息实例对象</span>
+	 */
+	protected SchemaConfigBuilder(final BrainConfigureBuilder parentBuilder, final T schemaConfig) {
+		super(parentBuilder);
+		this.schemaConfig = schemaConfig;
+	}
+
+	@Override
+	public void confirm(final Object object) {
+		if (object instanceof Authentication) {
+			Authentication authentication = this.schemaConfig.getAuthentication();
+			if (authentication == null
+					|| !ObjectUtils.nullSafeEquals(authentication.getAuthType(), ((Authentication) object).getAuthType())
+					|| authentication.getLastModified() != ((Authentication) object).getLastModified()) {
+				this.schemaConfig.setAuthentication((Authentication) object);
+				this.modified = Boolean.TRUE;
+			}
+		} else if (object instanceof TrustStore) {
+			TrustStore trustStore = (TrustStore) object;
+			TrustStore current = this.schemaConfig.getTrustStore();
+			if (current == null) {
+				this.schemaConfig.setTrustStore(trustStore);
+				this.modified = Boolean.TRUE;
+			} else {
+				if (!ObjectUtils.nullSafeEquals(current.getStorePath(), trustStore.getStorePath())
+						|| !ObjectUtils.nullSafeEquals(current.getStorePassword(), trustStore.getStorePassword())) {
+					this.schemaConfig.setTrustStore(trustStore);
+					this.modified = Boolean.TRUE;
+				}
+			}
+		} else if (object instanceof ServerInfo) {
+			ServerInfo serverInfo = (ServerInfo) object;
+			List<ServerInfo> serverList = this.schemaConfig.getServerList();
+			AtomicBoolean modified = new AtomicBoolean(Boolean.FALSE);
+			if (serverList.stream().noneMatch(existServer ->
+					existServer.match(serverInfo.getServerAddress(), serverInfo.getServerPort()))) {
+				serverList.add(serverInfo);
+				modified.set(Boolean.TRUE);
+			} else {
+				serverList.replaceAll(existServer -> {
+					if (existServer.match(serverInfo.getServerAddress(), serverInfo.getServerPort())) {
+						if (existServer.getLastModified() != serverInfo.getLastModified()) {
+							modified.set(Boolean.TRUE);
+						}
+						return serverInfo;
+					}
+					return existServer;
+				});
+			}
+			if (modified.get()) {
+				this.schemaConfig.setServerList(serverList);
+				this.modified = Boolean.TRUE;
+			}
+		}
+	}
+
+	@Override
+	public final T build() {
+		if (this.modified) {
+			this.schemaConfig.setLastModified(DateTimeUtils.currentUTCTimeMillis());
+		}
+		return this.schemaConfig;
+	}
+
+	/**
+	 * <h3 class="en-US">Set the dialect name used</h3>
+	 * <h3 class="zh-CN">设置使用的方言名称</h3>
+	 *
+	 * @param dialectName  <span class="en-US">Data source dialect name</span>
+	 *                     <span class="zh-CN">数据源方言名称</span>
+	 * @param builderClass <span class="en-US">Returned object type</span>
+	 *                     <span class="zh-CN">返回的对象类型</span>
+	 * @param <B>          <span class="en-US">Generic class that returns the object type</span>
+	 *                     <span class="zh-CN">返回对象类型的泛型类</span>
+	 * @return <span class="en-US">Instance object of specified return type</span>
+	 * <span class="zh-CN">指定返回类型的实例对象</span>
+	 */
+	protected final <B> B dialect(final String dialectName, final Class<B> builderClass) {
+		if (StringUtils.isEmpty(dialectName)
+				|| ObjectUtils.nullSafeEquals(this.schemaConfig.getDialectName(), dialectName)) {
+			return builderClass.cast(this);
+		}
+		this.schemaConfig.setDialectName(dialectName);
+		this.modified = Boolean.TRUE;
+		return builderClass.cast(this);
+	}
+
+	/**
+	 * <h3 class="en-US">Set slow query-critical time</h3>
+	 * <h3 class="zh-CN">设置慢查询临界时间</h3>
+	 *
+	 * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
+	 *                        <span class="zh-CN">慢查询的临界时间（单位：毫秒）</span>
+	 * @param builderClass    <span class="en-US">Returned object type</span>
+	 *                        <span class="zh-CN">返回的对象类型</span>
+	 * @param <B>             <span class="en-US">Generic class that returns the object type</span>
+	 *                        <span class="zh-CN">返回对象类型的泛型类</span>
+	 * @return <span class="en-US">Instance object of specified return type</span>
+	 * <span class="zh-CN">指定返回类型的实例对象</span>
+	 */
+	protected final <B> B lowQuery(final long lowQueryTimeout, final Class<B> builderClass) {
+		if (lowQueryTimeout > 0 && this.schemaConfig.getLowQueryTimeout() != lowQueryTimeout) {
+			this.schemaConfig.setLowQueryTimeout(lowQueryTimeout);
+			this.modified = Boolean.TRUE;
+		}
+		return builderClass.cast(this);
+	}
+
+	/**
+	 * <h3 class="en-US">Set value of timeout</h3>
+	 * <h3 class="zh-CN">设置超时时间</h3>
+	 *
+	 * @param validateTimeout <span class="en-US">Timeout value of connection validate (Unit: seconds)</span>
+	 *                        <span class="zh-CN">连接检查超时时间（单位：秒）</span>
+	 * @param connectTimeout  <span class="en-US">Timeout value of create connection (Unit: seconds)</span>
+	 *                        <span class="zh-CN">建立连接超时时间（单位：秒）</span>
+	 * @param builderClass    <span class="en-US">Returned object type</span>
+	 *                        <span class="zh-CN">返回的对象类型</span>
+	 * @param <B>             <span class="en-US">Generic class that returns the object type</span>
+	 *                        <span class="zh-CN">返回对象类型的泛型类</span>
+	 * @return <span class="en-US">Instance object of specified return type</span>
+	 * <span class="zh-CN">指定返回类型的实例对象</span>
+	 */
+	protected final <B> B timeout(final int validateTimeout, final int connectTimeout, final Class<B> builderClass) {
+		if (validateTimeout > 0 && this.schemaConfig.getValidateTimeout() != validateTimeout) {
+			this.schemaConfig.setValidateTimeout(validateTimeout);
+			this.modified = Boolean.TRUE;
+		}
+		if (connectTimeout > 0 && this.schemaConfig.getConnectTimeout() != connectTimeout) {
+			this.schemaConfig.setConnectTimeout(connectTimeout);
+			this.modified = Boolean.TRUE;
+		}
+		return builderClass.cast(this);
+	}
+
+	/**
+	 * <h3 class="en-US">Set connection pool configure information</h3>
+	 * <h3 class="zh-CN">设置连接池配置信息</h3>
+	 *
+	 * @param pooled         <span class="en-US">Data source allows connection pooling</span>
+	 *                       <span class="zh-CN">数据源允许连接池</span>
+	 * @param minConnections <span class="en-US">Minimum number of connections in the connection pool</span>
+	 *                       <span class="zh-CN">连接池的最小连接数</span>
+	 * @param maxConnections <span class="en-US">Maximum number of connections in the connection pool</span>
+	 *                       <span class="zh-CN">连接池的最大连接数</span>
+	 * @param builderClass   <span class="en-US">Returned object type</span>
+	 *                       <span class="zh-CN">返回的对象类型</span>
+	 * @param <B>            <span class="en-US">Generic class that returns the object type</span>
+	 *                       <span class="zh-CN">返回对象类型的泛型类</span>
+	 * @return <span class="en-US">Instance object of specified return type</span>
+	 * <span class="zh-CN">指定返回类型的实例对象</span>
+	 */
+	protected final <B> B connectionPool(final boolean pooled, final int minConnections, final int maxConnections,
+	                                     final Class<B> builderClass) {
+		this.schemaConfig.setPooled(pooled);
+		if (pooled) {
+			this.schemaConfig.setMinConnections(minConnections);
+			this.schemaConfig.setMaxConnections(maxConnections);
+		} else {
+			this.schemaConfig.setMinConnections(Globals.DEFAULT_VALUE_INT);
+			this.schemaConfig.setMaxConnections(Globals.DEFAULT_VALUE_INT);
+		}
+		return builderClass.cast(this);
+	}
+
+	/**
+	 * <h2 class="en-US">Implementation class of trust store configure information builder</h2>
+	 * <h2 class="zh-CN">信任证书库配置信息构建器实现类</h2>
+	 *
+	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
+	 * @version $Revision: 1.0.0 $ $Date: Jun 23, 2025 15:56:28 $
+	 */
+	public static final class TrustStoreBuilder<T extends ParentBuilder> extends AbstractBuilder<T, TrustStore> {
+
+		/**
+		 * <span class="en-US">Trust store configure information</span>
+		 * <span class="zh-CN">信任证书库配置信息</span>
+		 */
+		private final TrustStore trustStore;
+
+		/**
+		 * <h3 class="en-US">Constructor method for the implementation class of trust store configure information builder</h3>
+		 * <h3 class="zh-CN">信任证书库配置信息构建器实现类的构造方法</h3>
+		 *
+		 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
+		 *                      <span class="zh-CN">父构建器实例对象</span>
+		 * @param trustStore    <span class="en-US">Trust store configure information</span>
+		 *                      <span class="zh-CN">信任证书库配置信息</span>
+		 */
+		TrustStoreBuilder(final T parentBuilder, @Nonnull final TrustStore trustStore) {
+			super(parentBuilder);
+			this.trustStore = trustStore;
+		}
+
+		/**
+		 * <h3 class="en-US">Set the trust store information</h3>
+		 * <h3 class="zh-CN">设置信任证书库信息</h3>
+		 *
+		 * @param storePath     <span class="en-US">Trust certificate store path</span>
+		 *                      <span class="zh-CN">信任证书库地址</span>
+		 * @param storePassword <span class="en-US">Trust certificate store password</span>
+		 *                      <span class="zh-CN">信任证书库密码</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public TrustStoreBuilder<T> config(final String storePath, final String storePassword) {
+			if (!ObjectUtils.nullSafeEquals(this.trustStore.getStorePath(), storePath)) {
+				this.trustStore.setStorePath(storePath);
+			}
+			if (!ObjectUtils.nullSafeEquals(this.trustStore.getStorePassword(), storePassword)) {
+				this.trustStore.setStorePassword(storePassword);
+			}
+			return this;
+		}
+
+		@Override
+		public TrustStore build() throws BuilderException {
+			return this.trustStore;
+		}
+	}
+
+	/**
+	 * <h2 class="en-US">Implementation class of database server configure information builder</h2>
+	 * <h2 class="zh-CN">数据库服务器配置信息构建器实现类</h2>
+	 *
+	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
+	 * @version $Revision: 1.0.0 $ $Date: Jun 23, 2025 15:56:28 $
+	 */
+	public static final class ServerInfoBuilder<T extends ParentBuilder> extends AbstractBuilder<T, ServerInfo> {
+
+		/**
+		 * <h2 class="en-US">Server information</h2>
+		 * <h2 class="zh-CN">服务器信息</h2>
+		 */
+		private final ServerInfo serverInfo;
+		/**
+		 * <h2 class="en-US">Configure information modified flag</h2>
+		 * <h2 class="zh-CN">配置信息修改标记</h2>
+		 */
+		private boolean modified = Boolean.FALSE;
+
+		/**
+		 * <h3 class="en-US">Constructor method for implementation class of database server configure information builder</h3>
+		 * <h3 class="zh-CN">数据库服务器配置信息构建器实现类的构造函数</h3>
+		 *
+		 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
+		 *                      <span class="zh-CN">父构建器实例对象</span>
+		 * @param serverInfo    <h2 class="en-US">Server information</h2>
+		 *                      <h2 class="zh-CN">服务器信息</h2>
+		 */
+		ServerInfoBuilder(@Nonnull final T parentBuilder, @Nonnull final ServerInfo serverInfo) {
+			super(parentBuilder);
+			this.serverInfo = serverInfo;
+		}
+
+		/**
+		 * <h3 class="en-US">Generate basic identity authentication information builder instance object based on existing identity authentication information</h3>
+		 * <h3 class="zh-CN">根据现有的身份认证信息生成基本身份认证信息构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">Builder implementation class of basic authentication information instance object</span>
+		 * <span class="zh-CN">基本身份认证信息构建器实例对象</span>
+		 */
+		public AuthenticationBuilder.UserAuthenticationBuilder<ServerInfoBuilder<T>> userAuthenticationBuilder() {
+			return new AuthenticationBuilder.UserAuthenticationBuilder<>(this,
+					Optional.ofNullable(this.serverInfo.getAuthentication())
+							.filter(authentication -> authentication instanceof UserAuthentication)
+							.map(authentication -> (UserAuthentication) authentication)
+							.orElse(new UserAuthentication()));
+		}
+
+		/**
+		 * <h3 class="en-US">Generate a builder instance object that uses the trust store authentication information
+		 * in the certificate store based on the existing authentication information.</h3>
+		 * <h3 class="zh-CN">根据现有的身份认证信息生成使用证书库中X.509证书认证信息的构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate in the certificate store</span>
+		 * <span class="zh-CN">使用证书库中X.509证书的认证信息的构建器</span>
+		 */
+		public AuthenticationBuilder.TrustStoreAuthenticationBuilder<ServerInfoBuilder<T>> trustStoreAuthentication() {
+			return new AuthenticationBuilder.TrustStoreAuthenticationBuilder<>(this,
+					Optional.ofNullable(this.serverInfo.getAuthentication())
+							.filter(authentication -> authentication instanceof TrustStoreAuthentication)
+							.map(authentication -> (TrustStoreAuthentication) authentication)
+							.orElse(new TrustStoreAuthentication()));
+		}
+
+		/**
+		 * <h3 class="en-US">Generate a builder instance object that uses the X.509 certificate authentication information.</h3>
+		 * <h3 class="zh-CN">根据现有的身份认证信息生成X.509证书认证信息的构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate</span>
+		 * <span class="zh-CN">使用X.509证书的认证信息的构建器</span>
+		 */
+		public AuthenticationBuilder.X509AuthenticationBuilder<ServerInfoBuilder<T>> x509Authentication() {
+			return new AuthenticationBuilder.X509AuthenticationBuilder<>(this,
+					Optional.ofNullable(this.serverInfo.getAuthentication())
+							.filter(authentication -> authentication instanceof X509Authentication)
+							.map(authentication -> (X509Authentication) authentication)
+							.orElse(new X509Authentication()));
+		}
+
+		/**
+		 * <h3 class="en-US">Set the trust store information</h3>
+		 * <h3 class="zh-CN">设置信任证书库信息</h3>
+		 *
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public TrustStoreBuilder<ServerInfoBuilder<T>> trustStore() {
+			return new TrustStoreBuilder<>(this,
+					(this.serverInfo.getTrustStore() == null) ? new TrustStore() : this.serverInfo.getTrustStore());
+		}
+
+		/**
+		 * <h3 class="en-US">Update server name</h3>
+		 * <h3 class="zh-CN">修改服务器名称</h3>
+		 *
+		 * @param serverName <span class="en-US">Server name</span>
+		 *                   <span class="zh-CN">服务器名称</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public ServerInfoBuilder<T> name(final String serverName) {
+			if (ObjectUtils.nullSafeEquals(this.serverInfo.getServerName(), serverName)) {
+				this.serverInfo.setServerName(serverName);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Update server level information</h3>
+		 * <h3 class="zh-CN">修改服务器等级信息</h3>
+		 *
+		 * @param serverLevel <span class="en-US">Server level</span>
+		 *                    <span class="zh-CN">服务器等级</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public ServerInfoBuilder<T> level(final int serverLevel) {
+			if (this.serverInfo.getServerLevel() != serverLevel) {
+				this.serverInfo.setServerLevel(serverLevel);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		@Override
+		public ServerInfo build() throws BuilderException {
+			if (this.modified) {
+				this.serverInfo.setLastModified(DateTimeUtils.currentUTCTimeMillis());
+			}
+			return this.serverInfo;
+		}
+
+		@Override
+		public void confirm(final Object object) throws BuilderException {
+			if (object instanceof Authentication) {
+				Authentication authentication = this.serverInfo.getAuthentication();
+				if (authentication == null
+						|| !ObjectUtils.nullSafeEquals(authentication.getAuthType(), ((Authentication) object).getAuthType())
+						|| authentication.getLastModified() != ((Authentication) object).getLastModified()) {
+					this.serverInfo.setAuthentication((Authentication) object);
+					this.modified = Boolean.TRUE;
+				}
+			} else if (object instanceof TrustStore) {
+				TrustStore trustStore = (TrustStore) object;
+				TrustStore existedTrustStore = this.serverInfo.getTrustStore();
+				if (existedTrustStore == null || !this.serverInfo.getTrustStore().equals(trustStore)) {
+					this.serverInfo.setTrustStore(trustStore);
+					this.modified = Boolean.TRUE;
+				}
+			}
+		}
+	}
+
+	/**
+	 * <h3 class="en-US">Generate database server configure information</h3>
+	 * <h3 class="zh-CN">生成数据库服务器配置信息</h3>
+	 *
+	 * @param serverAddress <span class="en-US">Server address</span>
+	 *                      <span class="zh-CN">服务器地址</span>
+	 * @param serverPort    <span class="en-US">Server port number</span>
+	 *                      <span class="zh-CN">服务器端口号</span>
+	 * @return <span class="en-US">Database server configure information</span>
+	 * <span class="zh-CN">数据库服务器配置信息</span>
+	 */
+	private static ServerInfo newInstance(final String serverAddress, final int serverPort) {
+		ServerInfo serverInfo = new ServerInfo();
+		serverInfo.setServerAddress(serverAddress);
+		serverInfo.setServerPort(serverPort);
+		return serverInfo;
+	}
+
+	/**
+	 * <h2 class="en-US">Implementation class of distribute data schema configure information builder</h2>
+	 * <h2 class="zh-CN">分布式数据源配置信息构建器实现类</h2>
+	 *
+	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
+	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
+	 */
+	public static final class DistributeConfigBuilder extends SchemaConfigBuilder<DistributeSchemaConfig> {
+
+		/**
+		 * <h3 class="en-US">Constructor method for implementation class of distribute data schema configure information builder</h3>
+		 * <h3 class="zh-CN">分布式数据源配置信息构建器实现类的构造方法</h3>
+		 *
+		 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
+		 *                      <span class="zh-CN">父构建器实例对象</span>
+		 * @param schemaConfig  <span class="en-US">Configure information instance object</span>
+		 *                      <span class="zh-CN">配置信息实例对象</span>
+		 */
+		DistributeConfigBuilder(final BrainConfigureBuilder parentBuilder,
+		                        final DistributeSchemaConfig schemaConfig) {
+			super(parentBuilder, schemaConfig);
+		}
+
+		/**
+		 * <h3 class="en-US">Set the dialect name used</h3>
+		 * <h3 class="zh-CN">设置使用的方言名称</h3>
+		 *
+		 * @param dialectName <span class="en-US">Data source dialect name</span>
+		 *                    <span class="zh-CN">数据源方言名称</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public DistributeConfigBuilder dialect(final String dialectName) {
+			return super.dialect(dialectName, DistributeConfigBuilder.class);
+		}
+
+		/**
+		 * <h3 class="en-US">Trust store configure information builder </h3>
+		 * <h3 class="zh-CN">信任证书库配置信息构建器</h3>
+		 *
+		 * @return <span class="en-US">Builder instance object</span>
+		 * <span class="zh-CN">构建器实例对象</span>
+		 */
+		public TrustStoreBuilder<DistributeConfigBuilder> trustStore() {
+			return new TrustStoreBuilder<>(this,
+					(this.schemaConfig.getTrustStore() == null) ? new TrustStore() : this.schemaConfig.getTrustStore());
+		}
+
+		/**
+		 * <h3 class="en-US">Set slow query-critical time</h3>
+		 * <h3 class="zh-CN">设置慢查询临界时间</h3>
+		 *
+		 * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
+		 *                        <span class="zh-CN">慢查询的临界时间（单位：毫秒）</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public DistributeConfigBuilder lowQuery(final long lowQueryTimeout) {
+			return super.lowQuery(lowQueryTimeout, DistributeConfigBuilder.class);
+		}
+
+		/**
+		 * <h3 class="en-US">Set request timeout</h3>
+		 * <h3 class="zh-CN">设置请求超时时间</h3>
+		 *
+		 * @param requestTimeout <span class="en-US">Request timeout value</span>
+		 *                       <span class="zh-CN">请求超时时间</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public DistributeConfigBuilder request(final int requestTimeout) {
+			if (requestTimeout > 0 && this.schemaConfig.getRequestTimeout() != requestTimeout) {
+				this.schemaConfig.setRequestTimeout(requestTimeout);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Set value of timeout</h3>
+		 * <h3 class="zh-CN">设置超时时间</h3>
+		 *
+		 * @param validateTimeout <span class="en-US">Timeout value of connection validate (Unit: seconds)</span>
+		 *                        <span class="zh-CN">连接检查超时时间（单位：秒）</span>
+		 * @param connectTimeout  <span class="en-US">Timeout value of create connection (Unit: seconds)</span>
+		 *                        <span class="zh-CN">建立连接超时时间（单位：秒）</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public DistributeConfigBuilder timeout(final int validateTimeout, final int connectTimeout) {
+			return super.timeout(validateTimeout, connectTimeout, DistributeConfigBuilder.class);
+		}
+
+		/**
+		 * <h3 class="en-US">Set connection pool configure information</h3>
+		 * <h3 class="zh-CN">设置连接池配置信息</h3>
+		 *
+		 * @param pooled         <span class="en-US">Data source allows connection pooling</span>
+		 *                       <span class="zh-CN">数据源允许连接池</span>
+		 * @param minConnections <span class="en-US">Minimum number of connections in the connection pool</span>
+		 *                       <span class="zh-CN">连接池的最小连接数</span>
+		 * @param maxConnections <span class="en-US">Maximum number of connections in the connection pool</span>
+		 *                       <span class="zh-CN">连接池的最大连接数</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public DistributeConfigBuilder connectionPool(final boolean pooled, final int minConnections,
+		                                              final int maxConnections) {
+			return super.connectionPool(pooled, minConnections, maxConnections, DistributeConfigBuilder.class);
+		}
+
+		/**
+		 * <h3 class="en-US">Database server configure information builder</h3>
+		 * <h3 class="zh-CN">数据库服务器配置信息构建器</h3>
+		 *
+		 * @param serverAddress <span class="en-US">Server address</span>
+		 *                      <span class="zh-CN">服务器地址</span>
+		 * @param serverPort    <span class="en-US">Server port number</span>
+		 *                      <span class="zh-CN">服务器端口号</span>
+		 * @return <span class="en-US">Database server configure information builder instance object</span>
+		 * <span class="zh-CN">数据库服务器配置信息构建器实例对象</span>
+		 */
+		public ServerInfoBuilder<DistributeConfigBuilder> serverBuilder(final String serverAddress, final int serverPort) {
+			ServerInfo serverInfo = this.schemaConfig.getServerList()
+					.stream()
+					.filter(server -> server.match(serverAddress, serverPort))
+					.findFirst()
+					.orElse(newInstance(serverAddress, serverPort));
+			return new ServerInfoBuilder<>(this, serverInfo);
+		}
+
+		/**
+		 * <h3 class="en-US">Delete server level information</h3>
+		 * <h3 class="zh-CN">删除服务器等级信息</h3>
+		 *
+		 * @param serverAddress <span class="en-US">Server address</span>
+		 *                      <span class="zh-CN">服务器地址</span>
+		 * @param serverPort    <span class="en-US">Server port number</span>
+		 *                      <span class="zh-CN">服务器端口号</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public DistributeConfigBuilder removeServer(final String serverAddress, final int serverPort) {
+			List<ServerInfo> serverList = this.schemaConfig.getServerList();
+			if (serverList.removeIf(serverInfo -> serverInfo.match(serverAddress, serverPort))) {
+				this.schemaConfig.setServerList(serverList);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Generate basic identity authentication information builder instance object based on existing identity authentication information</h3>
+		 * <h3 class="zh-CN">根据现有的身份认证信息生成基本身份认证信息构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">Builder implementation class of basic authentication information instance object</span>
+		 * <span class="zh-CN">基本身份认证信息构建器实例对象</span>
+		 */
+		public AuthenticationBuilder.UserAuthenticationBuilder<DistributeConfigBuilder> userAuthenticationBuilder() {
+			return new AuthenticationBuilder.UserAuthenticationBuilder<>(this,
+					Optional.ofNullable(this.schemaConfig.getAuthentication())
+							.filter(authentication -> authentication instanceof UserAuthentication)
+							.map(authentication -> (UserAuthentication) authentication)
+							.orElse(new UserAuthentication()));
+		}
+
+		/**
+		 * <h3 class="en-US">Generate a builder instance object that uses the trust store authentication information
+		 * in the certificate store based on the existing authentication information.</h3>
+		 * <h3 class="zh-CN">根据现有的身份认证信息生成使用证书库中X.509证书认证信息的构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate in the certificate store</span>
+		 * <span class="zh-CN">使用证书库中X.509证书的认证信息的构建器</span>
+		 */
+		public AuthenticationBuilder.TrustStoreAuthenticationBuilder<DistributeConfigBuilder> trustStoreAuthenticationBuilder() {
+			return new AuthenticationBuilder.TrustStoreAuthenticationBuilder<>(this,
+					Optional.ofNullable(this.schemaConfig.getAuthentication())
+							.filter(authentication -> authentication instanceof TrustStoreAuthentication)
+							.map(authentication -> (TrustStoreAuthentication) authentication)
+							.orElse(new TrustStoreAuthentication()));
+		}
+
+		/**
+		 * <h3 class="en-US">Generate a builder instance object that uses the X.509 certificate authentication information.</h3>
+		 * <h3 class="zh-CN">根据现有的身份认证信息生成X.509证书认证信息的构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate</span>
+		 * <span class="zh-CN">使用X.509证书的认证信息的构建器</span>
+		 */
+		public AuthenticationBuilder.X509AuthenticationBuilder<DistributeConfigBuilder> x509Authentication() {
+			return new AuthenticationBuilder.X509AuthenticationBuilder<>(this,
+					Optional.ofNullable(this.schemaConfig.getAuthentication())
+							.filter(authentication -> authentication instanceof X509Authentication)
+							.map(authentication -> (X509Authentication) authentication)
+							.orElse(new X509Authentication()));
+		}
+
+		/**
+		 * <h3 class="en-US">Set database name</h3>
+		 * <h3 class="zh-CN">设置数据库名称</h3>
+		 *
+		 * @param databaseName <span class="en-US">Database name</span>
+		 *                     <span class="zh-CN">数据库名称</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public DistributeConfigBuilder databaseName(final String databaseName) {
+			if (StringUtils.notBlank(databaseName)
+					&& !ObjectUtils.nullSafeEquals(this.schemaConfig.getDatabaseName(), databaseName)) {
+				this.schemaConfig.setDatabaseName(databaseName);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Set using SSL when connect to server</h3>
+		 * <h3 class="zh-CN">设置使用SSL连接</h3>
+		 *
+		 * @param useSsl <span class="en-US">Using SSL when connect to server</span>
+		 *               <span class="zh-CN">使用SSL连接</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public DistributeConfigBuilder useSsl(final boolean useSsl) {
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.isUseSsl(), useSsl)) {
+				this.schemaConfig.setUseSsl(useSsl);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Set the maximum size of the prepared statement</h3>
+		 * <h3 class="zh-CN">设置查询分析器的最大缓存结果</h3>
+		 *
+		 * @param cachedLimitSize <span class="en-US">Maximum size of prepared statement</span>
+		 *                        <span class="zh-CN">查询分析器的最大缓存结果</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public DistributeConfigBuilder cacheSize(final int cachedLimitSize) {
+			if (cachedLimitSize > 0 && this.schemaConfig.getCachedLimitSize() != cachedLimitSize) {
+				this.schemaConfig.setCachedLimitSize(cachedLimitSize);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+	}
+
+	/**
+	 * <h2 class="en-US">Implementation class of JDBC data schema configure information builder</h2>
+	 * <h2 class="zh-CN">JDBC数据源配置信息构建器实现类</h2>
+	 *
+	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
+	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
+	 */
+	public static final class JdbcConfigBuilder extends SchemaConfigBuilder<JdbcSchemaConfig> {
+
+		/**
+		 * <h3 class="en-US">Constructor method for implementation class of JDBC data schema configure information builder</h3>
+		 * <h3 class="zh-CN">JDBC数据源配置信息构建器实现类的构造函数</h3>
+		 *
+		 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
+		 *                      <span class="zh-CN">父构建器实例对象</span>
+		 * @param schemaConfig  <span class="en-US">Configure information instance object</span>
+		 *                      <span class="zh-CN">配置信息实例对象</span>
+		 */
+		JdbcConfigBuilder(final BrainConfigureBuilder parentBuilder, final JdbcSchemaConfig schemaConfig) {
+			super(parentBuilder, schemaConfig);
+		}
+
+		/**
+		 * <h3 class="en-US">Set the dialect name used</h3>
+		 * <h3 class="zh-CN">设置使用的方言名称</h3>
+		 *
+		 * @param dialectName <span class="en-US">Data source dialect name</span>
+		 *                    <span class="zh-CN">数据源方言名称</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public JdbcConfigBuilder dialect(final String dialectName) {
+			return super.dialect(dialectName, JdbcConfigBuilder.class);
+		}
+
+		/**
+		 * <h3 class="en-US">Trust store configure information builder </h3>
+		 * <h3 class="zh-CN">信任证书库配置信息构建器</h3>
+		 *
+		 * @return <span class="en-US">Builder instance object</span>
+		 * <span class="zh-CN">构建器实例对象</span>
+		 */
+		public TrustStoreBuilder<JdbcConfigBuilder> trustStore() {
+			return new TrustStoreBuilder<>(this,
+					(this.schemaConfig.getTrustStore() == null) ? new TrustStore() : this.schemaConfig.getTrustStore());
+		}
+
+		/**
+		 * <h3 class="en-US">Set slow query-critical time</h3>
+		 * <h3 class="zh-CN">设置慢查询临界时间</h3>
+		 *
+		 * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
+		 *                        <span class="zh-CN">慢查询的临界时间（单位：毫秒）</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public JdbcConfigBuilder lowQuery(final long lowQueryTimeout) {
+			return super.lowQuery(lowQueryTimeout, JdbcConfigBuilder.class);
+		}
+
+		/**
+		 * <h3 class="en-US">Set value of timeout</h3>
+		 * <h3 class="zh-CN">设置超时时间</h3>
+		 *
+		 * @param validateTimeout <span class="en-US">Timeout value of connection validate (Unit: seconds)</span>
+		 *                        <span class="zh-CN">连接检查超时时间（单位：秒）</span>
+		 * @param connectTimeout  <span class="en-US">Timeout value of create connection (Unit: seconds)</span>
+		 *                        <span class="zh-CN">建立连接超时时间（单位：秒）</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public JdbcConfigBuilder timeout(final int validateTimeout, final int connectTimeout) {
+			return super.timeout(validateTimeout, connectTimeout, JdbcConfigBuilder.class);
+		}
+
+		/**
+		 * <h3 class="en-US">Set connection pool configure information</h3>
+		 * <h3 class="zh-CN">设置连接池配置信息</h3>
+		 *
+		 * @param pooled         <span class="en-US">Data source allows connection pooling</span>
+		 *                       <span class="zh-CN">数据源允许连接池</span>
+		 * @param minConnections <span class="en-US">Minimum number of connections in the connection pool</span>
+		 *                       <span class="zh-CN">连接池的最小连接数</span>
+		 * @param maxConnections <span class="en-US">Maximum number of connections in the connection pool</span>
+		 *                       <span class="zh-CN">连接池的最大连接数</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public JdbcConfigBuilder connectionPool(final boolean pooled, final int minConnections,
+		                                        final int maxConnections) {
+			return super.connectionPool(pooled, minConnections, maxConnections, JdbcConfigBuilder.class);
+		}
+
+		/**
+		 * <h3 class="en-US">Database server configure information builder</h3>
+		 * <h3 class="zh-CN">数据库服务器配置信息构建器</h3>
+		 *
+		 * @param serverAddress <span class="en-US">Server address</span>
+		 *                      <span class="zh-CN">服务器地址</span>
+		 * @param serverPort    <span class="en-US">Server port number</span>
+		 *                      <span class="zh-CN">服务器端口号</span>
+		 * @return <span class="en-US">Database server configure information builder instance object</span>
+		 * <span class="zh-CN">数据库服务器配置信息构建器实例对象</span>
+		 */
+		public ServerInfoBuilder<JdbcConfigBuilder> serverBuilder(final String serverAddress, final int serverPort) {
+			ServerInfo serverInfo = this.schemaConfig.getServerList()
+					.stream()
+					.filter(server -> server.match(serverAddress, serverPort))
+					.findFirst()
+					.orElse(newInstance(serverAddress, serverPort));
+			return new ServerInfoBuilder<>(this, serverInfo);
+		}
+
+		/**
+		 * <h3 class="en-US">Delete server level information</h3>
+		 * <h3 class="zh-CN">删除服务器等级信息</h3>
+		 *
+		 * @param serverAddress <span class="en-US">Server address</span>
+		 *                      <span class="zh-CN">服务器地址</span>
+		 * @param serverPort    <span class="en-US">Server port number</span>
+		 *                      <span class="zh-CN">服务器端口号</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public JdbcConfigBuilder removeServer(final String serverAddress, final int serverPort) {
+			List<ServerInfo> serverList = this.schemaConfig.getServerList();
+			if (serverList.removeIf(serverInfo -> serverInfo.match(serverAddress, serverPort))) {
+				this.schemaConfig.setServerList(serverList);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Generate basic identity authentication information builder instance object based on existing identity authentication information</h3>
+		 * <h3 class="zh-CN">根据现有的身份认证信息生成基本身份认证信息构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">Builder implementation class of basic authentication information instance object</span>
+		 * <span class="zh-CN">基本身份认证信息构建器实例对象</span>
+		 */
+		public AuthenticationBuilder.UserAuthenticationBuilder<JdbcConfigBuilder> userAuthentication() {
+			return new AuthenticationBuilder.UserAuthenticationBuilder<>(this,
+					Optional.ofNullable(this.schemaConfig.getAuthentication())
+							.filter(authentication -> authentication instanceof UserAuthentication)
+							.map(authentication -> (UserAuthentication) authentication)
+							.orElse(new UserAuthentication()));
+		}
+
+		/**
+		 * <h3 class="en-US">Generate a builder instance object that uses the trust store authentication information
+		 * in the certificate store based on the existing authentication information.</h3>
+		 * <h3 class="zh-CN">根据现有的身份认证信息生成使用证书库中X.509证书认证信息的构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate in the certificate store</span>
+		 * <span class="zh-CN">使用证书库中X.509证书的认证信息的构建器</span>
+		 */
+		public AuthenticationBuilder.TrustStoreAuthenticationBuilder<JdbcConfigBuilder> trustStoreAuthentication() {
+			return new AuthenticationBuilder.TrustStoreAuthenticationBuilder<>(this,
+					Optional.ofNullable(this.schemaConfig.getAuthentication())
+							.filter(authentication -> authentication instanceof TrustStoreAuthentication)
+							.map(authentication -> (TrustStoreAuthentication) authentication)
+							.orElse(new TrustStoreAuthentication()));
+		}
+
+		/**
+		 * <h3 class="en-US">Generate a builder instance object that uses the X.509 certificate authentication information.</h3>
+		 * <h3 class="zh-CN">根据现有的身份认证信息生成X.509证书认证信息的构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate</span>
+		 * <span class="zh-CN">使用X.509证书的认证信息的构建器</span>
+		 */
+		public AuthenticationBuilder.X509AuthenticationBuilder<JdbcConfigBuilder> x509Authentication() {
+			return new AuthenticationBuilder.X509AuthenticationBuilder<>(this,
+					Optional.ofNullable(this.schemaConfig.getAuthentication())
+							.filter(authentication -> authentication instanceof X509Authentication)
+							.map(authentication -> (X509Authentication) authentication)
+							.orElse(new X509Authentication()));
+		}
+
+		/**
+		 * <h3 class="en-US">Set JDBC connection url</h3>
+		 * <h3 class="zh-CN">设置JDBC连接字符串</h3>
+		 *
+		 * @param jdbcUrl <span class="en-US">JDBC connection url</span>
+		 *                <span class="zh-CN">JDBC连接字符串</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public JdbcConfigBuilder jdbcUrl(final String jdbcUrl) {
+			if (StringUtils.notBlank(jdbcUrl) && !ObjectUtils.nullSafeEquals(this.schemaConfig.getJdbcUrl(), jdbcUrl)) {
+				this.schemaConfig.setJdbcUrl(jdbcUrl);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Set connection retry</h3>
+		 * <h3 class="zh-CN">设置连接重试</h3>
+		 *
+		 * @param retryCount  <span class="en-US">Maximum number of connection retries</span>
+		 *                    <span class="zh-CN">连接最大重试次数</span>
+		 * @param retryPeriod <span class="en-US">Retry count if obtains connection has error</span>
+		 *                    <span class="zh-CN">获取连接的重试次数</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public JdbcConfigBuilder retry(final int retryCount, final long retryPeriod) {
+			if (retryCount > 0 && this.schemaConfig.getRetryCount() != retryCount) {
+				this.schemaConfig.setRetryCount(retryCount);
+				this.modified = Boolean.TRUE;
+			}
+			if (retryPeriod > 0 && this.schemaConfig.getRetryPeriod() != retryPeriod) {
+				this.schemaConfig.setRetryPeriod(retryPeriod);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Set the maximum size of the prepared statement</h3>
+		 * <h3 class="zh-CN">设置查询分析器的最大缓存结果</h3>
+		 *
+		 * @param cachedLimitSize <span class="en-US">Maximum size of prepared statement</span>
+		 *                        <span class="zh-CN">查询分析器的最大缓存结果</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public JdbcConfigBuilder cacheSize(final int cachedLimitSize) {
+			if (cachedLimitSize > 0 && this.schemaConfig.getCachedLimitSize() != cachedLimitSize) {
+				this.schemaConfig.setCachedLimitSize(cachedLimitSize);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Set connection test</h3>
+		 * <h3 class="zh-CN">设置连接检查</h3>
+		 *
+		 * @param testOnBorrow <span class="en-US">Check connection validate when obtains database connection</span>
+		 *                     <span class="zh-CN">在获取连接时检查连接是否有效</span>
+		 * @param testOnReturn <span class="en-US">Check connection validate when return database connection</span>
+		 *                     <span class="zh-CN">在归还连接时检查连接是否有效</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public JdbcConfigBuilder testConnection(final boolean testOnBorrow, final boolean testOnReturn) {
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.isTestOnBorrow(), testOnBorrow)) {
+				this.schemaConfig.setTestOnBorrow(testOnBorrow);
+				this.modified = Boolean.TRUE;
+			}
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.isTestOnReturn(), testOnReturn)) {
+				this.schemaConfig.setTestOnReturn(testOnReturn);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Set sharding configure information</h3>
+		 * <h3 class="zh-CN">设置分片配置信息</h3>
+		 *
+		 * @param sharding        <span class="en-US">Data source support sharding</span>
+		 *                        <span class="zh-CN">数据源是否支持分片</span>
+		 * @param shardingDefault <span class="en-US">Default database sharding value</span>
+		 *                        <span class="zh-CN">默认数据库分片值</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public JdbcConfigBuilder sharding(final boolean sharding, final String shardingDefault) {
+			if (sharding && this.schemaConfig.getJdbcUrl().contains("{catalog}")) {
+				if (!this.schemaConfig.isSharding()) {
+					this.schemaConfig.setSharding(Boolean.TRUE);
+					this.modified = Boolean.TRUE;
+				}
+				if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getShardingDefault(), shardingDefault)) {
+					this.schemaConfig.setShardingDefault(shardingDefault);
+					this.modified = Boolean.TRUE;
+				}
+			} else {
+				if (this.schemaConfig.isSharding()) {
+					this.schemaConfig.setSharding(Boolean.FALSE);
+					this.modified = Boolean.TRUE;
+				}
+				if (StringUtils.notBlank(this.schemaConfig.getShardingDefault())) {
+					this.schemaConfig.setShardingDefault(Globals.DEFAULT_VALUE_STRING);
+					this.modified = Boolean.TRUE;
+				}
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Set the parameter value of create databases</h3>
+		 * <h3 class="zh-CN">设置创建数据库时使用的参数信息</h3>
+		 *
+		 * @param databaseParameters <span class="en-US">Parameter value of create databases</span>
+		 *                           <span class="zh-CN">创建数据库时使用的参数信息</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public JdbcConfigBuilder databaseParameters(final String databaseParameters) {
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getDatabaseParameters(), databaseParameters)) {
+				this.schemaConfig.setDatabaseParameters(databaseParameters);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+	}
+
+	/**
+	 * <h2 class="en-US">Implementation class of Remote data schema configure information builder</h2>
+	 * <h2 class="zh-CN">远程数据源配置信息构建器实现类</h2>
+	 *
+	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
+	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
+	 */
+	public static final class RemoteConfigBuilder extends SchemaConfigBuilder<RemoteSchemaConfig> {
+
+		/**
+		 * <h3 class="en-US">Constructor method for implementation class of Remote data schema configure information builder</h3>
+		 * <h3 class="zh-CN">远程数据源配置信息构建器实现类的构造函数</h3>
+		 *
+		 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
+		 *                      <span class="zh-CN">父构建器实例对象</span>
+		 * @param schemaConfig  <span class="en-US">Configure information instance object</span>
+		 *                      <span class="zh-CN">配置信息实例对象</span>
+		 */
+		RemoteConfigBuilder(final BrainConfigureBuilder parentBuilder, final RemoteSchemaConfig schemaConfig) {
+			super(parentBuilder, schemaConfig);
+		}
+
+		/**
+		 * <h3 class="en-US">Trust store configure information builder </h3>
+		 * <h3 class="zh-CN">信任证书库配置信息构建器</h3>
+		 *
+		 * @return <span class="en-US">Builder instance object</span>
+		 * <span class="zh-CN">构建器实例对象</span>
+		 */
+		public TrustStoreBuilder<RemoteConfigBuilder> trustStore() {
+			return new TrustStoreBuilder<>(this,
+					(this.schemaConfig.getTrustStore() == null) ? new TrustStore() : this.schemaConfig.getTrustStore());
+		}
+
+		/**
+		 * <h3 class="en-US">Set slow query-critical time</h3>
+		 * <h3 class="zh-CN">设置慢查询临界时间</h3>
+		 *
+		 * @param lowQueryTimeout <span class="en-US">Low query timeout (Unit: milliseconds)</span>
+		 *                        <span class="zh-CN">慢查询的临界时间（单位：毫秒）</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public RemoteConfigBuilder lowQuery(final long lowQueryTimeout) {
+			return super.lowQuery(lowQueryTimeout, RemoteConfigBuilder.class);
+		}
+
+		/**
+		 * <h3 class="en-US">Set value of timeout</h3>
+		 * <h3 class="zh-CN">设置超时时间</h3>
+		 *
+		 * @param validateTimeout <span class="en-US">Timeout value of connection validate (Unit: seconds)</span>
+		 *                        <span class="zh-CN">连接检查超时时间（单位：秒）</span>
+		 * @param connectTimeout  <span class="en-US">Timeout value of create connection (Unit: seconds)</span>
+		 *                        <span class="zh-CN">建立连接超时时间（单位：秒）</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public RemoteConfigBuilder timeout(final int validateTimeout, final int connectTimeout) {
+			return super.timeout(validateTimeout, connectTimeout, RemoteConfigBuilder.class);
+		}
+
+		/**
+		 * <h3 class="en-US">Set remote type</h3>
+		 * <h3 class="zh-CN">设置远程类型</h3>
+		 *
+		 * @param remoteType <span class="en-US">Remote type</span>
+		 *                   <span class="zh-CN">远程类型</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public RemoteConfigBuilder type(final RemoteType remoteType) {
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getRemoteType(), remoteType)) {
+				this.schemaConfig.setRemoteType(remoteType);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Set remote address</h3>
+		 * <h3 class="zh-CN">设置远端地址</h3>
+		 *
+		 * @param remoteAddress <span class="en-US">Remote address</span>
+		 *                      <span class="zh-CN">远端地址</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public RemoteConfigBuilder address(final String remoteAddress) {
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getRemoteAddress(), remoteAddress)) {
+				this.schemaConfig.setRemoteAddress(remoteAddress);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Set keep-alive timeout</h3>
+		 * <h3 class="zh-CN">设置长连接超时时间</h3>
+		 *
+		 * @param keepAlive <span class="en-US">Keep-alive timeout (Unit: seconds)</span>
+		 *                  <span class="zh-CN">长连接超时时间（单位：秒）</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public RemoteConfigBuilder keepAlive(final int keepAlive) {
+			if (!ObjectUtils.nullSafeEquals(this.schemaConfig.getKeepAlive(), keepAlive)) {
+				this.schemaConfig.setKeepAlive(keepAlive);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Database server configure information builder</h3>
+		 * <h3 class="zh-CN">数据库服务器配置信息构建器</h3>
+		 *
+		 * @param serverAddress <span class="en-US">Server address</span>
+		 *                      <span class="zh-CN">服务器地址</span>
+		 * @param serverPort    <span class="en-US">Server port number</span>
+		 *                      <span class="zh-CN">服务器端口号</span>
+		 * @return <span class="en-US">Database server configure information builder instance object</span>
+		 * <span class="zh-CN">数据库服务器配置信息构建器实例对象</span>
+		 */
+		public ServerInfoBuilder<RemoteConfigBuilder> serverBuilder(final String serverAddress, final int serverPort) {
+			ServerInfo serverInfo = this.schemaConfig.getServerList()
+					.stream()
+					.filter(server -> server.match(serverAddress, serverPort))
+					.findFirst()
+					.orElse(newInstance(serverAddress, serverPort));
+			return new ServerInfoBuilder<>(this, serverInfo);
+		}
+
+		/**
+		 * <h3 class="en-US">Delete server level information</h3>
+		 * <h3 class="zh-CN">删除服务器等级信息</h3>
+		 *
+		 * @param serverAddress <span class="en-US">Server address</span>
+		 *                      <span class="zh-CN">服务器地址</span>
+		 * @param serverPort    <span class="en-US">Server port number</span>
+		 *                      <span class="zh-CN">服务器端口号</span>
+		 * @return <span class="en-US">Current builder instance object</span>
+		 * <span class="zh-CN">当前构建器实例对象</span>
+		 */
+		public RemoteConfigBuilder removeServer(final String serverAddress, final int serverPort) {
+			List<ServerInfo> serverList = this.schemaConfig.getServerList();
+			if (serverList.removeIf(serverInfo -> serverInfo.match(serverAddress, serverPort))) {
+				this.schemaConfig.setServerList(serverList);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Using current proxy configure information to create ProxyConfigBuilder instance</h3>
+		 * <h3 class="zh-CN">使用当前的代理服务器配置信息生成代理服务器配置构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">ProxyConfigBuilder instance</span>
+		 * <span class="zh-CN">代理服务器配置构建器实例对象</span>
+		 */
+		public ProxyConfigBuilder<RemoteConfigBuilder> proxyConfig() {
+			return new ProxyConfigBuilder<>(this,
+					Optional.ofNullable(this.schemaConfig.getProxyConfig()).orElse(new ProxyConfig()));
+		}
+
+		/**
+		 * <h3 class="en-US">Delete current proxy configure information</h3>
+		 * <h3 class="zh-CN">删除代理服务器配置信息</h3>
+		 *
+		 * @return <span class="en-US">Current builder instance</span>
+		 * <span class="zh-CN">当前构造器实例对象</span>
+		 */
+		public RemoteConfigBuilder removeProxyConfig() {
+			if (this.schemaConfig.getProxyConfig() != null) {
+				this.schemaConfig.setProxyConfig(null);
+				this.modified = Boolean.TRUE;
+			}
+			return this;
+		}
+
+		/**
+		 * <h3 class="en-US">Generate basic identity authentication information builder instance object based on existing identity authentication information</h3>
+		 * <h3 class="zh-CN">根据现有的身份认证信息生成基本身份认证信息构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">Builder implementation class of basic authentication information instance object</span>
+		 * <span class="zh-CN">基本身份认证信息构建器实例对象</span>
+		 */
+		public AuthenticationBuilder.UserAuthenticationBuilder<RemoteConfigBuilder> userAuthentication() {
+			return new AuthenticationBuilder.UserAuthenticationBuilder<>(this,
+					Optional.ofNullable(this.schemaConfig.getAuthentication())
+							.filter(authentication -> authentication instanceof UserAuthentication)
+							.map(authentication -> (UserAuthentication) authentication)
+							.orElse(new UserAuthentication()));
+		}
+
+		/**
+		 * <h3 class="en-US">Generate a builder instance object that uses the trust store authentication information
+		 * in the certificate store based on the existing authentication information.</h3>
+		 * <h3 class="zh-CN">根据现有的身份认证信息生成使用证书库中X.509证书认证信息的构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate in the certificate store</span>
+		 * <span class="zh-CN">使用证书库中X.509证书的认证信息的构建器</span>
+		 */
+		public AuthenticationBuilder.TrustStoreAuthenticationBuilder<RemoteConfigBuilder> trustStoreAuthentication() {
+			return new AuthenticationBuilder.TrustStoreAuthenticationBuilder<>(this,
+					Optional.ofNullable(this.schemaConfig.getAuthentication())
+							.filter(authentication -> authentication instanceof TrustStoreAuthentication)
+							.map(authentication -> (TrustStoreAuthentication) authentication)
+							.orElse(new TrustStoreAuthentication()));
+		}
+
+		/**
+		 * <h3 class="en-US">Generate a builder instance object that uses the X.509 certificate authentication information.</h3>
+		 * <h3 class="zh-CN">根据现有的身份认证信息生成X.509证书认证信息的构建器实例对象</h3>
+		 *
+		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate</span>
+		 * <span class="zh-CN">使用X.509证书的认证信息的构建器</span>
+		 */
+		public AuthenticationBuilder.X509AuthenticationBuilder<RemoteConfigBuilder> x509AuthenticationBuilder() {
+			return new AuthenticationBuilder.X509AuthenticationBuilder<>(this,
+					Optional.ofNullable(this.schemaConfig.getAuthentication())
+							.filter(authentication -> authentication instanceof X509Authentication)
+							.map(authentication -> (X509Authentication) authentication)
+							.orElse(new X509Authentication()));
+		}
+
+		@Override
+		public void confirm(final Object object) {
+			if (object instanceof ProxyConfig) {
+				if (this.schemaConfig.getProxyConfig() == null
+						|| this.schemaConfig.getProxyConfig().getLastModified() != ((ProxyConfig) object).getLastModified()) {
+					this.schemaConfig.setProxyConfig((ProxyConfig) object);
+					this.modified = Boolean.TRUE;
+				}
+			} else {
+				super.confirm(object);
+			}
+		}
+	}
 }

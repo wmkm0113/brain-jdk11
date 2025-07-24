@@ -27,7 +27,9 @@ import org.nervousync.brain.configs.auth.impl.TrustStoreAuthentication;
 import org.nervousync.brain.configs.auth.impl.UserAuthentication;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
-import org.nervousync.brain.defines.*;
+import org.nervousync.brain.defines.IndexDefine;
+import org.nervousync.brain.defines.InitOption;
+import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.DialectFactory;
 import org.nervousync.brain.dialects.remote.RemoteClient;
 import org.nervousync.brain.dialects.remote.RemoteDialect;
@@ -37,7 +39,6 @@ import org.nervousync.brain.enumerations.remote.RemoteType;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
-import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.commons.Globals;
 import org.nervousync.http.cert.TrustCert;
@@ -122,11 +123,11 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 			if (this.trustStore != null) {
 				try {
 					TrustCert trustCert =
-							TrustCert.newInstance(FileUtils.readFileBytes(this.trustStore.getTrustStorePath()),
-									this.trustStore.getTrustStorePassword());
+							TrustCert.newInstance(FileUtils.readFileBytes(this.trustStore.getStorePath()),
+									this.trustStore.getStorePassword());
 					SSLContext sslContext = SSLContext.getInstance("TLS");
 					GeneX509TrustManager x509TrustManager =
-							GeneX509TrustManager.newInstance(this.trustStore.getTrustStorePassword(), List.of(trustCert));
+							GeneX509TrustManager.newInstance(this.trustStore.getStorePassword(), List.of(trustCert));
 					sslContext.init(new KeyManager[0], new TrustManager[]{x509TrustManager}, new SecureRandom());
 					this.clientBuilder.sslContext(sslContext);
 				} catch (Exception e) {
@@ -134,16 +135,16 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 				}
 			}
 			Optional.ofNullable(this.trustStore)
-					.map(store -> CertificateUtils.loadKeyStore(store.getTrustStorePath(), store.getTrustStorePassword()))
+					.map(store ->
+							CertificateUtils.loadKeyStore(store.getStorePath(), store.getStorePassword()))
 					.ifPresent(this.clientBuilder::trustStore);
 
 			if (this.authentication != null) {
 				if (this.authentication instanceof TrustStoreAuthentication) {
-					KeyStore keyStore =
-							CertificateUtils.loadKeyStore(((TrustStoreAuthentication) this.authentication).getTrustStorePath(),
-									((TrustStoreAuthentication) this.authentication).getTrustStorePassword());
+					TrustStoreAuthentication tsAuth = (TrustStoreAuthentication) this.authentication;
+					KeyStore keyStore = CertificateUtils.loadKeyStore(tsAuth.getStorePath(), tsAuth.getStorePassword());
 					if (keyStore != null) {
-						this.clientBuilder.keyStore(keyStore, ((TrustStoreAuthentication) this.authentication).getTrustStorePassword());
+						this.clientBuilder.keyStore(keyStore, tsAuth.getStorePassword());
 					}
 				}
 				if (this.authentication instanceof UserAuthentication) {
@@ -308,6 +309,11 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 					default:
 						throw new MultilingualSQLException(0x00DB00000030L, this.remoteType);
 				}
+				TransactionalConfig transactionalConfig = this.txConfig.get();
+				if (transactionalConfig != null) {
+					remoteClient.beginTransactional(transactionalConfig.getTransactionalCode(),
+							transactionalConfig.getIsolation(), transactionalConfig.getTimeout());
+				}
 				this.operatorThreadLocal.set(remoteClient);
 			} catch (MalformedURLException e) {
 				throw new MultilingualSQLException(0x00DB00000035L, e, this.remoteType.toString(), this.remoteAddress);
@@ -317,7 +323,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	}
 
 	@Override
-	public void rollback(final Exception e) throws SQLException {
+	public void rollback(final Exception e) {
 		TransactionalConfig transactionalConfig = this.txConfig.get();
 		if (transactionalConfig != null && transactionalConfig.getIsolation() != Connection.TRANSACTION_NONE
 				&& transactionalConfig.rollback(e)) {
@@ -326,30 +332,29 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	}
 
 	@Override
-	public void commit() throws SQLException {
+	public void commit() {
 		if (this.txConfig.get() != null) {
 			this.operatorThreadLocal.get().commit(this.txConfig.get().getTransactionalCode());
 		}
 	}
 
 	@Override
-	public void truncateTables() throws SQLException {
+	public void truncateTables() {
 		this.operatorThreadLocal.get().truncateTables();
 	}
 
 	@Override
-	public void truncateTable(@Nonnull final TableDefine tableDefine) throws SQLException {
+	public void truncateTable(@Nonnull final TableDefine tableDefine) {
 		this.operatorThreadLocal.get().truncateTable(tableDefine.getTableName());
 	}
 
 	@Override
-	public void dropTables(final DropOption dropOption) throws SQLException {
+	public void dropTables(final DropOption dropOption) {
 		this.operatorThreadLocal.get().dropTables(dropOption);
 	}
 
 	@Override
-	public void dropTable(@Nonnull final TableDefine tableDefine, @Nonnull final DropOption dropOption)
-			throws SQLException {
+	public void dropTable(@Nonnull final TableDefine tableDefine, @Nonnull final DropOption dropOption) {
 		StringBuilder indexNames = new StringBuilder();
 		for (IndexDefine indexDefine : tableDefine.getIndexDefines()) {
 			indexNames.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(indexDefine.getIndexName());
@@ -370,7 +375,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 
 	@Override
 	public Map<String, Object> insert(@Nonnull final TableDefine tableDefine,
-	                                  @Nonnull final Map<String, Object> dataMap) throws SQLException {
+	                                  @Nonnull final Map<String, Object> dataMap) {
 		return Optional.ofNullable(this.operatorThreadLocal.get())
 				.map(remoteClient ->
 						remoteClient.insert(tableDefine.getTableName(),
@@ -383,8 +388,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	@Override
 	public Map<String, Object> retrieve(@Nonnull final TableDefine tableDefine, final String columns,
 	                                    @Nonnull final Map<String, Object> filterMap, final boolean forUpdate,
-	                                    final LockModeType lockOption)
-			throws SQLException {
+	                                    final LockModeType lockOption) {
 		return Optional.ofNullable(this.operatorThreadLocal.get())
 				.map(remoteClient ->
 						remoteClient.retrieve(tableDefine.getTableName(),
@@ -398,53 +402,30 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 
 	@Override
 	public int update(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> dataMap,
-	                  @Nonnull final Map<String, Object> filterMap) throws SQLException {
+	                  @Nonnull final Map<String, Object> filterMap) {
 		return this.operatorThreadLocal.get().update(tableDefine.getTableName(),
 				StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.FALSE),
 				StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE));
 	}
 
 	@Override
-	public int delete(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap)
-			throws SQLException {
+	public int delete(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap) {
 		return this.operatorThreadLocal.get().delete(tableDefine.getTableName(),
 				StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE));
 	}
 
 	@Override
-	public PartialCollection query(@Nonnull final TableDefine tableDefine,
-	                                       @Nonnull final QueryInfo queryInfo) throws SQLException {
+	public PartialCollection query(@Nonnull final QueryInfo queryInfo) {
 		return PartialCollection.parse(this.operatorThreadLocal.get().query(queryInfo.toString(StringUtils.StringType.JSON)));
 	}
 
 	@Override
-	public PartialCollection queryForUpdate(@Nonnull final TableDefine tableDefine,
-	                                        final List<Condition> conditionList, final LockModeType lockOption)
-			throws SQLException {
-		StringBuilder stringBuilder = new StringBuilder();
-		for (ColumnDefine columnDefine : tableDefine.getColumnDefines()) {
-			stringBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnDefine.getColumnName());
-		}
-		if (stringBuilder.length() == 0) {
-			throw new MultilingualSQLException(0x00DB00000011L);
-		}
-		return PartialCollection.parse(
-				this.operatorThreadLocal.get()
-						.queryForUpdate(tableDefine.getTableName(), stringBuilder.toString(),
-								StringUtils.objectToString(conditionList, StringUtils.StringType.JSON, Boolean.FALSE),
-								lockOption));
-	}
-
-	@Override
-	public Long queryTotal(@Nonnull final TableDefine tableDefine, final QueryInfo queryInfo) throws SQLException {
-		List<Condition> conditionList = queryInfo.getConditionList();
-		return this.operatorThreadLocal.get().queryTotal(tableDefine.getTableName(),
-				StringUtils.objectToString(conditionList, StringUtils.StringType.JSON, Boolean.FALSE));
+	public Long queryTotal(final QueryInfo queryInfo) {
+		return this.operatorThreadLocal.get().queryTotal(queryInfo.toString(StringUtils.StringType.JSON));
 	}
 
 	@Override
 	public void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
-	                      final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy,
 	                      @Nonnull final Map<String, InitOption> initOptionsMap) {
 		//  Not support the table initialize operating
 	}
