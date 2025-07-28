@@ -149,8 +149,8 @@ public abstract class SchemaConfig extends BeanObject {
 	private long lastModified = Globals.DEFAULT_VALUE_LONG;
 
 	/**
-	 * <h2 class="en-US">Constructor method for the data source configuration information abstract class</h2>
-	 * <h2 class="zh-CN">数据源配置信息抽象类的构造方法</h2>
+	 * <h3 class="en-US">Constructor method for the data source configuration information abstract class</h3>
+	 * <h3 class="zh-CN">数据源配置信息抽象类的构造方法</h3>
 	 *
 	 * @param dialectType <span class="en-US">Dialect type</span>
 	 *                    <span class="zh-CN">方言类型</span>

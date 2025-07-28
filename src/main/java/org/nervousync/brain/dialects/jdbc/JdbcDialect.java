@@ -1113,7 +1113,8 @@ public abstract class JdbcDialect extends BaseDialect {
 		}
 		List<Object> values = new ArrayList<>();
 		sqlBuilder.append(WHERE_COMMAND)
-				.append(BrainCommons.DEFAULT_WHERE_CLAUSE).append(this.whereClause(filterMap, values));
+				.append(BrainCommons.DEFAULT_WHERE_CLAUSE)
+				.append(this.whereClause(filterMap, values));
 		return new GeneratedCommand(sqlBuilder.toString(), values, Map.of());
 	}
 

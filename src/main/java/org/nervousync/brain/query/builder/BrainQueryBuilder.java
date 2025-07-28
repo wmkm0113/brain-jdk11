@@ -385,7 +385,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 */
 	@Nonnull
 	private List<TreeMap<String, Object>> itemsList(@Nonnull final List<QueryItem> itemList) {
-		itemList.sort(SortedItem.asc());
+		itemList.sort(SortedItem.desc());
 		List<TreeMap<String, Object>> parameterList = new ArrayList<>();
 		itemList.forEach(queryItem -> parameterList.add(cacheMap(queryItem)));
 		return parameterList;
@@ -442,7 +442,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 */
 	@Nonnull
 	private List<TreeMap<String, Object>> fromList(@Nonnull final List<QueryFrom> queryFromList) {
-		queryFromList.sort(SortedItem.asc());
+		queryFromList.sort(SortedItem.desc());
 		List<TreeMap<String, Object>> parameterList = new ArrayList<>();
 		queryFromList.forEach(queryFrom -> parameterList.add(this.cacheMap(queryFrom)));
 		return parameterList;
@@ -484,7 +484,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 */
 	@Nonnull
 	private List<TreeMap<String, Object>> parametersList(@Nonnull final List<AbstractParameter<?>> abstractParameters) {
-		abstractParameters.sort(SortedItem.asc());
+		abstractParameters.sort(SortedItem.desc());
 		List<TreeMap<String, Object>> parameterList = new ArrayList<>();
 		abstractParameters.forEach(parameter -> parameterList.add(this.cacheMap(parameter)));
 		return parameterList;
@@ -630,7 +630,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 		if (conditionList.isEmpty()) {
 			return Collections.emptyList();
 		}
-		conditionList.sort(SortedItem.asc());
+		conditionList.sort(SortedItem.desc());
 		List<TreeMap<String, Object>> conditions = new ArrayList<>();
 		conditionList.forEach(condition -> conditions.add(this.cacheMap(condition)));
 		return conditions;
@@ -679,7 +679,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 		if (orderByList.isEmpty()) {
 			return Collections.emptyList();
 		}
-		orderByList.sort(SortedItem.asc());
+		orderByList.sort(SortedItem.desc());
 		List<TreeMap<String, Object>> orderList = new ArrayList<>();
 		orderByList.forEach(orderBy -> {
 			TreeMap<String, Object> cacheMap = new TreeMap<>();
@@ -705,7 +705,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 		if (groupByList.isEmpty()) {
 			return Collections.emptyList();
 		}
-		groupByList.sort(SortedItem.asc());
+		groupByList.sort(SortedItem.desc());
 		List<TreeMap<String, String>> groupList = new ArrayList<>();
 		groupByList.forEach(groupBy -> {
 			TreeMap<String, String> cacheMap = new TreeMap<>();

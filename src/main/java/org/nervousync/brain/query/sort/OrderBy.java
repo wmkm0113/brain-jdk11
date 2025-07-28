@@ -55,7 +55,7 @@ public final class OrderBy extends SortedItem {
 	 * <span class="zh-CN">查询结果集排序类型</span>
 	 */
 	@XmlElement(name = "order_type")
-	private OrderType orderType;
+	private OrderType orderType = OrderType.ASC;
 
 	/**
 	 * <h3 class="en-US">Constructor method for query order by column definition</h3>

@@ -82,8 +82,8 @@ public abstract class SortsBuilder<P extends ParentBuilder, T> extends AbstractB
 		}
 
 		/**
-		 * <h2 class="en-US">Query group by information builder</h2>
-		 * <h2 class="zh-CN">查询分组列信息构建器</h2>
+		 * <h3 class="en-US">Query group by information builder</h3>
+		 * <h3 class="zh-CN">查询分组列信息构建器</h3>
 		 *
 		 * @param tableName  <span class="en-US">Data table name</span>
 		 *                   <span class="zh-CN">数据表名</span>
@@ -198,8 +198,8 @@ public abstract class SortsBuilder<P extends ParentBuilder, T> extends AbstractB
 		}
 
 		/**
-		 * <h2 class="en-US">Query group by information builder</h2>
-		 * <h2 class="zh-CN">查询分组列信息构建器</h2>
+		 * <h3 class="en-US">Query group by information builder</h3>
+		 * <h3 class="zh-CN">查询分组列信息构建器</h3>
 		 *
 		 * @param tableName  <span class="en-US">Data table name</span>
 		 *                   <span class="zh-CN">数据表名</span>

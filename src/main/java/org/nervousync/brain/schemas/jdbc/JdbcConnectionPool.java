@@ -126,8 +126,8 @@ public final class JdbcConnectionPool {
 
 
 	/**
-	 * <h2 class="en-US">Private constructor method for database connection pool</h2>
-	 * <h2 class="zh-CN">数据库连接池的私有构造方法</h2>
+	 * <h3 class="en-US">Private constructor method for database connection pool</h3>
+	 * <h3 class="zh-CN">数据库连接池的私有构造方法</h3>
 	 *
 	 * @param jdbcSchema         <span class="en-US">JDBC data source instance object</span>
 	 *                           <span class="zh-CN">JDBC数据源实例对象</span>

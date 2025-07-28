@@ -45,7 +45,6 @@ import org.nervousync.brain.schemas.distribute.DistributeSchema;
 import org.nervousync.brain.schemas.jdbc.JdbcSchema;
 import org.nervousync.brain.schemas.remote.RemoteSchema;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.CollectionUtils;
 import org.nervousync.utils.LoggerUtils;
 import org.nervousync.utils.ObjectUtils;
 import org.nervousync.utils.StringUtils;

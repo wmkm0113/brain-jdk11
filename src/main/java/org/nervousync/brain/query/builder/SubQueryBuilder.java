@@ -60,7 +60,7 @@ public final class SubQueryBuilder<P extends ParentBuilder> extends AbstractBuil
 	 * <span class="en-US">Query condition instance list</span>
 	 * <span class="zh-CN">查询条件实例对象列表</span>
 	 */
-	private final List<Condition> conditions;
+	private final List<Condition> conditionList;
 	/**
 	 * <span class="en-US">Identify key</span>
 	 * <span class="zh-CN">分组识别代码列表</span>
@@ -86,7 +86,7 @@ public final class SubQueryBuilder<P extends ParentBuilder> extends AbstractBuil
 		this.tableName = tableName;
 		this.itemList = new ArrayList<>();
 		this.queryJoins = new ArrayList<>();
-		this.conditions = new ArrayList<>();
+		this.conditionList = new ArrayList<>();
 		this.groupByList = new ArrayList<>();
 		this.havingList = new ArrayList<>();
 	}
@@ -153,7 +153,7 @@ public final class SubQueryBuilder<P extends ParentBuilder> extends AbstractBuil
 			if (conditions.isHaving()) {
 				this.havingList.addAll(conditions.getConditions());
 			} else {
-				this.conditions.addAll(conditions.getConditions());
+				this.conditionList.addAll(conditions.getConditions());
 			}
 		} else if (object instanceof ItemsBuilder.Items) {
 			this.itemList.clear();
@@ -173,7 +173,7 @@ public final class SubQueryBuilder<P extends ParentBuilder> extends AbstractBuil
 		queryData.setTableName(this.tableName);
 		queryData.setItemList(this.itemList);
 		queryData.setQueryJoins(this.queryJoins);
-		queryData.setConditionList(this.conditions);
+		queryData.setConditionList(this.conditionList);
 		queryData.setGroupByList(this.groupByList);
 		queryData.setHavingList(this.havingList);
 		return queryData;
