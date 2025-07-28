@@ -20,12 +20,8 @@ package org.nervousync.brain.configs.schema.impl;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.schema.SchemaConfig;
-import org.nervousync.brain.configs.server.ServerInfo;
 import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.commons.Globals;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * <h2 class="en-US">JDBC data source configuration information</h2>
@@ -45,13 +41,6 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	 */
 	private static final long serialVersionUID = -553668725998373198L;
 
-	/**
-	 * <span class="en-US">Database server info list</span>
-	 * <span class="zh-CN">数据库服务器列表</span>
-	 */
-	@XmlElementWrapper(name = "server_list")
-	@XmlElement(name = "server_info")
-	private List<ServerInfo> serverList = new ArrayList<>();
 	/**
 	 * <span class="en-US">JDBC connection url</span>
 	 * <span class="zh-CN">JDBC连接字符串</span>
@@ -113,28 +102,6 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	 */
 	public JdbcSchemaConfig() {
 		super(DialectType.Relational);
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for database server info list</h3>
-	 * <h3 class="zh-CN">数据库服务器列表的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Database server info list</span>
-	 * <span class="zh-CN">数据库服务器列表</span>
-	 */
-	public List<ServerInfo> getServerList() {
-		return this.serverList;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for database server info list</h3>
-	 * <h3 class="zh-CN">数据库服务器列表的Setter方法</h3>
-	 *
-	 * @param serverList <span class="en-US">Database server info list</span>
-	 *                   <span class="zh-CN">数据库服务器列表</span>
-	 */
-	public void setServerList(final List<ServerInfo> serverList) {
-		this.serverList = serverList;
 	}
 
 	/**

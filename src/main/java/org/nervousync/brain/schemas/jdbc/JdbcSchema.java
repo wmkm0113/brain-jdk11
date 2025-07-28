@@ -245,24 +245,41 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * <h3 class="en-US">Checks whether two tables are in the same database, according to the given query conditions</h3>
 	 * <h3 class="zh-CN">根据给定的查询条件检查两个数据表是否在同一数据库中</h3>
 	 *
-	 * @param leftTable     <span class="en-US">Left table name</span>
-	 *                      <span class="zh-CN">左表名</span>
-	 * @param rightTable    <span class="en-US">Right table name</span>
-	 *                      <span class="zh-CN">右表名</span>
-	 * @param conditionList <span class="en-US">Query condition instance list</span>
+	 * @param identifyCodes <span class="en-US">Data table identify code list</span>
+	 *                      <span class="zh-CN">数据表识别代码列表</span>
+	 * @param conditions    <span class="en-US">Query condition instance list</span>
 	 *                      <span class="zh-CN">查询条件实例对象列表</span>
 	 * @return <span class="en-US">Check result</span>
 	 * <span class="zh-CN">检查结果</span>
 	 */
-	public boolean sameCatalog(@Nonnull final String leftTable, @Nonnull final String rightTable,
-	                           @Nonnull final List<Condition> conditionList) {
-		String leftCatalog = Optional.ofNullable(this.strategyConfigs.get(leftTable))
-				.map(strategyConfig -> strategyConfig.tableKey(conditionList))
-				.orElse(Globals.DEFAULT_VALUE_STRING);
-		String rightCatalog = Optional.ofNullable(this.strategyConfigs.get(rightTable))
-				.map(strategyConfig -> strategyConfig.tableKey(conditionList))
-				.orElse(Globals.DEFAULT_VALUE_STRING);
-		return ObjectUtils.nullSafeEquals(leftCatalog, rightCatalog);
+	public boolean sameCatalog(@Nonnull final List<String> identifyCodes, @Nonnull final List<Condition> conditions) {
+		if (identifyCodes.isEmpty() || identifyCodes.size() == 1 || conditions.isEmpty()) {
+			return Boolean.TRUE;
+		}
+		List<String> catalogs = Optional.ofNullable(this.strategyConfigs.get(identifyCodes.get(0)))
+				.map(strategyConfig -> strategyConfig.dbKeys(conditions))
+				.orElse(Collections.emptyList());
+		if (catalogs.isEmpty()) {
+			return Boolean.TRUE;
+		}
+		if (catalogs.size() > 1) {
+			return Boolean.FALSE;
+		}
+
+		String catalog = catalogs.get(0);
+
+		for (int i = 1; i < identifyCodes.size(); i++) {
+			List<String> checkCatalogs = Optional.ofNullable(this.strategyConfigs.get(identifyCodes.get(i)))
+					.map(strategyConfig -> strategyConfig.dbKeys(conditions))
+					.orElse(Collections.emptyList());
+			if (checkCatalogs.size() != 1) {
+				return Boolean.FALSE;
+			}
+			if (!ObjectUtils.nullSafeEquals(catalog, checkCatalogs.get(0))) {
+				return Boolean.FALSE;
+			}
+		}
+		return Boolean.TRUE;
 	}
 
 	@Override
@@ -727,7 +744,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	@Nonnull
 	private List<String> dbKeys(@Nonnull QueryData queryData) {
 		List<String> catalogs = new ArrayList<>();
-		this.dbKeys(queryData.getTableName(), queryData.getConditions())
+		this.dbKeys(queryData.getTableName(), queryData.getConditionList())
 				.stream()
 				.filter(catalog -> !catalogs.contains(catalog))
 				.forEach(catalogs::add);

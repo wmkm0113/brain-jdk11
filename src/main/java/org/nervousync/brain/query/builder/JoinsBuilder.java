@@ -68,28 +68,35 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 	 * <h3 class="en-US">Data table query joins information builder</h3>
 	 * <h3 class="zh-CN">数据表关联构建器</h3>
 	 *
-	 * @param joinType  <span class="en-US">Table join type</span>
-	 *                  <span class="zh-CN">数据表关联类型</span>
-	 * @param tableName <span class="en-US">Join table name</span>
-	 *                  <span class="zh-CN">关联表名</span>
+	 * @param joinType       <span class="en-US">Table join type</span>
+	 *                       <span class="zh-CN">数据表关联类型</span>
+	 * @param drivenIdentify <span class="en-US">Driven table identify code</span>
+	 *                       <span class="zh-CN">驱动表识别代码</span>
+	 * @param tableName      <span class="en-US">Join table name</span>
+	 *                       <span class="zh-CN">关联表名</span>
 	 * @return <span class="en-US">Data table query joins information builder instance object</span>
 	 * <span class="zh-CN">数据表关联构建器实例对象</span>
 	 */
-	public TableQueryJoinBuilder<JoinsBuilder<P>> joinTable(@Nonnull final JoinType joinType, @Nonnull final String tableName) {
-		return new TableQueryJoinBuilder<>(this, joinType, tableName);
+	public TableQueryJoinBuilder<JoinsBuilder<P>> joinTable(@Nonnull final JoinType joinType,
+	                                                        @Nonnull final String drivenIdentify,
+	                                                        @Nonnull final String tableName) {
+		return new TableQueryJoinBuilder<>(this, joinType, drivenIdentify, tableName);
 	}
 
 	/**
 	 * <h3 class="en-US">Sub-query joins information builder</h3>
 	 * <h3 class="zh-CN">子查询关联构建器</h3>
 	 *
-	 * @param joinType <span class="en-US">Table join type</span>
-	 *                 <span class="zh-CN">数据表关联类型</span>
+	 * @param joinType       <span class="en-US">Table join type</span>
+	 *                       <span class="zh-CN">数据表关联类型</span>
+	 * @param drivenIdentify <span class="en-US">Driven table identify code</span>
+	 *                       <span class="zh-CN">驱动表识别代码</span>
 	 * @return <span class="en-US">Sub-query joins information builder instance object</span>
 	 * <span class="zh-CN">子查询关联构建器实例对象</span>
 	 */
-	public SubQueryJoinBuilder<JoinsBuilder<P>> joinQuery(@Nonnull final JoinType joinType) {
-		return new SubQueryJoinBuilder<>(this, joinType);
+	public SubQueryJoinBuilder<JoinsBuilder<P>> joinQuery(@Nonnull final JoinType joinType,
+	                                                      @Nonnull final String drivenIdentify) {
+		return new SubQueryJoinBuilder<>(this, joinType, drivenIdentify);
 	}
 
 	@Override
@@ -182,14 +189,18 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 * <h3 class="en-US">Constructor method for the abstract class of query join information builder</h3>
 		 * <h3 class="zh-CN">关联信息构建器抽象类的构造函数</h3>
 		 *
-		 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
-		 *                      <span class="zh-CN">父构建器实例对象</span>
-		 * @param queryJoin     <span class="en-US">Query join information</span>
-		 *                      <span class="zh-CN">关联查询信息</span>
+		 * @param parentBuilder  <span class="en-US">Parent builder instance object</span>
+		 *                       <span class="zh-CN">父构建器实例对象</span>
+		 * @param queryJoin      <span class="en-US">Query join information</span>
+		 *                       <span class="zh-CN">关联查询信息</span>
+		 * @param drivenIdentify <span class="en-US">Driven table identify code</span>
+		 *                       <span class="zh-CN">驱动表识别代码</span>
 		 */
-		protected QueryJoinBuilder(final P parentBuilder, final T queryJoin) {
+		protected QueryJoinBuilder(final P parentBuilder, @Nonnull final T queryJoin,
+		                           @Nonnull final String drivenIdentify) {
 			super(parentBuilder);
 			this.queryJoin = queryJoin;
+			this.queryJoin.setDrivenIdentify(drivenIdentify);
 		}
 
 		/**
@@ -200,27 +211,20 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 *                       <span class="zh-CN">查询条件连接代码</span>
 		 * @param conditionCode  <span class="en-US">Query condition code</span>
 		 *                       <span class="zh-CN">查询条件运算代码</span>
-		 * @param leftIdentify   <span class="en-US">Left table identify code</span>
-		 *                       <span class="zh-CN">左表识别代码</span>
 		 * @param leftKey        <span class="en-US">Left table data column identify code</span>
 		 *                       <span class="zh-CN">左表数据列识别代码</span>
-		 * @param rightIdentify  <span class="en-US">Right table identify code</span>
-		 *                       <span class="zh-CN">右表识别代码</span>
 		 * @param rightKey       <span class="en-US">Right table data column identify code</span>
 		 *                       <span class="zh-CN">右表数据列识别代码</span>
 		 */
 		protected void joinOn(@Nonnull final ConnectionCode connectionCode, @Nonnull final ConditionCode conditionCode,
-		                      @Nonnull final String leftIdentify, @Nonnull final String leftKey,
-		                      @Nonnull final String rightIdentify, @Nonnull final String rightKey) {
+		                      @Nonnull final String leftKey, @Nonnull final String rightKey) {
 			if (this.joinInfos.stream()
 					.noneMatch(existJoin ->
-							existJoin.match(conditionCode, leftIdentify, leftKey, rightIdentify, rightKey))) {
+							existJoin.match(conditionCode, leftKey, rightKey))) {
 				JoinInfo joinInfo = new JoinInfo();
 				joinInfo.setConnectionCode(connectionCode);
 				joinInfo.setConditionCode(conditionCode);
-				joinInfo.setLeftIdentify(leftIdentify);
 				joinInfo.setLeftKey(leftKey);
-				joinInfo.setRightIdentify(rightIdentify);
 				joinInfo.setRightKey(rightKey);
 				this.joinInfos.add(joinInfo);
 			}
@@ -248,16 +252,18 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 * <h3 class="en-US">Private constructor method for the data table query joins information builder</h3>
 		 * <h3 class="zh-CN">数据表关联信息构建器的私有构造函数</h3>
 		 *
-		 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
-		 *                      <span class="zh-CN">父构建器实例对象</span>
-		 * @param joinType      <span class="en-US">Table join type</span>
-		 *                      <span class="zh-CN">数据表关联类型</span>
-		 * @param tableName     <span class="en-US">Join table name</span>
-		 *                      <span class="zh-CN">关联表名</span>
+		 * @param parentBuilder  <span class="en-US">Parent builder instance object</span>
+		 *                       <span class="zh-CN">父构建器实例对象</span>
+		 * @param joinType       <span class="en-US">Table join type</span>
+		 *                       <span class="zh-CN">数据表关联类型</span>
+		 * @param drivenIdentify <span class="en-US">Driven table identify code</span>
+		 *                       <span class="zh-CN">驱动表识别代码</span>
+		 * @param tableName      <span class="en-US">Join table name</span>
+		 *                       <span class="zh-CN">关联表名</span>
 		 */
 		public TableQueryJoinBuilder(final P parentBuilder, @Nonnull final JoinType joinType,
-		                             @Nonnull final String tableName) {
-			super(parentBuilder, new TableQueryJoin());
+		                             @Nonnull final String drivenIdentify, @Nonnull final String tableName) {
+			super(parentBuilder, new TableQueryJoin(), drivenIdentify);
 			this.queryJoin.setJoinType(joinType);
 			this.queryJoin.setJoinTable(tableName);
 		}
@@ -282,20 +288,15 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 * <h3 class="en-US">Set join information</h3>
 		 * <h3 class="zh-CN">设置关联信息</h3>
 		 *
-		 * @param leftIdentify  <span class="en-US">Left table identify code</span>
-		 *                      <span class="zh-CN">左表识别代码</span>
-		 * @param leftKey       <span class="en-US">Left table data column identify code</span>
-		 *                      <span class="zh-CN">左表数据列识别代码</span>
-		 * @param rightIdentify <span class="en-US">Right table identify code</span>
-		 *                      <span class="zh-CN">右表识别代码</span>
-		 * @param rightKey      <span class="en-US">Right table data column identify code</span>
-		 *                      <span class="zh-CN">右表数据列识别代码</span>
+		 * @param leftKey  <span class="en-US">Left table data column identify code</span>
+		 *                 <span class="zh-CN">左表数据列识别代码</span>
+		 * @param rightKey <span class="en-US">Right table data column identify code</span>
+		 *                 <span class="zh-CN">右表数据列识别代码</span>
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public TableQueryJoinBuilder<P> on(@Nonnull final String leftIdentify, @Nonnull final String leftKey,
-		                                   @Nonnull final String rightIdentify, @Nonnull final String rightKey) {
-			return this.on(ConnectionCode.AND, ConditionCode.EQUAL, leftIdentify, leftKey, rightIdentify, rightKey);
+		public TableQueryJoinBuilder<P> on(@Nonnull final String leftKey, @Nonnull final String rightKey) {
+			return this.on(ConnectionCode.AND, ConditionCode.EQUAL, leftKey, rightKey);
 		}
 
 		/**
@@ -304,21 +305,16 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 *
 		 * @param connectionCode <span class="en-US">Query connection code</span>
 		 *                       <span class="zh-CN">查询条件连接代码</span>
-		 * @param leftIdentify   <span class="en-US">Left table identify code</span>
-		 *                       <span class="zh-CN">左表识别代码</span>
 		 * @param leftKey        <span class="en-US">Left table data column identify code</span>
 		 *                       <span class="zh-CN">左表数据列识别代码</span>
-		 * @param rightIdentify  <span class="en-US">Right table identify code</span>
-		 *                       <span class="zh-CN">右表识别代码</span>
 		 * @param rightKey       <span class="en-US">Right table data column identify code</span>
 		 *                       <span class="zh-CN">右表数据列识别代码</span>
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public TableQueryJoinBuilder<P> on(@Nonnull final ConnectionCode connectionCode,
-		                                   @Nonnull final String leftIdentify, @Nonnull final String leftKey,
-		                                   @Nonnull final String rightIdentify, @Nonnull final String rightKey) {
-			return this.on(connectionCode, ConditionCode.EQUAL, leftIdentify, leftKey, rightIdentify, rightKey);
+		                                   @Nonnull final String leftKey, @Nonnull final String rightKey) {
+			return this.on(connectionCode, ConditionCode.EQUAL, leftKey, rightKey);
 		}
 
 		/**
@@ -327,21 +323,16 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 *
 		 * @param conditionCode <span class="en-US">Query condition code</span>
 		 *                      <span class="zh-CN">查询条件运算代码</span>
-		 * @param leftIdentify  <span class="en-US">Left table identify code</span>
-		 *                      <span class="zh-CN">左表识别代码</span>
 		 * @param leftKey       <span class="en-US">Left table data column identify code</span>
 		 *                      <span class="zh-CN">左表数据列识别代码</span>
-		 * @param rightIdentify <span class="en-US">Right table identify code</span>
-		 *                      <span class="zh-CN">右表识别代码</span>
 		 * @param rightKey      <span class="en-US">Right table data column identify code</span>
 		 *                      <span class="zh-CN">右表数据列识别代码</span>
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public TableQueryJoinBuilder<P> on(@Nonnull final ConditionCode conditionCode,
-		                                   @Nonnull final String leftIdentify, @Nonnull final String leftKey,
-		                                   @Nonnull final String rightIdentify, @Nonnull final String rightKey) {
-			return this.on(ConnectionCode.AND, conditionCode, leftIdentify, leftKey, rightIdentify, rightKey);
+		                                   @Nonnull final String leftKey, @Nonnull final String rightKey) {
+			return this.on(ConnectionCode.AND, conditionCode, leftKey, rightKey);
 		}
 
 		/**
@@ -352,12 +343,8 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 *                       <span class="zh-CN">查询条件连接代码</span>
 		 * @param conditionCode  <span class="en-US">Query condition code</span>
 		 *                       <span class="zh-CN">查询条件运算代码</span>
-		 * @param leftIdentify   <span class="en-US">Left table identify code</span>
-		 *                       <span class="zh-CN">左表识别代码</span>
 		 * @param leftKey        <span class="en-US">Left table data column identify code</span>
 		 *                       <span class="zh-CN">左表数据列识别代码</span>
-		 * @param rightIdentify  <span class="en-US">Right table identify code</span>
-		 *                       <span class="zh-CN">右表识别代码</span>
 		 * @param rightKey       <span class="en-US">Right table data column identify code</span>
 		 *                       <span class="zh-CN">右表数据列识别代码</span>
 		 * @return <span class="en-US">Current builder instance object</span>
@@ -365,9 +352,8 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 */
 		public TableQueryJoinBuilder<P> on(@Nonnull final ConnectionCode connectionCode,
 		                                   @Nonnull final ConditionCode conditionCode,
-		                                   @Nonnull final String leftIdentify, @Nonnull final String leftKey,
-		                                   @Nonnull final String rightIdentify, @Nonnull final String rightKey) {
-			super.joinOn(connectionCode, conditionCode, leftIdentify, leftKey, rightIdentify, rightKey);
+		                                   @Nonnull final String leftKey, @Nonnull final String rightKey) {
+			super.joinOn(connectionCode, conditionCode, leftKey, rightKey);
 			return this;
 		}
 	}
@@ -387,13 +373,16 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 * <h3 class="en-US">Private constructor method for the sub-query joins information builder</h3>
 		 * <h3 class="zh-CN">子查询关联信息构建器的私有构造函数</h3>
 		 *
-		 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
-		 *                      <span class="zh-CN">父构建器实例对象</span>
-		 * @param joinType      <span class="en-US">Table join type</span>
-		 *                      <span class="zh-CN">数据表关联类型</span>
+		 * @param parentBuilder  <span class="en-US">Parent builder instance object</span>
+		 *                       <span class="zh-CN">父构建器实例对象</span>
+		 * @param joinType       <span class="en-US">Table join type</span>
+		 *                       <span class="zh-CN">数据表关联类型</span>
+		 * @param drivenIdentify <span class="en-US">Driven table identify code</span>
+		 *                       <span class="zh-CN">驱动表识别代码</span>
 		 */
-		public SubQueryJoinBuilder(final P parentBuilder, @Nonnull final JoinType joinType) {
-			super(parentBuilder, new SubQueryJoin());
+		public SubQueryJoinBuilder(final P parentBuilder, @Nonnull final JoinType joinType,
+		                           @Nonnull final String drivenIdentify) {
+			super(parentBuilder, new SubQueryJoin(), drivenIdentify);
 			this.queryJoin.setJoinType(joinType);
 		}
 
@@ -439,20 +428,15 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 * <h3 class="en-US">Set join information</h3>
 		 * <h3 class="zh-CN">设置关联信息</h3>
 		 *
-		 * @param leftIdentify  <span class="en-US">Left table identify code</span>
-		 *                      <span class="zh-CN">左表识别代码</span>
-		 * @param leftKey       <span class="en-US">Left table data column identify code</span>
-		 *                      <span class="zh-CN">左表数据列识别代码</span>
-		 * @param rightIdentify <span class="en-US">Right table identify code</span>
-		 *                      <span class="zh-CN">右表识别代码</span>
-		 * @param rightKey      <span class="en-US">Right table data column identify code</span>
-		 *                      <span class="zh-CN">右表数据列识别代码</span>
+		 * @param leftKey  <span class="en-US">Left table data column identify code</span>
+		 *                 <span class="zh-CN">左表数据列识别代码</span>
+		 * @param rightKey <span class="en-US">Right table data column identify code</span>
+		 *                 <span class="zh-CN">右表数据列识别代码</span>
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public SubQueryJoinBuilder<P> on(@Nonnull final String leftIdentify, @Nonnull final String leftKey,
-		                                 @Nonnull final String rightIdentify, @Nonnull final String rightKey) {
-			return this.on(ConnectionCode.AND, ConditionCode.EQUAL, leftIdentify, leftKey, rightIdentify, rightKey);
+		public SubQueryJoinBuilder<P> on(@Nonnull final String leftKey, @Nonnull final String rightKey) {
+			return this.on(ConnectionCode.AND, ConditionCode.EQUAL, leftKey, rightKey);
 		}
 
 		/**
@@ -461,21 +445,16 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 *
 		 * @param connectionCode <span class="en-US">Query connection code</span>
 		 *                       <span class="zh-CN">查询条件连接代码</span>
-		 * @param leftIdentify   <span class="en-US">Left table identify code</span>
-		 *                       <span class="zh-CN">左表识别代码</span>
 		 * @param leftKey        <span class="en-US">Left table data column identify code</span>
 		 *                       <span class="zh-CN">左表数据列识别代码</span>
-		 * @param rightIdentify  <span class="en-US">Right table identify code</span>
-		 *                       <span class="zh-CN">右表识别代码</span>
 		 * @param rightKey       <span class="en-US">Right table data column identify code</span>
 		 *                       <span class="zh-CN">右表数据列识别代码</span>
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public SubQueryJoinBuilder<P> on(@Nonnull final ConnectionCode connectionCode,
-		                                 @Nonnull final String leftIdentify, @Nonnull final String leftKey,
-		                                 @Nonnull final String rightIdentify, @Nonnull final String rightKey) {
-			return this.on(connectionCode, ConditionCode.EQUAL, leftIdentify, leftKey, rightIdentify, rightKey);
+		                                 @Nonnull final String leftKey, @Nonnull final String rightKey) {
+			return this.on(connectionCode, ConditionCode.EQUAL, leftKey, rightKey);
 		}
 
 		/**
@@ -484,21 +463,16 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 *
 		 * @param conditionCode <span class="en-US">Query condition code</span>
 		 *                      <span class="zh-CN">查询条件运算代码</span>
-		 * @param leftIdentify  <span class="en-US">Left table identify code</span>
-		 *                      <span class="zh-CN">左表识别代码</span>
 		 * @param leftKey       <span class="en-US">Left table data column identify code</span>
 		 *                      <span class="zh-CN">左表数据列识别代码</span>
-		 * @param rightIdentify <span class="en-US">Right table identify code</span>
-		 *                      <span class="zh-CN">右表识别代码</span>
 		 * @param rightKey      <span class="en-US">Right table data column identify code</span>
 		 *                      <span class="zh-CN">右表数据列识别代码</span>
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
 		public SubQueryJoinBuilder<P> on(@Nonnull final ConditionCode conditionCode,
-		                                 @Nonnull final String leftIdentify, @Nonnull final String leftKey,
-		                                 @Nonnull final String rightIdentify, @Nonnull final String rightKey) {
-			return this.on(ConnectionCode.AND, conditionCode, leftIdentify, leftKey, rightIdentify, rightKey);
+		                                 @Nonnull final String leftKey, @Nonnull final String rightKey) {
+			return this.on(ConnectionCode.AND, conditionCode, leftKey, rightKey);
 		}
 
 		/**
@@ -509,12 +483,8 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 *                       <span class="zh-CN">查询条件连接代码</span>
 		 * @param conditionCode  <span class="en-US">Query condition code</span>
 		 *                       <span class="zh-CN">查询条件运算代码</span>
-		 * @param leftIdentify   <span class="en-US">Left table identify code</span>
-		 *                       <span class="zh-CN">左表识别代码</span>
 		 * @param leftKey        <span class="en-US">Left table data column identify code</span>
 		 *                       <span class="zh-CN">左表数据列识别代码</span>
-		 * @param rightIdentify  <span class="en-US">Right table identify code</span>
-		 *                       <span class="zh-CN">右表识别代码</span>
 		 * @param rightKey       <span class="en-US">Right table data column identify code</span>
 		 *                       <span class="zh-CN">右表数据列识别代码</span>
 		 * @return <span class="en-US">Current builder instance object</span>
@@ -522,9 +492,8 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 */
 		public SubQueryJoinBuilder<P> on(@Nonnull final ConnectionCode connectionCode,
 		                                 @Nonnull final ConditionCode conditionCode,
-		                                 @Nonnull final String leftIdentify, @Nonnull final String leftKey,
-		                                 @Nonnull final String rightIdentify, @Nonnull final String rightKey) {
-			super.joinOn(connectionCode, conditionCode, leftIdentify, leftKey, rightIdentify, rightKey);
+		                                 @Nonnull final String leftKey, @Nonnull final String rightKey) {
+			super.joinOn(connectionCode, conditionCode, leftKey, rightKey);
 			return this;
 		}
 	}

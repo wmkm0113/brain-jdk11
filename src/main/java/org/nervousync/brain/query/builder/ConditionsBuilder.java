@@ -841,6 +841,17 @@ public final class ConditionsBuilder<P extends ParentBuilder> extends AbstractBu
 		}
 
 		/**
+		 * <h3 class="en-US">Calculate function parameter item builder</h3>
+		 * <h3 class="zh-CN">计算参数信息构建器</h3>
+		 *
+		 * @return <span class="en-US">Calculate function parameter item builder instance object</span>
+		 * <span class="zh-CN">计算参数信息构建器实例对象</span>
+		 */
+		public ParametersBuilder.CalculateParameterBuilder<ColumnConditionBuilder<P>> matchCalculate() {
+			return new ParametersBuilder.CalculateParameterBuilder<>(this);
+		}
+
+		/**
 		 * <h3 class="en-US">Query condition match function information builder</h3>
 		 * <h3 class="zh-CN">查询匹配函数构建器</h3>
 		 *

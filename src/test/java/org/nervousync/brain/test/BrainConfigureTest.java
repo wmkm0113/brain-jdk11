@@ -51,7 +51,7 @@ public final class BrainConfigureTest {
 				.serverBuilder("localhost", 2270)
 				.level(40)
 				.confirm()
-				.trustStoreAuthenticationBuilder()
+				.trustStoreAuth()
 				.confirm()
 				.confirm()
 				.build();
@@ -73,7 +73,7 @@ public final class BrainConfigureTest {
 				.authenticate("testUser", "testPwd")
 				.confirm()
 				.confirm()
-				.trustStoreAuthentication()
+				.trustStoreAuth()
 				.confirm()
 				.testConnection(Boolean.TRUE, Boolean.TRUE)
 				.confirm()
@@ -113,7 +113,7 @@ public final class BrainConfigureTest {
 		BrainConfigure configure = brainConfigureBuilder.defaultSchema("Jdbc").build();
 		String xml = configure.toString(StringUtils.StringType.XML);
 		configure = StringUtils.stringToObject(xml, BrainConfigure.class, "https://nervousync.org/schemas/brain");
-		System.out.println(configure.toString(StringUtils.StringType.XML));
+		System.out.println(configure.toString(StringUtils.StringType.JSON));
 		configure = this.newBuilder(configure)
 				.remoteConfig("Remote")
 				.type(RemoteType.SOAP)
@@ -148,7 +148,7 @@ public final class BrainConfigureTest {
 				.cacheSize(20)
 				.lowQuery(1000L)
 				.timeout(5, 5)
-				.userAuthenticationBuilder()
+				.basicAuth()
 				.authenticate("username", "password")
 				.confirm()
 				.confirm();
@@ -171,7 +171,7 @@ public final class BrainConfigureTest {
 				.jdbcUrl("jdbc:url://testUrl")
 				.lowQuery(1000L)
 				.timeout(5, 5)
-				.x509Authentication()
+				.x509Auth()
 				.x509(CertificateUtils.x509(keyPair.getPublic(), IDUtils.snowflake(), new Date(),
 						new Date(DateTimeUtils.expireMonth(2)), "TestCert",
 						keyPair.getPrivate(), "SHA256withRSA"))
@@ -193,7 +193,7 @@ public final class BrainConfigureTest {
 				.confirm()
 				.lowQuery(1000L)
 				.timeout(5, 5)
-				.x509AuthenticationBuilder()
+				.x509Auth()
 				.x509(CertificateUtils.x509(keyPair.getPublic(), IDUtils.snowflake(), new Date(),
 						new Date(DateTimeUtils.expireMonth(2)), "TestCert",
 						keyPair.getPrivate(), "SHA256withRSA"))

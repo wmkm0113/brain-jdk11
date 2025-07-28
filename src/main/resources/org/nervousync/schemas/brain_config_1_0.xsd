@@ -3,6 +3,115 @@
             elementFormDefault="qualified" version="1.0">
     <xsd:import namespace="https://nervousync.org/schemas/proxy"
                 schemaLocation="https://nervousync.org/schemas/proxy_config_1_0.xsd"/>
+    <xsd:complexType name="trust_store">
+        <xsd:sequence>
+            <xsd:element name="store_path" type="xsd:string">
+                <xsd:annotation>
+                    <xsd:documentation>Trust certificate store path</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="store_password" type="xsd:string">
+                <xsd:annotation>
+                    <xsd:documentation>Trust certificate store password</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="authentication" abstract="true">
+        <xsd:sequence>
+            <xsd:element name="last_modified" type="xsd:long">
+                <xsd:annotation>
+                    <xsd:documentation>Last modified timestamp</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="user_authentication">
+        <xsd:complexContent>
+            <xsd:extension base="authentication">
+                <xsd:sequence>
+                    <xsd:element name="username" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Authenticator username</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="password" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Authenticator password</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="x509_authentication">
+        <xsd:complexContent>
+            <xsd:extension base="authentication">
+                <xsd:sequence>
+                    <xsd:element name="cert_data" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>X.509 certificate information (encoded using Base64)
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="trust_store_authentication">
+        <xsd:complexContent>
+            <xsd:extension base="authentication">
+                <xsd:sequence>
+                    <xsd:element name="store_path" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Trust certificate store path</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="store_password" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Trust certificate store password</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="cert_name" type="xsd:string" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Certificate name</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="token_authentication">
+        <xsd:complexContent>
+            <xsd:extension base="authentication">
+                <xsd:sequence>
+                    <xsd:element name="key_id" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Identify key ID</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="secret_key" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Identify secret key</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="session_token" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Session token</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:group name="authentication_group">
+        <xsd:choice>
+            <xsd:element name="user_authentication" type="user_authentication"/>
+            <xsd:element name="x509_authentication" type="x509_authentication"/>
+            <xsd:element name="trust_store_authentication" type="trust_store_authentication"/>
+            <xsd:element name="token_authentication" type="token_authentication" />
+        </xsd:choice>
+    </xsd:group>
     <xsd:complexType name="server_info">
         <xsd:sequence>
             <xsd:element name="server_name" type="xsd:string" minOccurs="0">
@@ -25,122 +134,17 @@
                     <xsd:documentation>Server level</xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="trust_store" minOccurs="0">
-                <xsd:annotation>
-                    <xsd:documentation>Trust certificate store configuration information</xsd:documentation>
-                </xsd:annotation>
-                <xsd:complexType>
-                    <xsd:sequence>
-                        <xsd:element name="store_path" type="xsd:string">
-                            <xsd:annotation>
-                                <xsd:documentation>Trust certificate store path</xsd:documentation>
-                            </xsd:annotation>
-                        </xsd:element>
-                        <xsd:element name="store_password" type="xsd:string">
-                            <xsd:annotation>
-                                <xsd:documentation>Trust certificate store password</xsd:documentation>
-                            </xsd:annotation>
-                        </xsd:element>
-                    </xsd:sequence>
-                </xsd:complexType>
-            </xsd:element>
-            <xsd:choice>
-                <xsd:element name="token_authentication" minOccurs="0">
-                    <xsd:complexType>
-                        <xsd:sequence>
-                            <xsd:element name="auth_type" type="xsd:string" fixed="TOKEN">
-                                <xsd:annotation>
-                                    <xsd:documentation>Enumeration value of authentication type</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="key_id" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Identify key ID</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="secret_key" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Identify secret key</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="session_token" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Session token</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                        </xsd:sequence>
-                    </xsd:complexType>
-                </xsd:element>
-                <xsd:element name="trust_store_authentication" minOccurs="0">
-                    <xsd:complexType>
-                        <xsd:sequence>
-                            <xsd:element name="auth_type" type="xsd:string" fixed="TRUST_STORE">
-                                <xsd:annotation>
-                                    <xsd:documentation>Enumeration value of authentication type</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="store_path" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Trust certificate store path</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="store_password" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Trust certificate store password</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="cert_name" type="xsd:string" minOccurs="0">
-                                <xsd:annotation>
-                                    <xsd:documentation>Certificate name</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                        </xsd:sequence>
-                    </xsd:complexType>
-                </xsd:element>
-                <xsd:element name="user_authentication" minOccurs="0">
-                    <xsd:complexType>
-                        <xsd:sequence>
-                            <xsd:element name="auth_type" type="xsd:string" fixed="BASIC">
-                                <xsd:annotation>
-                                    <xsd:documentation>Enumeration value of authentication type</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="username" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Authenticator username</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="password" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Authenticator password</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                        </xsd:sequence>
-                    </xsd:complexType>
-                </xsd:element>
-                <xsd:element name="x509_authentication" minOccurs="0">
-                    <xsd:complexType>
-                        <xsd:sequence>
-                            <xsd:element name="auth_type" type="xsd:string" fixed="CERTIFICATE">
-                                <xsd:annotation>
-                                    <xsd:documentation>Enumeration value of authentication type</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="cert_data" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>X.509 certificate information (encoded using Base64)
-                                    </xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                        </xsd:sequence>
-                    </xsd:complexType>
-                </xsd:element>
-            </xsd:choice>
             <xsd:element name="last_modified" type="xsd:long">
                 <xsd:annotation>
                     <xsd:documentation>Last modified timestamp</xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
+            <xsd:element name="trust_store" type="trust_store" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Trust certificate store configuration information</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:group ref="authentication_group" minOccurs="0" />
         </xsd:sequence>
     </xsd:complexType>
     <xsd:complexType name="schema_config" abstract="true">
@@ -160,117 +164,26 @@
                     <xsd:documentation>Data source dialect name</xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="trust_store" minOccurs="0">
+            <xsd:element name="server_list">
                 <xsd:annotation>
-                    <xsd:documentation>Trust certificate store configuration information</xsd:documentation>
+                    <xsd:documentation>Database server info list</xsd:documentation>
                 </xsd:annotation>
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="store_path" type="xsd:string">
+                        <xsd:element name="server_info" type="server_info" minOccurs="0" maxOccurs="unbounded">
                             <xsd:annotation>
-                                <xsd:documentation>Trust certificate store path</xsd:documentation>
-                            </xsd:annotation>
-                        </xsd:element>
-                        <xsd:element name="store_password" type="xsd:string">
-                            <xsd:annotation>
-                                <xsd:documentation>Trust certificate store password</xsd:documentation>
+                                <xsd:documentation>Database server info</xsd:documentation>
                             </xsd:annotation>
                         </xsd:element>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:choice>
-                <xsd:element name="token_authentication" minOccurs="0">
-                    <xsd:complexType>
-                        <xsd:sequence>
-                            <xsd:element name="auth_type" type="xsd:string" fixed="TOKEN">
-                                <xsd:annotation>
-                                    <xsd:documentation>Enumeration value of authentication type</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="key_id" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Identify key ID</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="secret_key" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Identify secret key</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="session_token" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Session token</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                        </xsd:sequence>
-                    </xsd:complexType>
-                </xsd:element>
-                <xsd:element name="trust_store_authentication" minOccurs="0">
-                    <xsd:complexType>
-                        <xsd:sequence>
-                            <xsd:element name="auth_type" type="xsd:string" fixed="TRUST_STORE">
-                                <xsd:annotation>
-                                    <xsd:documentation>Enumeration value of authentication type</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="store_path" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Trust certificate store path</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="store_password" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Trust certificate store password</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="cert_name" type="xsd:string" minOccurs="0">
-                                <xsd:annotation>
-                                    <xsd:documentation>Certificate name</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                        </xsd:sequence>
-                    </xsd:complexType>
-                </xsd:element>
-                <xsd:element name="user_authentication" minOccurs="0">
-                    <xsd:complexType>
-                        <xsd:sequence>
-                            <xsd:element name="auth_type" type="xsd:string" fixed="BASIC">
-                                <xsd:annotation>
-                                    <xsd:documentation>Enumeration value of authentication type</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="username" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Authenticator username</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="password" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>Authenticator password</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                        </xsd:sequence>
-                    </xsd:complexType>
-                </xsd:element>
-                <xsd:element name="x509_authentication" minOccurs="0">
-                    <xsd:complexType>
-                        <xsd:sequence>
-                            <xsd:element name="auth_type" type="xsd:string" fixed="CERTIFICATE">
-                                <xsd:annotation>
-                                    <xsd:documentation>Enumeration value of authentication type</xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                            <xsd:element name="cert_data" type="xsd:string">
-                                <xsd:annotation>
-                                    <xsd:documentation>X.509 certificate information (encoded using Base64)
-                                    </xsd:documentation>
-                                </xsd:annotation>
-                            </xsd:element>
-                        </xsd:sequence>
-                    </xsd:complexType>
-                </xsd:element>
-            </xsd:choice>
+            <xsd:element name="trust_store" type="trust_store" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Trust certificate store configuration information</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:group ref="authentication_group" minOccurs="0" />
             <xsd:element name="low_query_timeout" type="xsd:long" default="-1">
                 <xsd:annotation>
                     <xsd:documentation>Low query timeout (Unit: milliseconds)</xsd:documentation>
@@ -315,20 +228,6 @@
                     <xsd:complexContent>
                         <xsd:extension base="schema_config">
                             <xsd:sequence>
-                                <xsd:element name="server_list">
-                                    <xsd:annotation>
-                                        <xsd:documentation>Database server info list</xsd:documentation>
-                                    </xsd:annotation>
-                                    <xsd:complexType>
-                                        <xsd:sequence>
-                                            <xsd:element name="server_info" type="server_info" maxOccurs="unbounded">
-                                                <xsd:annotation>
-                                                    <xsd:documentation>Database server info</xsd:documentation>
-                                                </xsd:annotation>
-                                            </xsd:element>
-                                        </xsd:sequence>
-                                    </xsd:complexType>
-                                </xsd:element>
                                 <xsd:element name="database_name" type="xsd:string" minOccurs="0">
                                     <xsd:annotation>
                                         <xsd:documentation>Database name</xsd:documentation>
@@ -359,26 +258,6 @@
                     <xsd:complexContent>
                         <xsd:extension base="schema_config">
                             <xsd:sequence>
-                                <xsd:element name="server_array" type="xsd:boolean" default="false">
-                                    <xsd:annotation>
-                                        <xsd:documentation>Using server array</xsd:documentation>
-                                    </xsd:annotation>
-                                </xsd:element>
-                                <xsd:element name="server_list">
-                                    <xsd:annotation>
-                                        <xsd:documentation>Database server info list</xsd:documentation>
-                                    </xsd:annotation>
-                                    <xsd:complexType>
-                                        <xsd:sequence>
-                                            <xsd:element name="server_info" type="server_info" minOccurs="0"
-                                                         maxOccurs="unbounded">
-                                                <xsd:annotation>
-                                                    <xsd:documentation>Database server info</xsd:documentation>
-                                                </xsd:annotation>
-                                            </xsd:element>
-                                        </xsd:sequence>
-                                    </xsd:complexType>
-                                </xsd:element>
                                 <xsd:element name="jdbc_url" type="xsd:string">
                                     <xsd:annotation>
                                         <xsd:documentation>JDBC connection url</xsd:documentation>
@@ -547,35 +426,6 @@
             </xsd:element>
         </xsd:sequence>
     </xsd:complexType>
-    <xsd:complexType name="storage_config">
-        <xsd:sequence>
-            <xsd:element name="base_path" type="xsd:string" minOccurs="0">
-                <xsd:annotation>
-                    <xsd:documentation>The work path for data import/export operate</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="storage_provider" type="xsd:string">
-                <xsd:annotation>
-                    <xsd:documentation>Task store provider name to use</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="thread_limit" type="xsd:int" default="20">
-                <xsd:annotation>
-                    <xsd:documentation>Number of tasks allowed to be executed simultaneously</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="expire_time" type="xsd:long" default="604800000">
-                <xsd:annotation>
-                    <xsd:documentation>Expiration time for automatic deletion of completed tasks</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="last_modified" type="xsd:long">
-                <xsd:annotation>
-                    <xsd:documentation>Last modified timestamp</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-        </xsd:sequence>
-    </xsd:complexType>
     <xsd:complexType name="sorted_item" abstract="true">
         <xsd:sequence>
             <xsd:element name="sort_code">
@@ -634,6 +484,11 @@
                     <xsd:element name="alias_name" type="xsd:string" minOccurs="0">
                         <xsd:annotation>
                             <xsd:documentation>Item alias name</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="jdbc_type" type="xsd:int" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>JDBC type code</xsd:documentation>
                         </xsd:annotation>
                     </xsd:element>
                 </xsd:sequence>
@@ -696,11 +551,23 @@
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
+    <xsd:complexType name="constant_item">
+        <xsd:complexContent>
+            <xsd:extension base="query_item">
+                <xsd:sequence>
+                    <xsd:annotation>
+                        <xsd:documentation>Constant value information</xsd:documentation>
+                    </xsd:annotation>
+                    <xsd:element name="constant_value" type="xsd:anyType"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
     <xsd:complexType name="function_item">
         <xsd:complexContent>
             <xsd:extension base="query_item">
                 <xsd:sequence>
-                    <xsd:element name="function_name" type="xsd:string" minOccurs="0">
+                    <xsd:element name="function_name" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Function name</xsd:documentation>
                         </xsd:annotation>
@@ -710,7 +577,7 @@
                             <xsd:documentation>Function parameter list</xsd:documentation>
                         </xsd:annotation>
                         <xsd:complexType>
-                            <xsd:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+                            <xsd:group ref="function_parameter_group" minOccurs="0" maxOccurs="unbounded"/>
                         </xsd:complexType>
                     </xsd:element>
                 </xsd:sequence>
@@ -729,18 +596,6 @@
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
-    <xsd:complexType name="constant_item">
-        <xsd:complexContent>
-            <xsd:extension base="query_item">
-                <xsd:sequence>
-                    <xsd:annotation>
-                        <xsd:documentation>Constant value information</xsd:documentation>
-                    </xsd:annotation>
-                    <xsd:element name="constant_value" type="xsd:anyType"/>
-                </xsd:sequence>
-            </xsd:extension>
-        </xsd:complexContent>
-    </xsd:complexType>
     <xsd:group name="item_group">
         <xsd:choice>
             <xsd:element name="calculate_item" type="calculate_item"/>
@@ -752,10 +607,10 @@
     </xsd:group>
     <xsd:group name="calculate_item_group">
         <xsd:choice>
+            <xsd:element name="calculate_item" type="calculate_item"/>
+            <xsd:element name="constant_item" type="constant_item"/>
             <xsd:element name="column_item" type="column_item"/>
             <xsd:element name="function_item" type="function_item"/>
-            <xsd:element name="constant_item" type="constant_item"/>
-            <xsd:element name="calculate_item" type="calculate_item"/>
         </xsd:choice>
     </xsd:group>
     <xsd:complexType name="abstract_parameter" abstract="true">
@@ -786,6 +641,15 @@
             <xsd:extension base="abstract_parameter">
                 <xsd:sequence>
                     <xsd:element name="array_data" type="array_data"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="calculate_parameter">
+        <xsd:complexContent>
+            <xsd:extension base="abstract_parameter">
+                <xsd:sequence>
+                    <xsd:element name="calculate_item" type="calculate_item"/>
                 </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>
@@ -838,11 +702,20 @@
     <xsd:group name="parameter_group">
         <xsd:choice>
             <xsd:element name="arrays_parameter" type="arrays_parameter"/>
+            <xsd:element name="calculate_parameter" type="calculate_parameter"/>
             <xsd:element name="column_parameter" type="column_parameter"/>
             <xsd:element name="constant_parameter" type="constant_parameter"/>
             <xsd:element name="function_parameter" type="function_parameter"/>
             <xsd:element name="query_parameter" type="query_parameter"/>
             <xsd:element name="ranges_parameter" type="ranges_parameter"/>
+        </xsd:choice>
+    </xsd:group>
+    <xsd:group name="function_parameter_group">
+        <xsd:choice>
+            <xsd:element name="calculate_parameter" type="calculate_parameter"/>
+            <xsd:element name="column_parameter" type="column_parameter"/>
+            <xsd:element name="constant_parameter" type="constant_parameter"/>
+            <xsd:element name="function_parameter" type="function_parameter"/>
         </xsd:choice>
     </xsd:group>
     <xsd:complexType name="condition" abstract="true">
@@ -872,6 +745,14 @@
                             </xsd:restriction>
                         </xsd:simpleType>
                     </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="column_condition">
+        <xsd:complexContent>
+            <xsd:extension base="condition">
+                <xsd:sequence>
                     <xsd:element name="condition_code">
                         <xsd:annotation>
                             <xsd:documentation>Condition type enumeration value</xsd:documentation>
@@ -896,14 +777,6 @@
                             </xsd:restriction>
                         </xsd:simpleType>
                     </xsd:element>
-                </xsd:sequence>
-            </xsd:extension>
-        </xsd:complexContent>
-    </xsd:complexType>
-    <xsd:complexType name="column_condition">
-        <xsd:complexContent>
-            <xsd:extension base="condition">
-                <xsd:sequence>
                     <xsd:element name="table_name" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>The table name to which the data column belongs</xsd:documentation>
@@ -943,6 +816,51 @@
             <xsd:element name="group_condition" type="group_condition"/>
         </xsd:choice>
     </xsd:group>
+    <xsd:complexType name="query_from" abstract="true">
+        <xsd:complexContent>
+            <xsd:extension base="sorted_item">
+                <xsd:sequence>
+                    <xsd:element name="alias_name" type="xsd:string" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Alias name</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="from_sub_query">
+        <xsd:complexContent>
+            <xsd:extension base="query_from">
+                <xsd:sequence>
+                    <xsd:element name="query_data" type="sub_query_data">
+                        <xsd:annotation>
+                            <xsd:documentation>Sub-query information</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="from_table">
+        <xsd:complexContent>
+            <xsd:extension base="query_from">
+                <xsd:sequence>
+                    <xsd:element name="table_name" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Data table name</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:group name="from_group">
+        <xsd:choice>
+            <xsd:element name="from_sub_query" type="from_sub_query"/>
+            <xsd:element name="from_table" type="from_table"/>
+        </xsd:choice>
+    </xsd:group>
     <xsd:complexType name="join_info">
         <xsd:all>
             <xsd:element name="connection_code">
@@ -971,19 +889,9 @@
                     </xsd:restriction>
                 </xsd:simpleType>
             </xsd:element>
-            <xsd:element name="left_identify" type="xsd:string">
-                <xsd:annotation>
-                    <xsd:documentation>Left table identify key</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
             <xsd:element name="left_key" type="xsd:string">
                 <xsd:annotation>
                     <xsd:documentation>Left table data column identify key</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="right_identify" type="xsd:string">
-                <xsd:annotation>
-                    <xsd:documentation>Right table identify key</xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
             <xsd:element name="right_key" type="xsd:string">
@@ -995,6 +903,11 @@
     </xsd:complexType>
     <xsd:complexType name="query_join" abstract="true">
         <xsd:sequence>
+            <xsd:element name="driven_identify" type="xsd:string" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Driven table identify code</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
             <xsd:element name="alias_name" type="xsd:string" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>Alias name</xsd:documentation>
@@ -1112,10 +1025,15 @@
                     <xsd:documentation>Query driven table name</xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="alias_name" type="xsd:string" minOccurs="0">
+            <xsd:element name="item_list">
                 <xsd:annotation>
-                    <xsd:documentation>Query driven table alias name</xsd:documentation>
+                    <xsd:documentation>Query item instance list</xsd:documentation>
                 </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:group ref="item_group" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                </xsd:complexType>
             </xsd:element>
             <xsd:element name="join_list">
                 <xsd:annotation>
@@ -1127,19 +1045,9 @@
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="item_list">
-                <xsd:annotation>
-                    <xsd:documentation>Query item instance list</xsd:documentation>
-                </xsd:annotation>
-                <xsd:complexType>
-                    <xsd:sequence>
-                        <xsd:group ref="item_group" maxOccurs="unbounded"/>
-                    </xsd:sequence>
-                </xsd:complexType>
-            </xsd:element>
             <xsd:element name="condition_list">
                 <xsd:annotation>
-                    <xsd:documentation>Query condition instance list</xsd:documentation>
+                    <xsd:documentation>Query where clause condition instance list</xsd:documentation>
                 </xsd:annotation>
                 <xsd:complexType>
                     <xsd:sequence>
@@ -1159,7 +1067,7 @@
             </xsd:element>
             <xsd:element name="having_list">
                 <xsd:annotation>
-                    <xsd:documentation>Query having condition instance list</xsd:documentation>
+                    <xsd:documentation>Query having clause condition instance list</xsd:documentation>
                 </xsd:annotation>
                 <xsd:complexType>
                     <xsd:sequence>
@@ -1171,15 +1079,20 @@
     </xsd:complexType>
     <xsd:complexType name="query_info">
         <xsd:all>
-            <xsd:element name="table_name" type="xsd:string">
+            <xsd:element name="cache_key" type="xsd:string">
                 <xsd:annotation>
-                    <xsd:documentation>Query driven table name</xsd:documentation>
+                    <xsd:documentation>Query information cache key value</xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="alias_name" type="xsd:string" minOccurs="0">
+            <xsd:element name="from_list">
                 <xsd:annotation>
-                    <xsd:documentation>Query driven table alias name</xsd:documentation>
+                    <xsd:documentation>Query from information list</xsd:documentation>
                 </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:group ref="from_group" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                </xsd:complexType>
             </xsd:element>
             <xsd:element name="join_list">
                 <xsd:annotation>
@@ -1256,9 +1169,35 @@
                     <xsd:documentation>Page limit records count</xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
+            <xsd:element name="for_update" type="xsd:boolean">
+                <xsd:annotation>
+                    <xsd:documentation>Query result using for update record</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="lock_option">
+                <xsd:annotation>
+                    <xsd:documentation>Query record lock option</xsd:documentation>
+                </xsd:annotation>
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:enumeration value="READ"/>
+                        <xsd:enumeration value="WRITE"/>
+                        <xsd:enumeration value="OPTIMISTIC"/>
+                        <xsd:enumeration value="OPTIMISTIC_FORCE_INCREMENT"/>
+                        <xsd:enumeration value="PESSIMISTIC_READ"/>
+                        <xsd:enumeration value="PESSIMISTIC_WRITE"/>
+                        <xsd:enumeration value="PESSIMISTIC_FORCE_INCREMENT"/>
+                        <xsd:enumeration value="NONE"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:element>
         </xsd:all>
     </xsd:complexType>
-    <xsd:element name="query_info" type="query_info"/>
+    <xsd:element name="query_info" type="query_info">
+        <xsd:annotation>
+            <xsd:documentation>Query information defines</xsd:documentation>
+        </xsd:annotation>
+    </xsd:element>
     <xsd:element name="table_define">
         <xsd:complexType>
             <xsd:sequence>

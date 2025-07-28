@@ -21,7 +21,6 @@ import org.nervousync.commons.Globals;
 import org.nervousync.utils.ConvertUtils;
 import org.nervousync.utils.SecurityUtils;
 import org.nervousync.utils.StringUtils;
-import org.nervousync.utils.SystemUtils;
 
 /**
  * <h2 class="en-US">Constant value define</h2>
@@ -214,16 +213,6 @@ public final class BrainCommons {
 	 * <span class="zh-CN">默认的JNDI名称</span>
 	 */
 	public static final String DEFAULT_JNDI_NAME = "jndi/brain";
-	/**
-	 * <span class="en-US">Cache name</span>
-	 * <span class="zh-CN">缓存名称</span>
-	 */
-	public static final String CACHE_NAME = "Brain_Cache";
-	/**
-	 * <span class="en-US">Default data import/export work path</span>
-	 * <span class="zh-CN">默认的导入导出工作目录</span>
-	 */
-	public static final String DEFAULT_TMP_PATH = SystemUtils.JAVA_TMP_DIR + Globals.DEFAULT_PAGE_SEPARATOR + "brain";
 
 	/**
 	 * <h3 class="en-US">Data table identification code</h3>

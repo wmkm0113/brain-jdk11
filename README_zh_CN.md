@@ -26,15 +26,13 @@
     + [高级配置](#5高级配置)
 * [贡献与反馈](#贡献与反馈)
 * [捐款](#捐款)
-* [赞助与鸣谢](#赞助与鸣谢)
 
-## JDK版本：
+## JDK版本
+**编译：** OpenJDK 11   
+**运行：** OpenJDK 11+ 或兼容版本   
+**Jakarta EE平台：** 10
 
-编译：OpenJDK 11   
-运行：OpenJDK 11+ 或兼容版本
-
-## 生命周期：
-
+## 生命周期
 **功能冻结：** 2026年12月31日   
 **安全更新：** 2029年12月31日
 
@@ -455,10 +453,3 @@ Throws: Exception if an error occurred during execution
 * 以太坊地址: 0xd88a49056E6ECE59e89c7e5724729A0FB0872986
 * Solana 地址: GSwycoeVZHRW72TcvW38qLfqsWhFbwDbxamaEuwEwQjW
 * BNB 地址: 0xd88a49056E6ECE59e89c7e5724729A0FB0872986
-
-## 赞助与鸣谢
-
-<span id="JetBrains">
-    <img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg" width="100px" alt="JetBrains Logo (Main) logo.">
-    <span>非常感谢 <a href="https://www.jetbrains.com/">JetBrains</a> 通过许可证赞助我们的开源项目。</span>
-</span>

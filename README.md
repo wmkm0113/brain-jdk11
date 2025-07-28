@@ -29,15 +29,13 @@ transaction operations.
     + [Advanced configuration](#5-advanced-configuration)
 * [Contributions and feedback](#contributions-and-feedback)
 * [Donations](#donations)
-* [Sponsorship and Thanks To](#sponsorship-and-thanks-to)
 
 ## JDK Version
-
-Compile：OpenJDK 11   
-Runtime: OpenJDK 11+ or compatible version
+**Compile:** OpenJDK 11   
+**Runtime:** OpenJDK 11+ or compatible version   
+**Jakarta EE Platform:** 10
 
 ## End of Life
-
 **Features Freeze:** 31, Dec, 2026   
 **Secure Patch:** 31, Dec, 2029
 
@@ -477,10 +475,3 @@ To support this project, you can make a donation to:
 * Ethereum address: 0xd88a49056E6ECE59e89c7e5724729A0FB0872986
 * Solana address: GSwycoeVZHRW72TcvW38qLfqsWhFbwDbxamaEuwEwQjW
 * BNB address: 0xd88a49056E6ECE59e89c7e5724729A0FB0872986
-
-## Sponsorship and Thanks To
-
-<span id="JetBrains">
-    <img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg" width="100px" alt="JetBrains Logo (Main) logo.">
-    <span>Many thanks to <a href="https://www.jetbrains.com/">JetBrains</a> for sponsoring our Open Source projects with a license.</span>
-</span>

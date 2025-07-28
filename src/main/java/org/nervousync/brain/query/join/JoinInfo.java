@@ -53,23 +53,11 @@ public final class JoinInfo extends BeanObject {
 	@XmlElement(name = "condition_code")
 	private ConditionCode conditionCode;
 	/**
-	 * <span class="en-US">Left table identify code</span>
-	 * <span class="zh-CN">左表识别代码</span>
-	 */
-	@XmlElement(name = "left_identify")
-	private String leftIdentify;
-	/**
 	 * <span class="en-US">Left table data column identify code</span>
 	 * <span class="zh-CN">左表数据列识别代码</span>
 	 */
 	@XmlElement(name = "left_key")
 	private String leftKey;
-	/**
-	 * <span class="en-US">Right table identify code</span>
-	 * <span class="zh-CN">右表识别代码</span>
-	 */
-	@XmlElement(name = "right_identify")
-	private String rightIdentify;
 	/**
 	 * <span class="en-US">Right table data column identify code</span>
 	 * <span class="zh-CN">右表数据列识别代码</span>
@@ -129,28 +117,6 @@ public final class JoinInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for the left table identify code</h3>
-	 * <h3 class="zh-CN">左表识别代码的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Left table identify code</span>
-	 * <span class="zh-CN">左表识别代码</span>
-	 */
-	public String getLeftIdentify() {
-		return this.leftIdentify;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for the left table identify code</h3>
-	 * <h3 class="zh-CN">左表识别代码的Setter方法</h3>
-	 *
-	 * @param leftIdentify <span class="en-US">Left table identify code</span>
-	 *                     <span class="zh-CN">左表识别代码</span>
-	 */
-	public void setLeftIdentify(final String leftIdentify) {
-		this.leftIdentify = leftIdentify;
-	}
-
-	/**
 	 * <h3 class="en-US">Getter method for the left table data column identify code</h3>
 	 * <h3 class="zh-CN">左表数据列识别代码的Getter方法</h3>
 	 *
@@ -170,28 +136,6 @@ public final class JoinInfo extends BeanObject {
 	 */
 	public void setLeftKey(final String leftKey) {
 		this.leftKey = leftKey;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for the right table identify code</h3>
-	 * <h3 class="zh-CN">右表识别代码的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Right table identify code</span>
-	 * <span class="zh-CN">右表识别代码</span>
-	 */
-	public String getRightIdentify() {
-		return this.rightIdentify;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for the right table identify code</h3>
-	 * <h3 class="zh-CN">右表识别代码的Setter方法</h3>
-	 *
-	 * @param rightIdentify <span class="en-US">Right table identify code</span>
-	 *                      <span class="zh-CN">右表识别代码</span>
-	 */
-	public void setRightIdentify(final String rightIdentify) {
-		this.rightIdentify = rightIdentify;
 	}
 
 	/**
@@ -222,24 +166,17 @@ public final class JoinInfo extends BeanObject {
 	 *
 	 * @param conditionCode <span class="en-US">Query condition code</span>
 	 *                      <span class="zh-CN">查询条件运算代码</span>
-	 * @param leftIdentify  <span class="en-US">Left table identify code</span>
-	 *                      <span class="zh-CN">左表识别代码</span>
 	 * @param leftKey       <span class="en-US">Left table data column identify code</span>
 	 *                      <span class="zh-CN">左表数据列识别代码</span>
-	 * @param rightIdentify <span class="en-US">Right table identify code</span>
-	 *                      <span class="zh-CN">右表识别代码</span>
 	 * @param rightKey      <span class="en-US">Right table data column identify code</span>
 	 *                      <span class="zh-CN">右表数据列识别代码</span>
 	 * @return <span class="en-US">Check result</span>
 	 * <span class="zh-CN">检查结果</span>
 	 */
 	public boolean match(final ConditionCode conditionCode,
-	                     @Nonnull final String leftIdentify, @Nonnull final String leftKey,
-	                     @Nonnull final String rightIdentify, @Nonnull final String rightKey) {
+	                     @Nonnull final String leftKey, @Nonnull final String rightKey) {
 		return ObjectUtils.nullSafeEquals(this.conditionCode, conditionCode)
-				&& ObjectUtils.nullSafeEquals(this.leftIdentify, leftIdentify)
 				&& ObjectUtils.nullSafeEquals(this.leftKey, leftKey)
-				&& ObjectUtils.nullSafeEquals(this.rightIdentify, rightIdentify)
 				&& ObjectUtils.nullSafeEquals(this.rightKey, rightKey);
 	}
 }

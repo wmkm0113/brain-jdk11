@@ -18,7 +18,6 @@
 package org.nervousync.brain.dialects.distribute;
 
 import jakarta.annotation.Nonnull;
-import jakarta.persistence.LockModeType;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.InitOption;
 import org.nervousync.brain.defines.TableDefine;
@@ -230,21 +229,6 @@ public interface DistributeClient extends Closeable {
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	PartialCollection query(@Nonnull final QueryInfo queryInfo) throws Exception;
-
-	/**
-	 * <h3 class="en-US">Execute query commands for data updates</h3>
-	 * <h3 class="zh-CN">执行用于数据更新的查询命令</h3>
-	 *
-	 * @param queryInfo  <span class="en-US">Query record information</span>
-	 *                   <span class="zh-CN">数据检索信息</span>
-	 * @param lockOption <span class="en-US">Lock option</span>
-	 *                   <span class="zh-CN">数据锁选项</span>
-	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
-	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
-	 * @throws Exception <span class="en-US">An error occurred during execution</span>
-	 *                   <span class="zh-CN">执行过程中出错</span>
-	 */
-	PartialCollection queryForUpdate(@Nonnull final QueryInfo queryInfo, final LockModeType lockOption) throws Exception;
 
 	/**
 	 * <h3 class="en-US">Query total record count</h3>

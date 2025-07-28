@@ -19,15 +19,20 @@ package org.nervousync.brain.test;
 
 import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.*;
+import org.nervousync.brain.defines.ColumnDefine;
+import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.enumerations.query.CalculateCode;
 import org.nervousync.brain.enumerations.query.ConnectionCode;
 import org.nervousync.brain.enumerations.query.JoinType;
+import org.nervousync.brain.manager.TableManager;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.builder.BrainQueryBuilder;
 import org.nervousync.utils.LoggerUtils;
 import org.nervousync.utils.StringUtils;
 
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -37,6 +42,46 @@ public final class QueryBuilderTest {
 
 	static {
 		LoggerUtils.initLoggerConfigure(Level.DEBUG);
+		registerTable();
+		registerJoin();
+		registerSubQuery();
+	}
+
+	private static void registerTable() {
+		TableDefine tableDefine = new TableDefine();
+		tableDefine.setTableName("tableName");
+
+		List<ColumnDefine> columnDefines = new ArrayList<>();
+		for (int i = 1 ; i < 4 ; i++) {
+			ColumnDefine columnDefine = new ColumnDefine();
+			columnDefine.setColumnName("columnName" + i);
+			columnDefine.setJdbcType(Types.VARCHAR);
+			columnDefines.add(columnDefine);
+		}
+		tableDefine.setColumnDefines(columnDefines);
+		TableManager.getInstance().register(tableDefine);
+	}
+
+	private static void registerJoin() {
+		TableDefine tableDefine = new TableDefine();
+		tableDefine.setTableName("joinTable");
+
+		ColumnDefine columnDefine = new ColumnDefine();
+		columnDefine.setColumnName("joinColumn");
+		columnDefine.setJdbcType(Types.VARCHAR);
+		tableDefine.setColumnDefines(List.of(columnDefine));
+		TableManager.getInstance().register(tableDefine);
+	}
+
+	private static void registerSubQuery() {
+		TableDefine tableDefine = new TableDefine();
+		tableDefine.setTableName("subQueryTable");
+
+		ColumnDefine columnDefine = new ColumnDefine();
+		columnDefine.setColumnName("subColumn");
+		columnDefine.setJdbcType(Types.VARCHAR);
+		tableDefine.setColumnDefines(List.of(columnDefine));
+		TableManager.getInstance().register(tableDefine);
 	}
 
 	@Test
@@ -327,8 +372,8 @@ public final class QueryBuilderTest {
 						.table("tableName").confirm()
 						.confirm()
 						.joins()
-						.joinTable(JoinType.LEFT, "joinTable")
-						.on("tableName", "currentColumn", "joinTable", "joinColumn")
+						.joinTable(JoinType.LEFT, "tableName", "joinTable")
+						.on("currentColumn", "joinColumn")
 						.confirm()
 						.confirm()
 						.items()
@@ -390,9 +435,9 @@ public final class QueryBuilderTest {
 						.table("tableName").confirm()
 						.confirm()
 						.joins()
-						.joinTable(JoinType.LEFT, "joinTable")
+						.joinTable(JoinType.LEFT, "tableName", "joinTable")
 						.aliasName("aliasName")
-						.on("tableName", "currentColumn", "joinTable", "joinColumn")
+						.on("currentColumn", "joinColumn")
 						.confirm()
 						.confirm()
 						.items()
@@ -438,7 +483,7 @@ public final class QueryBuilderTest {
 						.table("tableName").confirm()
 						.confirm()
 						.joins()
-						.joinQuery(JoinType.LEFT)
+						.joinQuery(JoinType.LEFT, "tableName")
 						.subQueryBuilder("joinTable")
 						.items()
 						.column("joinTable", "joinColumn")
@@ -451,7 +496,7 @@ public final class QueryBuilderTest {
 						.confirm()
 						.confirm()
 						.aliasName("aliasName")
-						.on("tableName", "currentColumn", "joinTable", "joinColumn")
+						.on("currentColumn", "joinColumn")
 						.confirm()
 						.confirm()
 						.items()
@@ -497,8 +542,8 @@ public final class QueryBuilderTest {
 						.table("tableName").confirm()
 						.confirm()
 						.joins()
-						.joinTable(JoinType.LEFT, "joinTable")
-						.on("tableName", "currentColumn", "joinTable", "joinColumn")
+						.joinTable(JoinType.LEFT, "tableName", "joinTable")
+						.on("currentColumn", "joinColumn")
 						.confirm()
 						.confirm()
 						.items()
@@ -550,8 +595,8 @@ public final class QueryBuilderTest {
 						.table("tableName").confirm()
 						.confirm()
 						.joins()
-						.joinTable(JoinType.LEFT, "joinTable")
-						.on("tableName", "currentColumn", "joinTable", "joinColumn")
+						.joinTable(JoinType.LEFT, "tableName", "joinTable")
+						.on("currentColumn", "joinColumn")
 						.confirm()
 						.confirm()
 						.items()
@@ -603,8 +648,8 @@ public final class QueryBuilderTest {
 						.table("tableName").confirm()
 						.confirm()
 						.joins()
-						.joinTable(JoinType.LEFT, "joinTable")
-						.on("tableName", "currentColumn", "joinTable", "joinColumn")
+						.joinTable(JoinType.LEFT, "tableName", "joinTable")
+						.on("currentColumn", "joinColumn")
 						.confirm()
 						.confirm()
 						.items()
@@ -645,8 +690,8 @@ public final class QueryBuilderTest {
 						.table("tableName").confirm()
 						.confirm()
 						.joins()
-						.joinTable(JoinType.LEFT, "joinTable")
-						.on("tableName", "currentColumn", "joinTable", "joinColumn")
+						.joinTable(JoinType.LEFT, "tableName", "joinTable")
+						.on("currentColumn", "joinColumn")
 						.confirm()
 						.confirm()
 						.items()
@@ -687,8 +732,8 @@ public final class QueryBuilderTest {
 						.table("tableName").confirm()
 						.confirm()
 						.joins()
-						.joinTable(JoinType.LEFT, "joinTable")
-						.on("tableName", "currentColumn", "joinTable", "joinColumn")
+						.joinTable(JoinType.LEFT, "tableName", "joinTable")
+						.on("currentColumn", "joinColumn")
 						.confirm()
 						.confirm()
 						.items()
@@ -729,8 +774,8 @@ public final class QueryBuilderTest {
 						.table("tableName").confirm()
 						.confirm()
 						.joins()
-						.joinTable(JoinType.LEFT, "joinTable")
-						.on("tableName", "currentColumn", "joinTable", "joinColumn")
+						.joinTable(JoinType.LEFT, "tableName", "joinTable")
+						.on("currentColumn", "joinColumn")
 						.confirm()
 						.confirm()
 						.items()

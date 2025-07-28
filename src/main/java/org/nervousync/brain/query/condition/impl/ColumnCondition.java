@@ -72,6 +72,7 @@ public final class ColumnCondition extends Condition {
 	 */
 	@XmlElements({
 			@XmlElement(name = "arrays_parameter", type = ArraysParameter.class),
+			@XmlElement(name = "calculate_parameter", type = CalculateParameter.class),
 			@XmlElement(name = "column_parameter", type = ColumnParameter.class),
 			@XmlElement(name = "constant_parameter", type = ConstantParameter.class),
 			@XmlElement(name = "function_parameter", type = FunctionParameter.class),

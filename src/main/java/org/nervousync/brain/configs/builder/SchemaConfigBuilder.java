@@ -624,7 +624,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @return <span class="en-US">Builder implementation class of basic authentication information instance object</span>
 		 * <span class="zh-CN">基本身份认证信息构建器实例对象</span>
 		 */
-		public AuthenticationBuilder.UserAuthenticationBuilder<DistributeConfigBuilder> userAuthenticationBuilder() {
+		public AuthenticationBuilder.UserAuthenticationBuilder<DistributeConfigBuilder> basicAuth() {
 			return new AuthenticationBuilder.UserAuthenticationBuilder<>(this,
 					Optional.ofNullable(this.schemaConfig.getAuthentication())
 							.filter(authentication -> authentication instanceof UserAuthentication)
@@ -640,7 +640,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate in the certificate store</span>
 		 * <span class="zh-CN">使用证书库中X.509证书的认证信息的构建器</span>
 		 */
-		public AuthenticationBuilder.TrustStoreAuthenticationBuilder<DistributeConfigBuilder> trustStoreAuthenticationBuilder() {
+		public AuthenticationBuilder.TrustStoreAuthenticationBuilder<DistributeConfigBuilder> trustStoreAuth() {
 			return new AuthenticationBuilder.TrustStoreAuthenticationBuilder<>(this,
 					Optional.ofNullable(this.schemaConfig.getAuthentication())
 							.filter(authentication -> authentication instanceof TrustStoreAuthentication)
@@ -655,7 +655,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate</span>
 		 * <span class="zh-CN">使用X.509证书的认证信息的构建器</span>
 		 */
-		public AuthenticationBuilder.X509AuthenticationBuilder<DistributeConfigBuilder> x509Authentication() {
+		public AuthenticationBuilder.X509AuthenticationBuilder<DistributeConfigBuilder> x509Auth() {
 			return new AuthenticationBuilder.X509AuthenticationBuilder<>(this,
 					Optional.ofNullable(this.schemaConfig.getAuthentication())
 							.filter(authentication -> authentication instanceof X509Authentication)
@@ -856,7 +856,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @return <span class="en-US">Builder implementation class of basic authentication information instance object</span>
 		 * <span class="zh-CN">基本身份认证信息构建器实例对象</span>
 		 */
-		public AuthenticationBuilder.UserAuthenticationBuilder<JdbcConfigBuilder> userAuthentication() {
+		public AuthenticationBuilder.UserAuthenticationBuilder<JdbcConfigBuilder> basicAuth() {
 			return new AuthenticationBuilder.UserAuthenticationBuilder<>(this,
 					Optional.ofNullable(this.schemaConfig.getAuthentication())
 							.filter(authentication -> authentication instanceof UserAuthentication)
@@ -872,7 +872,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate in the certificate store</span>
 		 * <span class="zh-CN">使用证书库中X.509证书的认证信息的构建器</span>
 		 */
-		public AuthenticationBuilder.TrustStoreAuthenticationBuilder<JdbcConfigBuilder> trustStoreAuthentication() {
+		public AuthenticationBuilder.TrustStoreAuthenticationBuilder<JdbcConfigBuilder> trustStoreAuth() {
 			return new AuthenticationBuilder.TrustStoreAuthenticationBuilder<>(this,
 					Optional.ofNullable(this.schemaConfig.getAuthentication())
 							.filter(authentication -> authentication instanceof TrustStoreAuthentication)
@@ -887,7 +887,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate</span>
 		 * <span class="zh-CN">使用X.509证书的认证信息的构建器</span>
 		 */
-		public AuthenticationBuilder.X509AuthenticationBuilder<JdbcConfigBuilder> x509Authentication() {
+		public AuthenticationBuilder.X509AuthenticationBuilder<JdbcConfigBuilder> x509Auth() {
 			return new AuthenticationBuilder.X509AuthenticationBuilder<>(this,
 					Optional.ofNullable(this.schemaConfig.getAuthentication())
 							.filter(authentication -> authentication instanceof X509Authentication)
@@ -1214,7 +1214,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @return <span class="en-US">Builder implementation class of basic authentication information instance object</span>
 		 * <span class="zh-CN">基本身份认证信息构建器实例对象</span>
 		 */
-		public AuthenticationBuilder.UserAuthenticationBuilder<RemoteConfigBuilder> userAuthentication() {
+		public AuthenticationBuilder.UserAuthenticationBuilder<RemoteConfigBuilder> basicAuth() {
 			return new AuthenticationBuilder.UserAuthenticationBuilder<>(this,
 					Optional.ofNullable(this.schemaConfig.getAuthentication())
 							.filter(authentication -> authentication instanceof UserAuthentication)
@@ -1230,7 +1230,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate in the certificate store</span>
 		 * <span class="zh-CN">使用证书库中X.509证书的认证信息的构建器</span>
 		 */
-		public AuthenticationBuilder.TrustStoreAuthenticationBuilder<RemoteConfigBuilder> trustStoreAuthentication() {
+		public AuthenticationBuilder.TrustStoreAuthenticationBuilder<RemoteConfigBuilder> trustStoreAuth() {
 			return new AuthenticationBuilder.TrustStoreAuthenticationBuilder<>(this,
 					Optional.ofNullable(this.schemaConfig.getAuthentication())
 							.filter(authentication -> authentication instanceof TrustStoreAuthentication)
@@ -1245,7 +1245,7 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 		 * @return <span class="en-US">Builder implementation class of use the authentication information of the X.509 certificate</span>
 		 * <span class="zh-CN">使用X.509证书的认证信息的构建器</span>
 		 */
-		public AuthenticationBuilder.X509AuthenticationBuilder<RemoteConfigBuilder> x509AuthenticationBuilder() {
+		public AuthenticationBuilder.X509AuthenticationBuilder<RemoteConfigBuilder> x509Auth() {
 			return new AuthenticationBuilder.X509AuthenticationBuilder<>(this,
 					Optional.ofNullable(this.schemaConfig.getAuthentication())
 							.filter(authentication -> authentication instanceof X509Authentication)

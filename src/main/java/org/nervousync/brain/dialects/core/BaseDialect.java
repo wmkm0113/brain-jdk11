@@ -414,20 +414,24 @@ public abstract class BaseDialect implements Dialect {
 	 * <h3 class="en-US">Generate query column name commands</h3>
 	 * <h3 class="zh-CN">生成查询列名称命令</h3>
 	 *
-	 * @param aliasMap   <span class="en-US">Data table alias mapping table</span>
-	 *                   <span class="zh-CN">数据表别名映射表</span>
-	 * @param tableName  <span class="en-US">Database table name</span>
-	 *                   <span class="zh-CN">数据表名</span>
-	 * @param columnName <span class="en-US">Data column name</span>
-	 *                   <span class="zh-CN">数据列名</span>
+	 * @param aliasMap     <span class="en-US">Data table alias mapping table</span>
+	 *                     <span class="zh-CN">数据表别名映射表</span>
+	 * @param identifyCode <span class="en-US">Identify code</span>
+	 *                     <span class="zh-CN">识别代码</span>
+	 * @param columnName   <span class="en-US">Data column name</span>
+	 *                     <span class="zh-CN">数据列名</span>
 	 * @return <span class="en-US">Generated SQL command</span>
 	 * <span class="zh-CN">生成的SQL命令</span>
 	 */
-	protected final String columnName(final Map<String, String> aliasMap, final String tableName,
+	protected final String columnName(final Map<String, String> aliasMap, final String identifyCode,
 	                                  final String columnName) {
 		StringBuilder stringBuilder = new StringBuilder();
-		if (aliasMap.containsKey(tableName)) {
-			stringBuilder.append(aliasMap.get(tableName)).append(BrainCommons.DEFAULT_NAME_SPLIT);
+		if (StringUtils.notBlank(identifyCode)) {
+			if (aliasMap.containsKey(identifyCode)) {
+				stringBuilder.append(aliasMap.get(identifyCode)).append(BrainCommons.DEFAULT_NAME_SPLIT);
+			} else if (aliasMap.containsValue(identifyCode)) {
+				stringBuilder.append(identifyCode).append(BrainCommons.DEFAULT_NAME_SPLIT);
+			}
 		}
 		stringBuilder.append(columnName);
 		return this.nameCase(stringBuilder.toString());

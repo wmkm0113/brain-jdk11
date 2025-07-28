@@ -46,6 +46,12 @@ public abstract class QueryJoin extends BeanObject {
 	private static final long serialVersionUID = 5429421831753628828L;
 
 	/**
+	 * <span class="en-US">Driven table identify code</span>
+	 * <span class="zh-CN">驱动表识别代码</span>
+	 */
+	@XmlElement(name = "driven_identify")
+	private String drivenIdentify;
+	/**
 	 * <span class="en-US">Join table alias name</span>
 	 * <span class="zh-CN">关联表别名</span>
 	 */
@@ -64,6 +70,28 @@ public abstract class QueryJoin extends BeanObject {
 	@XmlElement(name = "join_info")
 	@XmlElementWrapper(name = "join_info_list")
 	private List<JoinInfo> joinInfos = Collections.emptyList();
+
+	/**
+	 * <h3 class="en-US">Getter method for the driven table identify code</h3>
+	 * <h3 class="zh-CN">驱动表识别代码的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Driven table identify code</span>
+	 * <span class="zh-CN">驱动表识别代码</span>
+	 */
+	public String getDrivenIdentify() {
+		return this.drivenIdentify;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the driven table identify code</h3>
+	 * <h3 class="zh-CN">驱动表识别代码的Setter方法</h3>
+	 *
+	 * @param drivenIdentify <span class="en-US">Driven table identify code</span>
+	 *                       <span class="zh-CN">驱动表识别代码</span>
+	 */
+	public void setDrivenIdentify(final String drivenIdentify) {
+		this.drivenIdentify = drivenIdentify;
+	}
 
 	/**
 	 * <h3 class="en-US">Getter method for join table alias name</h3>

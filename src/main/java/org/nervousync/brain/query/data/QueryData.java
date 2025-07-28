@@ -87,15 +87,15 @@ public final class QueryData extends BeanObject {
 			@XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/brain"),
 			@XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/brain")
 	})
-	@XmlElementWrapper(name = "conditions")
-	private List<Condition> conditions;
+	@XmlElementWrapper(name = "condition_list")
+	private List<Condition> conditionList;
 	/**
 	 * <span class="en-US">Identify key</span>
 	 * <span class="zh-CN">分组识别代码列表</span>
 	 */
 	@XmlElement(name = "group_by")
 	@XmlElementWrapper(name = "group_list")
-	private List<GroupBy> groupBy;
+	private List<GroupBy> groupByList;
 	/**
 	 * <span class="en-US">Group having condition instance list</span>
 	 * <span class="zh-CN">分组筛选条件实例对象列表</span>
@@ -112,8 +112,8 @@ public final class QueryData extends BeanObject {
 	 * <h3 class="zh-CN">子查询定义的构造方法</h3>
 	 */
 	public QueryData() {
-		this.conditions = new ArrayList<>();
-		this.groupBy = new ArrayList<>();
+		this.conditionList = new ArrayList<>();
+		this.groupByList = new ArrayList<>();
 		this.havingList = new ArrayList<>();
 	}
 
@@ -191,19 +191,19 @@ public final class QueryData extends BeanObject {
 	 * @return <span class="en-US">Query condition instance list</span>
 	 * <span class="zh-CN">查询条件实例对象列表</span>
 	 */
-	public List<Condition> getConditions() {
-		return this.conditions;
+	public List<Condition> getConditionList() {
+		return this.conditionList;
 	}
 
 	/**
 	 * <h3 class="en-US">Setter method for the query condition instance list</h3>
 	 * <h3 class="zh-CN">查询条件实例对象列表的Setter方法</h3>
 	 *
-	 * @param conditions <span class="en-US">Query condition instance list</span>
+	 * @param conditionList <span class="en-US">Query condition instance list</span>
 	 *                   <span class="zh-CN">查询条件实例对象列表</span>
 	 */
-	public void setConditions(final List<Condition> conditions) {
-		this.conditions = conditions;
+	public void setConditionList(final List<Condition> conditionList) {
+		this.conditionList = conditionList;
 	}
 
 	/**
@@ -213,19 +213,19 @@ public final class QueryData extends BeanObject {
 	 * @return <span class="en-US">Group identify key</span>
 	 * <span class="zh-CN">分组识别代码列表</span>
 	 */
-	public List<GroupBy> getGroupBy() {
-		return this.groupBy;
+	public List<GroupBy> getGroupByList() {
+		return this.groupByList;
 	}
 
 	/**
 	 * <h3 class="en-US">Setter method for group identify key</h3>
 	 * <h3 class="zh-CN">分组识别代码列表的Setter方法</h3>
 	 *
-	 * @param groupBy <span class="en-US">Group identify key</span>
+	 * @param groupByList <span class="en-US">Group identify key</span>
 	 *                <span class="zh-CN">分组识别代码列表</span>
 	 */
-	public void setGroupBy(final List<GroupBy> groupBy) {
-		this.groupBy = groupBy;
+	public void setGroupByList(final List<GroupBy> groupByList) {
+		this.groupByList = groupByList;
 	}
 
 	/**

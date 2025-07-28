@@ -17,13 +17,27 @@
 
 package org.nervousync.brain.query.builder;
 
+import jakarta.annotation.Nonnull;
 import jakarta.persistence.LockModeType;
 import org.intellij.lang.annotations.MagicConstant;
+import org.nervousync.brain.enumerations.query.FromType;
+import org.nervousync.brain.enumerations.query.ItemType;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
+import org.nervousync.brain.query.condition.impl.ColumnCondition;
+import org.nervousync.brain.query.condition.impl.GroupCondition;
 import org.nervousync.brain.query.core.QueryFrom;
 import org.nervousync.brain.query.core.QueryItem;
+import org.nervousync.brain.query.core.SortedItem;
+import org.nervousync.brain.query.data.QueryData;
+import org.nervousync.brain.query.from.FromSubQuery;
+import org.nervousync.brain.query.from.FromTable;
+import org.nervousync.brain.query.item.*;
+import org.nervousync.brain.query.join.SubQueryJoin;
+import org.nervousync.brain.query.join.TableQueryJoin;
+import org.nervousync.brain.query.param.AbstractParameter;
+import org.nervousync.brain.query.param.impl.*;
 import org.nervousync.brain.query.sort.GroupBy;
 import org.nervousync.brain.query.sort.OrderBy;
 import org.nervousync.brain.query.join.QueryJoin;
@@ -31,10 +45,16 @@ import org.nervousync.builder.Builder;
 import org.nervousync.builder.ParentBuilder;
 import org.nervousync.commons.Globals;
 import org.nervousync.exceptions.builder.BuilderException;
+import org.nervousync.utils.ConvertUtils;
+import org.nervousync.utils.LoggerUtils;
+import org.nervousync.utils.SecurityUtils;
+import org.nervousync.utils.StringUtils;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.TreeMap;
 
 /**
  * <h2 class="en-US">Query information builder</h2>
@@ -44,6 +64,12 @@ import java.util.List;
  * @version $Revision: 1.0.0 $ $Date: Oct 28, 2020 11:46:08 $
  */
 public final class BrainQueryBuilder extends ParentBuilder implements Builder<QueryInfo> {
+
+	/**
+	 * <span class="en-US">Logger instance</span>
+	 * <span class="zh-CN">日志实例</span>
+	 */
+	private static final LoggerUtils.Logger LOGGER = LoggerUtils.getLogger(BrainQueryBuilder.class);
 
 	/**
 	 * <span class="en-US">Sheet name</span>
@@ -271,6 +297,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 			throw new BuilderException(0x00DB00000042L);
 		}
 		QueryInfo queryInfo = new QueryInfo();
+		queryInfo.setCacheKey(this.cacheKey());
 		queryInfo.setSheetName(this.sheetName);
 		queryInfo.setQueryFrom(this.queryFrom);
 		queryInfo.setQueryJoins(this.queryJoins);
@@ -315,5 +342,377 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 			this.orderByList.clear();
 			this.orderByList.addAll(((SortsBuilder.OrderByItems) object).getItemList());
 		}
+	}
+
+	/**
+	 * <h3 class="en-US">Calculate the cache key value of the given query information</h3>
+	 * <h3 class="zh-CN">计算查询信息的缓存键值</h3>
+	 *
+	 * @return <span class="en-US">Cache key value</span>
+	 * <span class="zh-CN">缓存键值</span>
+	 */
+	@Nonnull
+	private String cacheKey() {
+		if (!this.cacheables || this.forUpdate) {
+			//  Return empty string if query information defines can't cacheables or query result will use it for update records
+			return Globals.DEFAULT_VALUE_STRING;
+		}
+		TreeMap<String, Object> cacheMap = new TreeMap<>();
+		cacheMap.put("items", this.itemsList(this.itemList));
+		cacheMap.put("from", this.fromList(this.queryFrom));
+		cacheMap.put("joins", this.joinsList(this.queryJoins));
+		cacheMap.put("where", this.conditionsList(this.conditionList));
+		cacheMap.put("having", this.conditionsList(this.havingList));
+		cacheMap.put("order", this.orderList(this.orderByList));
+		cacheMap.put("group", this.groupList(this.groupByList));
+		cacheMap.put("page", this.pageNo);
+		cacheMap.put("limit", this.pageLimit);
+		String jsonData = StringUtils.objectToString(cacheMap, StringUtils.StringType.JSON, Boolean.FALSE);
+		if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug("Query_Cache_Debug", jsonData);
+		}
+		return ConvertUtils.bytesToHex(SecurityUtils.SHA256(jsonData));
+	}
+
+	/**
+	 * <h3 class="en-US">Convert the query item information list into the list of data mapping table</h3>
+	 * <h3 class="zh-CN">转换查询项信息列表为数据映射表列表</h3>
+	 *
+	 * @param itemList <span class="en-US">Query item information list</span>
+	 *                 <span class="zh-CN">查询项信息列表</span>
+	 * @return <span class="en-US">List of data mapping table</span>
+	 * <span class="zh-CN">数据映射表列表</span>
+	 */
+	@Nonnull
+	private List<TreeMap<String, Object>> itemsList(@Nonnull final List<QueryItem> itemList) {
+		itemList.sort(SortedItem.asc());
+		List<TreeMap<String, Object>> parameterList = new ArrayList<>();
+		itemList.forEach(queryItem -> parameterList.add(cacheMap(queryItem)));
+		return parameterList;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert query item information into data mapping table</h3>
+	 * <h3 class="zh-CN">转换查询项信息为数据映射表</h3>
+	 *
+	 * @param queryItem <span class="en-US">Query item information</span>
+	 *                  <span class="zh-CN">查询项信息</span>
+	 * @return <span class="en-US">Data mapping table</span>
+	 * <span class="zh-CN">数据映射表</span>
+	 */
+	@Nonnull
+	private TreeMap<String, Object> cacheMap(@Nonnull final QueryItem queryItem) {
+		TreeMap<String, Object> cacheMap = new TreeMap<>();
+		switch (queryItem.getItemType()) {
+			case CALCULATE:
+				cacheMap.put("type", ItemType.CALCULATE);
+				cacheMap.put("calculate", ((CalculateItem) queryItem).getCalculateCode());
+				cacheMap.put("items", this.itemsList(((CalculateItem) queryItem).getCalculateItems()));
+				break;
+			case COLUMN:
+				cacheMap.put("type", ItemType.COLUMN);
+				cacheMap.put("table", ((ColumnItem) queryItem).getTableName());
+				cacheMap.put("column", ((ColumnItem) queryItem).getColumnName());
+				break;
+			case CONSTANT:
+				cacheMap.put("type", ItemType.CONSTANT);
+				cacheMap.put("value", ((ConstantItem) queryItem).getConstantValue());
+				break;
+			case FUNCTION:
+				cacheMap.put("type", ItemType.FUNCTION);
+				cacheMap.put("function", ((FunctionItem) queryItem).getFunctionName());
+				cacheMap.put("parameters", this.parametersList(((FunctionItem) queryItem).getFunctionParams()));
+				break;
+			case QUERY:
+				cacheMap.put("type", ItemType.QUERY);
+				cacheMap.put("query", this.cacheMap(((SubQueryItem) queryItem).getQueryData()));
+				break;
+		}
+		return cacheMap;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert the query from information list into the list of data mapping table</h3>
+	 * <h3 class="zh-CN">转换查询来源信息列表为数据映射表列表</h3>
+	 *
+	 * @param queryFromList <span class="en-US">Query from information list</span>
+	 *                      <span class="zh-CN">查询来源信息列表</span>
+	 * @return <span class="en-US">List of data mapping table</span>
+	 * <span class="zh-CN">数据映射表列表</span>
+	 */
+	@Nonnull
+	private List<TreeMap<String, Object>> fromList(@Nonnull final List<QueryFrom> queryFromList) {
+		queryFromList.sort(SortedItem.asc());
+		List<TreeMap<String, Object>> parameterList = new ArrayList<>();
+		queryFromList.forEach(queryFrom -> parameterList.add(this.cacheMap(queryFrom)));
+		return parameterList;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert the query from information into data mapping table</h3>
+	 * <h3 class="zh-CN">转换查询来源信息为数据映射表</h3>
+	 *
+	 * @param queryFrom <span class="en-US">Query from information</span>
+	 *                  <span class="zh-CN">查询来源信息</span>
+	 * @return <span class="en-US">Data mapping table</span>
+	 * <span class="zh-CN">数据映射表</span>
+	 */
+	@Nonnull
+	private TreeMap<String, Object> cacheMap(@Nonnull final QueryFrom queryFrom) {
+		TreeMap<String, Object> cacheMap = new TreeMap<>();
+		switch (queryFrom.getFromType()) {
+			case Table:
+				cacheMap.put("type", FromType.Table);
+				cacheMap.put("table", ((FromTable) queryFrom).getTableName());
+				break;
+			case SubQuery:
+				cacheMap.put("type", FromType.SubQuery);
+				cacheMap.put("subQuery", cacheMap(((FromSubQuery) queryFrom).getQueryData()));
+				break;
+		}
+		return cacheMap;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert the query parameter information list into the list of data mapping table</h3>
+	 * <h3 class="zh-CN">转换查询参数信息列表为数据映射表列表</h3>
+	 *
+	 * @param abstractParameters <span class="en-US">Query parameter information list</span>
+	 *                           <span class="zh-CN">查询参数信息列表</span>
+	 * @return <span class="en-US">List of data mapping table</span>
+	 * <span class="zh-CN">数据映射表列表</span>
+	 */
+	@Nonnull
+	private List<TreeMap<String, Object>> parametersList(@Nonnull final List<AbstractParameter<?>> abstractParameters) {
+		abstractParameters.sort(SortedItem.asc());
+		List<TreeMap<String, Object>> parameterList = new ArrayList<>();
+		abstractParameters.forEach(parameter -> parameterList.add(this.cacheMap(parameter)));
+		return parameterList;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert parameter information into data mapping table</h3>
+	 * <h3 class="zh-CN">转换参数信息为数据映射表</h3>
+	 *
+	 * @param parameter <span class="en-US">Parameter information</span>
+	 *                  <span class="zh-CN">参数信息</span>
+	 * @return <span class="en-US">Data mapping table</span>
+	 * <span class="zh-CN">数据映射表</span>
+	 */
+	@Nonnull
+	private TreeMap<String, Object> cacheMap(final AbstractParameter<?> parameter) {
+		TreeMap<String, Object> cacheMap = new TreeMap<>();
+		if (parameter != null) {
+			switch (parameter.getItemType()) {
+				case ARRAY:
+					cacheMap.put("type", ItemType.ARRAY);
+					cacheMap.put("arrays", ((ArraysParameter) parameter).getItemValue().getArrayObject());
+					break;
+				case CALCULATE:
+					cacheMap.put("type", ItemType.CALCULATE);
+					cacheMap.put("calculate", ((CalculateParameter) parameter).getItemValue().getCalculateCode());
+					cacheMap.put("items", this.itemsList(((CalculateParameter) parameter).getItemValue().getCalculateItems()));
+					break;
+				case COLUMN:
+					cacheMap.put("type", ItemType.COLUMN);
+					cacheMap.put("table", ((ColumnParameter) parameter).getItemValue().getTableName());
+					cacheMap.put("column", ((ColumnParameter) parameter).getItemValue().getColumnName());
+					break;
+				case CONSTANT:
+					cacheMap.put("type", ItemType.CONSTANT);
+					cacheMap.put("value", ((ConstantParameter) parameter).getItemValue());
+					break;
+				case FUNCTION:
+					cacheMap.put("type", ItemType.FUNCTION);
+					FunctionItem functionItem = ((FunctionParameter) parameter).getItemValue();
+					cacheMap.put("function", functionItem.getFunctionName());
+					cacheMap.put("parameters", this.parametersList(functionItem.getFunctionParams()));
+					break;
+				case QUERY:
+					cacheMap.put("type", ItemType.QUERY);
+					cacheMap.put("function", ((QueryParameter) parameter).getFunctionName());
+					cacheMap.put("query", this.cacheMap(((QueryParameter) parameter).getItemValue()));
+					break;
+				case RANGE:
+					cacheMap.put("type", ItemType.RANGE.toString());
+					cacheMap.put("begin", ((RangesParameter) parameter).getItemValue().getBeginValue());
+					cacheMap.put("end", ((RangesParameter) parameter).getItemValue().getEndValue());
+					break;
+			}
+		}
+		return cacheMap;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert sub-query information into data mapping table</h3>
+	 * <h3 class="zh-CN">转换子查询信息为数据映射表</h3>
+	 *
+	 * @param queryData <span class="en-US">Sub-query information</span>
+	 *                  <span class="zh-CN">子查询信息</span>
+	 * @return <span class="en-US">Data mapping table</span>
+	 * <span class="zh-CN">数据映射表</span>
+	 */
+	@Nonnull
+	private TreeMap<String, Object> cacheMap(@Nonnull final QueryData queryData) {
+		TreeMap<String, Object> cacheMap = new TreeMap<>();
+		cacheMap.put("items", this.itemsList(queryData.getItemList()));
+		cacheMap.put("from", queryData.getTableName());
+		cacheMap.put("joins", this.joinsList(queryData.getQueryJoins()));
+		cacheMap.put("where", this.conditionsList(queryData.getConditionList()));
+		cacheMap.put("having", this.conditionsList(queryData.getHavingList()));
+		cacheMap.put("group", this.groupList(queryData.getGroupByList()));
+		return cacheMap;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert the query join information list into the list of data mapping table</h3>
+	 * <h3 class="zh-CN">转换查询关联信息列表为数据映射表列表</h3>
+	 *
+	 * @param queryJoinList <span class="en-US">Query join information list</span>
+	 *                      <span class="zh-CN">查询关联信息列表</span>
+	 * @return <span class="en-US">List of data mapping table</span>
+	 * <span class="zh-CN">数据映射表列表</span>
+	 */
+	@Nonnull
+	private List<TreeMap<String, Object>> joinsList(@Nonnull final List<QueryJoin> queryJoinList) {
+		if (queryJoinList.isEmpty()) {
+			return Collections.emptyList();
+		}
+		List<TreeMap<String, Object>> joinList = new ArrayList<>();
+		queryJoinList.forEach(queryJoin -> joinList.add(this.cacheMap(queryJoin)));
+		return joinList;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert query join information into data mapping table</h3>
+	 * <h3 class="zh-CN">转换查询关联信息为数据映射表</h3>
+	 *
+	 * @param queryJoin <span class="en-US">Query join information</span>
+	 *                  <span class="zh-CN">查询关联信息</span>
+	 * @return <span class="en-US">Data mapping table</span>
+	 * <span class="zh-CN">数据映射表</span>
+	 */
+	@Nonnull
+	private TreeMap<String, Object> cacheMap(@Nonnull final QueryJoin queryJoin) {
+		TreeMap<String, Object> cacheMap = new TreeMap<>();
+		if (queryJoin instanceof TableQueryJoin) {
+			cacheMap.put("table", ((TableQueryJoin) queryJoin).getJoinTable());
+		} else if (queryJoin instanceof SubQueryJoin) {
+			cacheMap.put("subQuery", cacheMap(((SubQueryJoin) queryJoin).getSubQuery()));
+		}
+		cacheMap.put("type", queryJoin.getJoinType());
+
+		List<TreeMap<String, Object>> joinColumns = new ArrayList<>();
+		queryJoin.getJoinInfos().forEach(joinInfo -> {
+			TreeMap<String, Object> joinMap = new TreeMap<>();
+			joinMap.put("connection", joinInfo.getConnectionCode());
+			joinMap.put("condition", joinInfo.getConditionCode());
+			joinMap.put("leftKey", joinInfo.getLeftKey());
+			joinMap.put("rightKey", joinInfo.getRightKey());
+			joinColumns.add(joinMap);
+		});
+		cacheMap.put("joinColumns", joinColumns);
+
+		return cacheMap;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert the query condition information list into the list of data mapping table</h3>
+	 * <h3 class="zh-CN">转换查询匹配信息列表为数据映射表列表</h3>
+	 *
+	 * @param conditionList <span class="en-US">Query condition information list</span>
+	 *                      <span class="zh-CN">查询匹配信息列表</span>
+	 * @return <span class="en-US">List of data mapping table</span>
+	 * <span class="zh-CN">数据映射表列表</span>
+	 */
+	@Nonnull
+	private List<TreeMap<String, Object>> conditionsList(@Nonnull final List<Condition> conditionList) {
+		if (conditionList.isEmpty()) {
+			return Collections.emptyList();
+		}
+		conditionList.sort(SortedItem.asc());
+		List<TreeMap<String, Object>> conditions = new ArrayList<>();
+		conditionList.forEach(condition -> conditions.add(this.cacheMap(condition)));
+		return conditions;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert query condition information into data mapping table</h3>
+	 * <h3 class="zh-CN">转换查询匹配信息为数据映射表</h3>
+	 *
+	 * @param condition <span class="en-US">Query condition information</span>
+	 *                  <span class="zh-CN">查询匹配信息</span>
+	 * @return <span class="en-US">Data mapping table</span>
+	 * <span class="zh-CN">数据映射表</span>
+	 */
+	@Nonnull
+	private TreeMap<String, Object> cacheMap(@Nonnull final Condition condition) {
+		TreeMap<String, Object> cacheMap = new TreeMap<>();
+		cacheMap.put("connection", condition.getConnectionCode());
+		cacheMap.put("type", condition.getConditionType());
+		switch (condition.getConditionType()) {
+			case COLUMN:
+				cacheMap.put("condition", ((ColumnCondition) condition).getConditionCode());
+				cacheMap.put("table", ((ColumnCondition) condition).getTableName());
+				cacheMap.put("column", ((ColumnCondition) condition).getColumnName());
+				cacheMap.put("function", ((ColumnCondition) condition).getFunctionName());
+				cacheMap.put("parameter", this.cacheMap(((ColumnCondition) condition).getConditionParameter()));
+				break;
+			case GROUP:
+				cacheMap.put("conditions", this.conditionsList(((GroupCondition) condition).getConditionList()));
+				break;
+		}
+		return cacheMap;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert the query order by list into the list of data mapping table</h3>
+	 * <h3 class="zh-CN">转换查询排序信息列表为数据映射表列表</h3>
+	 *
+	 * @param orderByList <span class="en-US">Query order by list</span>
+	 *                    <span class="zh-CN">查询排序信息列表</span>
+	 * @return <span class="en-US">List of data mapping table</span>
+	 * <span class="zh-CN">数据映射表列表</span>
+	 */
+	@Nonnull
+	private List<TreeMap<String, Object>> orderList(@Nonnull final List<OrderBy> orderByList) {
+		if (orderByList.isEmpty()) {
+			return Collections.emptyList();
+		}
+		orderByList.sort(SortedItem.asc());
+		List<TreeMap<String, Object>> orderList = new ArrayList<>();
+		orderByList.forEach(orderBy -> {
+			TreeMap<String, Object> cacheMap = new TreeMap<>();
+			cacheMap.put("table", orderBy.getTableName());
+			cacheMap.put("column", orderBy.getColumnName());
+			cacheMap.put("type", orderBy.getOrderType());
+			orderList.add(cacheMap);
+		});
+		return orderList;
+	}
+
+	/**
+	 * <h3 class="en-US">Convert the query group by list into the list of data mapping table</h3>
+	 * <h3 class="zh-CN">转换查询分组信息列表为数据映射表列表</h3>
+	 *
+	 * @param groupByList <span class="en-US">Query group by list</span>
+	 *                    <span class="zh-CN">查询分组信息列表</span>
+	 * @return <span class="en-US">List of data mapping table</span>
+	 * <span class="zh-CN">数据映射表列表</span>
+	 */
+	@Nonnull
+	private List<TreeMap<String, String>> groupList(@Nonnull final List<GroupBy> groupByList) {
+		if (groupByList.isEmpty()) {
+			return Collections.emptyList();
+		}
+		groupByList.sort(SortedItem.asc());
+		List<TreeMap<String, String>> groupList = new ArrayList<>();
+		groupByList.forEach(groupBy -> {
+			TreeMap<String, String> cacheMap = new TreeMap<>();
+			cacheMap.put("table", groupBy.getTableName());
+			cacheMap.put("column", groupBy.getColumnName());
+			groupList.add(cacheMap);
+		});
+		return groupList;
 	}
 }

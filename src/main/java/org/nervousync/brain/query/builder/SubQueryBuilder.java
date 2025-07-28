@@ -173,8 +173,8 @@ public final class SubQueryBuilder<P extends ParentBuilder> extends AbstractBuil
 		queryData.setTableName(this.tableName);
 		queryData.setItemList(this.itemList);
 		queryData.setQueryJoins(this.queryJoins);
-		queryData.setConditions(this.conditions);
-		queryData.setGroupBy(this.groupByList);
+		queryData.setConditionList(this.conditions);
+		queryData.setGroupByList(this.groupByList);
 		queryData.setHavingList(this.havingList);
 		return queryData;
 	}

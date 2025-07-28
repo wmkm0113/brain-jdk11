@@ -61,6 +61,12 @@ public final class QueryInfo extends BeanObject {
 	private static final long serialVersionUID = 549973159743148887L;
 
 	/**
+	 * <span class="en-US">Cache key value</span>
+	 * <span class="zh-CN">缓存键值</span>
+	 */
+	@XmlElement(name = "cache_key")
+	private String cacheKey;
+	/**
 	 * <span class="en-US">Sheet name</span>
 	 * <span class="zh-CN">工作表名称</span>
 	 */
@@ -72,8 +78,8 @@ public final class QueryInfo extends BeanObject {
 	 */
 	@Nonnull
 	@XmlElements({
-			@XmlElement(name = "from_sub_query", type = FromSubQuery.class),
-			@XmlElement(name = "from_table", type = FromTable.class)
+			@XmlElement(name = "from_sub_query", type = FromSubQuery.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "from_table", type = FromTable.class, namespace = "https://nervousync.org/schemas/brain")
 	})
 	@XmlElementWrapper(name = "from_list")
 	private List<QueryFrom> queryFrom;
@@ -82,7 +88,7 @@ public final class QueryInfo extends BeanObject {
 	 * <span class="zh-CN">关联查询信息列表</span>
 	 */
 	@Nonnull
-	@XmlElement(name = "query_join")
+	@XmlElement(name = "query_join", namespace = "https://nervousync.org/schemas/brain")
 	@XmlElementWrapper(name = "join_list")
 	private List<QueryJoin> queryJoins;
 	/**
@@ -91,11 +97,11 @@ public final class QueryInfo extends BeanObject {
 	 */
 	@Nonnull
 	@XmlElements({
-			@XmlElement(name = "calculate_item", type = CalculateItem.class),
-			@XmlElement(name = "column_item", type = ColumnItem.class),
-			@XmlElement(name = "constant_item", type = ConstantItem.class),
-			@XmlElement(name = "function_item", type = FunctionItem.class),
-			@XmlElement(name = "sub_query_item", type = SubQueryItem.class)
+			@XmlElement(name = "calculate_item", type = CalculateItem.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "column_item", type = ColumnItem.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "constant_item", type = ConstantItem.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "function_item", type = FunctionItem.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "sub_query_item", type = SubQueryItem.class, namespace = "https://nervousync.org/schemas/brain")
 	})
 	@XmlElementWrapper(name = "item_list")
 	private List<QueryItem> itemList;
@@ -105,8 +111,8 @@ public final class QueryInfo extends BeanObject {
 	 */
 	@Nonnull
 	@XmlElements({
-			@XmlElement(name = "column_condition", type = ColumnCondition.class),
-			@XmlElement(name = "group_condition", type = GroupCondition.class)
+			@XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/brain")
 	})
 	@XmlElementWrapper(name = "condition_list")
 	private List<Condition> conditionList;
@@ -115,7 +121,7 @@ public final class QueryInfo extends BeanObject {
 	 * <span class="zh-CN">查询排序数据列列表</span>
 	 */
 	@Nonnull
-	@XmlElement(name = "order_by")
+	@XmlElement(name = "order_by", namespace = "https://nervousync.org/schemas/brain")
 	@XmlElementWrapper(name = "order_list")
 	private List<OrderBy> orderByList;
 	/**
@@ -123,7 +129,7 @@ public final class QueryInfo extends BeanObject {
 	 * <span class="zh-CN">查询分组数据列列表</span>
 	 */
 	@Nonnull
-	@XmlElement(name = "group_by")
+	@XmlElement(name = "group_by", namespace = "https://nervousync.org/schemas/brain")
 	@XmlElementWrapper(name = "group_list")
 	private List<GroupBy> groupByList;
 	/**
@@ -132,8 +138,8 @@ public final class QueryInfo extends BeanObject {
 	 */
 	@Nonnull
 	@XmlElements({
-			@XmlElement(name = "column_condition", type = ColumnCondition.class),
-			@XmlElement(name = "group_condition", type = GroupCondition.class)
+			@XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/brain")
 	})
 	@XmlElementWrapper(name = "having_list")
 	private List<Condition> havingList;
@@ -156,8 +162,8 @@ public final class QueryInfo extends BeanObject {
 	@XmlElement(name = "page_limit")
 	private int pageLimit = Globals.DEFAULT_VALUE_INT;
 	/**
-	 * <span class="en-US">Retrieve result using for update record</span>
-	 * <span class="zh-CN">检索结果用于更新记录</span>
+	 * <span class="en-US">Query result using for update record</span>
+	 * <span class="zh-CN">查询结果用于更新记录</span>
 	 */
 	@XmlElement(name = "for_update")
 	private boolean forUpdate = Boolean.FALSE;
@@ -180,6 +186,28 @@ public final class QueryInfo extends BeanObject {
 		this.orderByList = new ArrayList<>();
 		this.groupByList = new ArrayList<>();
 		this.havingList = new ArrayList<>();
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the cache key value</h3>
+	 * <h3 class="zh-CN">缓存键值的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Cache key value</span>
+	 * <span class="zh-CN">缓存键值</span>
+	 */
+	public String getCacheKey() {
+		return this.cacheKey;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the cache key value</h3>
+	 * <h3 class="zh-CN">缓存键值的Setter方法</h3>
+	 *
+	 * @param cacheKey <span class="en-US">Cache key value</span>
+	 *                 <span class="zh-CN">缓存键值</span>
+	 */
+	public void setCacheKey(final String cacheKey) {
+		this.cacheKey = cacheKey;
 	}
 
 	/**

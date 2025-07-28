@@ -281,25 +281,6 @@ public interface RemoteClient {
 	String query(@Nonnull @WebParam @QueryParam("query") final String queryInfo);
 
 	/**
-	 * <h3 class="en-US">Execute query commands for data updates</h3>
-	 * <h3 class="zh-CN">执行用于数据更新的查询命令</h3>
-	 *
-	 * @param queryInfo  <span class="en-US">Query record information</span>
-	 *                   <span class="zh-CN">数据检索信息</span>
-	 * @param lockOption <span class="en-US">Query record lock option</span>
-	 *                   <span class="zh-CN">查询记录锁定选项</span>
-	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
-	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
-	 */
-	@GET
-	@Path("/search/{tableName}/forUpdate")
-	@Produces(MediaType.APPLICATION_JSON)
-	@Consumes(MediaType.APPLICATION_JSON)
-	@WebMethod
-	String queryForUpdate(@Nonnull @WebParam @QueryParam("query") final String queryInfo,
-	                      @Nonnull @WebParam @QueryParam("lock") final LockModeType lockOption);
-
-	/**
 	 * <h3 class="en-US">Query total record count</h3>
 	 * <h3 class="zh-CN">查询总记录数</h3>
 	 *

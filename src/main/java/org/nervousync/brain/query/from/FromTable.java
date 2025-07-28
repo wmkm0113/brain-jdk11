@@ -17,10 +17,7 @@
 
 package org.nervousync.brain.query.from;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlRootElement;
-import jakarta.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.FromType;
 import org.nervousync.brain.query.core.QueryFrom;
 
@@ -46,6 +43,7 @@ public final class FromTable extends QueryFrom {
 	 * <span class="en-US">Data table name</span>
 	 * <span class="zh-CN">数据表名</span>
 	 */
+	@XmlElement(name = "table_name")
 	private String tableName;
 
 	/**

@@ -1087,7 +1087,8 @@ public abstract class JdbcDialect extends BaseDialect {
 		sqlBuilder.append(COMMAND_SET)
 				.append(columnBuilder.substring(BrainCommons.DEFAULT_SPLIT_CHARACTER.length()))
 				.append(WHERE_COMMAND)
-				.append(BrainCommons.DEFAULT_WHERE_CLAUSE).append(this.whereClause(filterMap, values));
+				.append(BrainCommons.DEFAULT_WHERE_CLAUSE)
+				.append(this.whereClause(filterMap, values));
 		return new GeneratedCommand(sqlBuilder.toString(), values, Map.of());
 	}
 
@@ -1180,7 +1181,9 @@ public abstract class JdbcDialect extends BaseDialect {
 				sqlBuilder.append(this.joinCommand(aliasMap, queryJoin, values));
 			}
 		}
-		sqlBuilder.append(this.whereClause(aliasMap, queryInfo.getConditionList(), values));
+		sqlBuilder.append(WHERE_COMMAND)
+				.append(BrainCommons.DEFAULT_WHERE_CLAUSE)
+				.append(this.whereClause(aliasMap, queryInfo.getConditionList(), values));
 		return new GeneratedCommand(sqlBuilder.toString(), values, Map.of());
 	}
 
@@ -1637,15 +1640,14 @@ public abstract class JdbcDialect extends BaseDialect {
 			}
 		} else if (queryJoin instanceof TableQueryJoin) {
 			TableQueryJoin tableQueryJoin = (TableQueryJoin) queryJoin;
-			aliasName = aliasMap.get(tableQueryJoin.getJoinTable());
+			aliasName = tableQueryJoin.getJoinTable();
 			sqlBuilder.append(this.nameCase(tableQueryJoin.getJoinTable()));
 		} else {
 			return Globals.DEFAULT_VALUE_STRING;
 		}
-		if (StringUtils.isEmpty(aliasName)) {
-			return Globals.DEFAULT_VALUE_STRING;
+		if (StringUtils.notBlank(aliasName)) {
+			sqlBuilder.append(this.aliasCommand()).append(BrainCommons.WHITE_SPACE).append(aliasName);
 		}
-		sqlBuilder.append(this.aliasCommand()).append(BrainCommons.WHITE_SPACE).append(aliasName);
 		sqlBuilder.append(DEFAULT_COMMAND_ON);
 		StringBuilder columnBuilder = new StringBuilder();
 		for (JoinInfo joinInfo : queryJoin.getJoinInfos()) {
@@ -1654,7 +1656,7 @@ public abstract class JdbcDialect extends BaseDialect {
 						.append(joinInfo.getConnectionCode())
 						.append(BrainCommons.WHITE_SPACE);
 			}
-			columnBuilder.append(this.columnName(aliasMap, joinInfo.getLeftIdentify(), joinInfo.getLeftKey()));
+			columnBuilder.append(this.columnName(aliasMap, queryJoin.getDrivenIdentify(), joinInfo.getLeftKey()));
 			switch (joinInfo.getConditionCode()) {
 				case LESS:
 					columnBuilder.append(BrainCommons.OPERATOR_LESS);
@@ -1675,7 +1677,7 @@ public abstract class JdbcDialect extends BaseDialect {
 					columnBuilder.append(BrainCommons.OPERATOR_GREATER_EQUAL);
 					break;
 			}
-			columnBuilder.append(this.columnName(aliasMap, joinInfo.getRightIdentify(), joinInfo.getRightKey()));
+			columnBuilder.append(this.columnName(aliasMap, aliasName, joinInfo.getRightKey()));
 		}
 		sqlBuilder.append(BrainCommons.BRACKETS_BEGIN).append(columnBuilder).append(BrainCommons.BRACKETS_END);
 		return sqlBuilder.toString();
@@ -1753,13 +1755,13 @@ public abstract class JdbcDialect extends BaseDialect {
 				.append(this.itemCommand(aliasMap, queryData.getItemList(), values))
 				.append(FROM_COMMAND)
 				.append(this.nameCase(queryData.getTableName()));
-		String whereClause = this.whereClause(aliasMap, queryData.getConditions(), values);
+		String whereClause = this.whereClause(aliasMap, queryData.getConditionList(), values);
 		if (StringUtils.notBlank(whereClause)) {
 			sqlBuilder.append(WHERE_COMMAND).append(BrainCommons.DEFAULT_WHERE_CLAUSE).append(whereClause);
 		}
-		if (queryData.getGroupBy() != null && !queryData.getGroupBy().isEmpty()) {
+		if (queryData.getGroupByList() != null && !queryData.getGroupByList().isEmpty()) {
 			StringBuilder groupByClause = new StringBuilder();
-			for (GroupBy groupBy : queryData.getGroupBy()) {
+			for (GroupBy groupBy : queryData.getGroupByList()) {
 				if (groupByClause.length() > 0) {
 					groupByClause.append(BrainCommons.DEFAULT_SPLIT_CHARACTER);
 				}

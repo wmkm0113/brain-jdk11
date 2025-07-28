@@ -45,12 +45,15 @@ import org.nervousync.brain.schemas.distribute.DistributeSchema;
 import org.nervousync.brain.schemas.jdbc.JdbcSchema;
 import org.nervousync.brain.schemas.remote.RemoteSchema;
 import org.nervousync.commons.Globals;
+import org.nervousync.utils.CollectionUtils;
 import org.nervousync.utils.LoggerUtils;
 import org.nervousync.utils.ObjectUtils;
 import org.nervousync.utils.StringUtils;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * <h2 class="en-US">Nervousync brain data source</h2>
@@ -317,31 +320,36 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <h3 class="en-US">Checks whether two tables are in the same database, according to the given query conditions</h3>
 	 * <h3 class="zh-CN">根据给定的查询条件检查两个数据表是否在同一数据库中</h3>
 	 *
-	 * @param leftTable     <span class="en-US">Left table name</span>
-	 *                      <span class="zh-CN">左表名</span>
-	 * @param rightTable    <span class="en-US">Right table name</span>
-	 *                      <span class="zh-CN">右表名</span>
-	 * @param conditionList <span class="en-US">Query condition instance list</span>
-	 *                      <span class="zh-CN">查询条件实例对象列表</span>
+	 * @param identifyCodes <span class="en-US">Data table identify code list</span>
+	 *                      <span class="zh-CN">数据表识别代码列表</span>
+	 * @param whereClause   <span class="en-US">Where clause query conditions</span>
+	 *                      <span class="zh-CN">Where字句查询条件</span>
+	 * @param havingClause  <span class="en-US">Having clause query conditions</span>
+	 *                      <span class="zh-CN">Having字句查询条件</span>
 	 * @return <span class="en-US">Check result</span>
 	 * <span class="zh-CN">检查结果</span>
 	 * @throws SQLException <span class="en-US">The data source or data table is not registered</span>
 	 *                      <span class="zh-CN">数据源或数据表未注册</span>
 	 */
-	public boolean sameCatalog(@Nonnull final String leftTable, @Nonnull final String rightTable,
-	                           @Nonnull final List<Condition> conditionList) throws SQLException {
-		TableDefine leftDefine = this.tableManager.define(leftTable);
-		TableDefine rightDefine = this.tableManager.define(rightTable);
-
-		if (!ObjectUtils.nullSafeEquals(leftDefine.getSchemaName(), rightDefine.getSchemaName())
-				|| !ObjectUtils.nullSafeEquals(leftDefine.getCatalog(), rightDefine.getCatalog())) {
-			return Boolean.FALSE;
+	public boolean sameCatalog(@Nonnull final List<String> identifyCodes,
+	                           @Nonnull final List<Condition> whereClause, @Nonnull final List<Condition> havingClause)
+			throws SQLException {
+		if (identifyCodes.isEmpty() || identifyCodes.size() == 1) {
+			return Boolean.TRUE;
 		}
-		return Optional.of(this.retrieveSchema(leftDefine.getSchemaName()))
-				.filter(schema -> schema instanceof JdbcSchema)
-				.map(schema -> (JdbcSchema) schema)
-				.map(jdbcSchema -> jdbcSchema.sameCatalog(leftTable, rightTable, conditionList))
-				.orElse(Boolean.TRUE);
+		String catalog = this.tableManager.define(identifyCodes.get(0)).getCatalog();
+		for (int i = 0; i < identifyCodes.size(); i++) {
+			if (!ObjectUtils.nullSafeEquals(catalog, this.tableManager.define(identifyCodes.get(0)).getCatalog())) {
+				return Boolean.FALSE;
+			}
+		}
+
+		BaseSchema<?> schema = this.retrieveSchema(catalog);
+		if (schema instanceof JdbcSchema) {
+			return ((JdbcSchema) schema).sameCatalog(identifyCodes,
+					Stream.concat(whereClause.stream(), havingClause.stream()).collect(Collectors.toList()));
+		}
+		return Boolean.TRUE;
 	}
 
 	/**

@@ -51,13 +51,13 @@ public abstract class Authentication extends BeanObject {
 	 * <span class="en-US">Enumeration value of authentication type</span>
 	 * <span class="zh-CN">身份认证类型的枚举值</span>
 	 */
-	@XmlElement(name = "auth_type")
 	private final AuthType authType;
 	/**
 	 * <span class="en-US">Last modified timestamp</span>
 	 * <span class="zh-CN">最后修改时间戳</span>
 	 */
 	@JsonIgnore
+	@XmlElement(name = "last_modified")
 	private long lastModified = Globals.DEFAULT_VALUE_LONG;
 
 	/**

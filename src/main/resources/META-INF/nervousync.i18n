@@ -389,6 +389,10 @@
           "content": "No database schema found! Schema name: {0}"
         },
         {
+          "key": "No_Table_Found",
+          "content": "Can't found table define, table name: {0}"
+        },
+        {
           "key": "Drop_Table_Error",
           "content": "Drop table failed! "
         },
@@ -455,6 +459,10 @@
         {
           "key": "Query_Alias_Exists",
           "content": "Query alias name was existed"
+        },
+        {
+          "key": "Query_Cache_Debug",
+          "content": "Query cache information: {0}"
         }
       ]
     },
@@ -671,6 +679,10 @@
           "content": "未找到数据源！数据源名称：{0}"
         },
         {
+          "key": "No_Table_Found",
+          "content": "未找到数据表定义，数据表名：{0}"
+        },
+        {
           "key": "Drop_Table_Error",
           "content": "删除数据表出错！"
         },
@@ -737,6 +749,10 @@
         {
           "key": "Query_Alias_Exists",
           "content": "查询别名已存在"
+        },
+        {
+          "key": "Query_Cache_Debug",
+          "content": "查询信息缓存: {0}"
         }
       ]
     }
