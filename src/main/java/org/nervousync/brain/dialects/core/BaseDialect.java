@@ -230,7 +230,7 @@ public abstract class BaseDialect implements Dialect {
 	 * @return <span class="en-US">Support join query</span>
 	 * <span class="zh-CN">支持关联查询</span>
 	 */
-	public final boolean isSupportJoin() {
+	public final boolean supportJoin() {
 		return this.supportJoin;
 	}
 

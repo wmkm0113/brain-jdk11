@@ -31,6 +31,7 @@ import org.nervousync.brain.query.param.AbstractParameter;
  */
 @XmlType(name = "function_parameter", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "function_parameter", namespace = "https://nervousync.org/schemas/brain")
+@XmlAccessorType(XmlAccessType.NONE)
 public final class FunctionParameter extends AbstractParameter<FunctionItem> {
 
 	/**

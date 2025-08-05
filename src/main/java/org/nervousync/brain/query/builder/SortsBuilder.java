@@ -67,7 +67,7 @@ public abstract class SortsBuilder<P extends ParentBuilder, T> extends AbstractB
 		 * <span class="en-US">Query group by column information list</span>
 		 * <span class="zh-CN">查询分组列信息列表</span>
 		 */
-		private final List<GroupBy> groupByList;
+		private final List<GroupBy> groupByList = new ArrayList<>();
 
 		/**
 		 * <h3 class="en-US">Constructor method for the query group by list information builder</h3>
@@ -75,10 +75,14 @@ public abstract class SortsBuilder<P extends ParentBuilder, T> extends AbstractB
 		 *
 		 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
 		 *                      <span class="zh-CN">父构建器实例对象</span>
+		 * @param groupByList   <span class="en-US">Query group by column information list</span>
+		 *                      <span class="zh-CN">查询分组列信息列表</span>
 		 */
-		public GroupItemsBuilder(final P parentBuilder) {
+		public GroupItemsBuilder(final P parentBuilder, final List<GroupBy> groupByList) {
 			super(parentBuilder);
-			this.groupByList = new ArrayList<>();
+			if (groupByList != null) {
+				this.groupByList.addAll(groupByList);
+			}
 		}
 
 		/**
@@ -183,7 +187,7 @@ public abstract class SortsBuilder<P extends ParentBuilder, T> extends AbstractB
 		 * <span class="en-US">Query group by column information list</span>
 		 * <span class="zh-CN">查询分组列信息列表</span>
 		 */
-		private final List<OrderBy> orderByList;
+		private final List<OrderBy> orderByList = new ArrayList<>();
 
 		/**
 		 * <h3 class="en-US">Constructor method for the query group by list information builder</h3>
@@ -191,10 +195,14 @@ public abstract class SortsBuilder<P extends ParentBuilder, T> extends AbstractB
 		 *
 		 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
 		 *                      <span class="zh-CN">父构建器实例对象</span>
+		 * @param orderByList   <span class="en-US">Query group by column information list</span>
+		 *                      <span class="zh-CN">查询分组列信息列表</span>
 		 */
-		public OrderItemsBuilder(final P parentBuilder) {
+		public OrderItemsBuilder(final P parentBuilder, final List<OrderBy> orderByList) {
 			super(parentBuilder);
-			this.orderByList = new ArrayList<>();
+			if (orderByList != null) {
+				this.orderByList.addAll(orderByList);
+			}
 		}
 
 		/**

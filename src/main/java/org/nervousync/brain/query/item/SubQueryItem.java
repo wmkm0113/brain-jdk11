@@ -19,8 +19,10 @@ package org.nervousync.brain.query.item;
 
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.ItemType;
+import org.nervousync.brain.query.core.AbstractQuery;
 import org.nervousync.brain.query.core.QueryItem;
-import org.nervousync.brain.query.data.QueryData;
+import org.nervousync.brain.query.subqueries.ScalarSubQuery;
+import org.nervousync.brain.query.subqueries.TableSubQuery;
 
 /**
  * <h2 class="en-US">Sub-query information define</h2>
@@ -44,8 +46,11 @@ public final class SubQueryItem extends QueryItem {
 	 * <span class="en-US">Sub-query information</span>
 	 * <span class="zh-CN">子查询信息</span>
 	 */
-	@XmlElement(name = "query_data", namespace = "https://nervousync.org/schemas/brain")
-	private QueryData queryData;
+	@XmlElements({
+			@XmlElement(name = "scalar_sub_query", type = ScalarSubQuery.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "table_sub_query", type = TableSubQuery.class, namespace = "https://nervousync.org/schemas/brain")
+	})
+	private AbstractQuery queryData;
 
 	/**
 	 * <h3 class="en-US">Protect constructor method for abstract query item define</h3>
@@ -62,7 +67,7 @@ public final class SubQueryItem extends QueryItem {
 	 * @return <span class="en-US">Query information</span>
 	 * <span class="zh-CN">查询信息</span>
 	 */
-	public QueryData getQueryData() {
+	public AbstractQuery getQueryData() {
 		return queryData;
 	}
 
@@ -73,7 +78,7 @@ public final class SubQueryItem extends QueryItem {
 	 * @param queryData <span class="en-US">Query information</span>
 	 *                  <span class="zh-CN">查询信息</span>
 	 */
-	public void setQueryData(QueryData queryData) {
+	public void setQueryData(final AbstractQuery queryData) {
 		this.queryData = queryData;
 	}
 }

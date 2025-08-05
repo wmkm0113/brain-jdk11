@@ -47,8 +47,8 @@ public final class GroupCondition extends Condition {
 	 * <span class="zh-CN">匹配条件列表</span>
 	 */
 	@XmlElements({
-			@XmlElement(name = "column_condition", type = ColumnCondition.class),
-			@XmlElement(name = "group_condition", type = GroupCondition.class)
+			@XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/brain")
 	})
 	@XmlElementWrapper(name = "condition_list")
 	private List<Condition> conditionList = new ArrayList<>();

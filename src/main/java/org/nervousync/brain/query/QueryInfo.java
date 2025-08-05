@@ -21,22 +21,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.LockModeType;
 import jakarta.xml.bind.annotation.*;
-import org.nervousync.annotations.beans.OutputConfig;
-import org.nervousync.beans.core.BeanObject;
-import org.nervousync.brain.query.condition.Condition;
-import org.nervousync.brain.query.condition.impl.ColumnCondition;
-import org.nervousync.brain.query.condition.impl.GroupCondition;
-import org.nervousync.brain.query.core.QueryFrom;
+import org.nervousync.brain.enumerations.query.QueryType;
+import org.nervousync.brain.query.core.AbstractQuery;
 import org.nervousync.brain.query.core.QueryItem;
 import org.nervousync.brain.query.core.SortedItem;
-import org.nervousync.brain.query.from.FromSubQuery;
-import org.nervousync.brain.query.from.FromTable;
-import org.nervousync.brain.query.sort.GroupBy;
 import org.nervousync.brain.query.sort.OrderBy;
 import org.nervousync.brain.query.item.*;
-import org.nervousync.brain.query.join.QueryJoin;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,8 +42,7 @@ import java.util.List;
 @XmlType(name = "query_info", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "query_info", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
-@OutputConfig(formatted = true, defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
-public final class QueryInfo extends BeanObject {
+public final class QueryInfo extends AbstractQuery {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>
@@ -73,25 +63,6 @@ public final class QueryInfo extends BeanObject {
 	@JsonIgnore
 	private String sheetName;
 	/**
-	 * <span class="en-US">Query from information list</span>
-	 * <span class="zh-CN">查询来源信息列表</span>
-	 */
-	@Nonnull
-	@XmlElements({
-			@XmlElement(name = "from_sub_query", type = FromSubQuery.class, namespace = "https://nervousync.org/schemas/brain"),
-			@XmlElement(name = "from_table", type = FromTable.class, namespace = "https://nervousync.org/schemas/brain")
-	})
-	@XmlElementWrapper(name = "from_list")
-	private List<QueryFrom> queryFrom;
-	/**
-	 * <span class="en-US">Related query information list</span>
-	 * <span class="zh-CN">关联查询信息列表</span>
-	 */
-	@Nonnull
-	@XmlElement(name = "query_join", namespace = "https://nervousync.org/schemas/brain")
-	@XmlElementWrapper(name = "join_list")
-	private List<QueryJoin> queryJoins;
-	/**
 	 * <span class="en-US">Query item instance list</span>
 	 * <span class="zh-CN">查询项目实例对象列表</span>
 	 */
@@ -106,43 +77,13 @@ public final class QueryInfo extends BeanObject {
 	@XmlElementWrapper(name = "item_list")
 	private List<QueryItem> itemList;
 	/**
-	 * <span class="en-US">Query condition instance list</span>
-	 * <span class="zh-CN">查询条件实例对象列表</span>
-	 */
-	@Nonnull
-	@XmlElements({
-			@XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/brain"),
-			@XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/brain")
-	})
-	@XmlElementWrapper(name = "condition_list")
-	private List<Condition> conditionList;
-	/**
 	 * <span class="en-US">Query order by columns' list</span>
 	 * <span class="zh-CN">查询排序数据列列表</span>
 	 */
 	@Nonnull
-	@XmlElement(name = "order_by", namespace = "https://nervousync.org/schemas/brain")
+	@XmlElement(name = "order_by", type = OrderBy.class, namespace = "https://nervousync.org/schemas/brain")
 	@XmlElementWrapper(name = "order_list")
 	private List<OrderBy> orderByList;
-	/**
-	 * <span class="en-US">Query group by columns list</span>
-	 * <span class="zh-CN">查询分组数据列列表</span>
-	 */
-	@Nonnull
-	@XmlElement(name = "group_by", namespace = "https://nervousync.org/schemas/brain")
-	@XmlElementWrapper(name = "group_list")
-	private List<GroupBy> groupByList;
-	/**
-	 * <span class="en-US">Group having condition instance list</span>
-	 * <span class="zh-CN">分组筛选条件实例对象列表</span>
-	 */
-	@Nonnull
-	@XmlElements({
-			@XmlElement(name = "column_condition", type = ColumnCondition.class, namespace = "https://nervousync.org/schemas/brain"),
-			@XmlElement(name = "group_condition", type = GroupCondition.class, namespace = "https://nervousync.org/schemas/brain")
-	})
-	@XmlElementWrapper(name = "having_list")
-	private List<Condition> havingList;
 	/**
 	 * <span class="en-US">Query result can cacheable</span>
 	 * <span class="zh-CN">查询结果可以缓存</span>
@@ -179,13 +120,9 @@ public final class QueryInfo extends BeanObject {
 	 * <h3 class="zh-CN">查询条件信息的构造方法</h3>
 	 */
 	public QueryInfo() {
-		this.queryFrom = new ArrayList<>();
-		this.queryJoins = new ArrayList<>();
+		super(QueryType.NORMAL);
 		this.itemList = new ArrayList<>();
-		this.conditionList = new ArrayList<>();
 		this.orderByList = new ArrayList<>();
-		this.groupByList = new ArrayList<>();
-		this.havingList = new ArrayList<>();
 	}
 
 	/**
@@ -233,52 +170,6 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for the query from information list</h3>
-	 * <h3 class="zh-CN">查询来源信息列表的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Query from information list</span>
-	 * <span class="zh-CN">查询来源信息列表</span>
-	 */
-	@Nonnull
-	public List<QueryFrom> getQueryFrom() {
-		return this.queryFrom;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for the query from information list</h3>
-	 * <h3 class="zh-CN">查询来源信息列表的Setter方法</h3>
-	 *
-	 * @param queryFrom <span class="en-US">Query from information list</span>
-	 *                  <span class="zh-CN">查询来源信息列表</span>
-	 */
-	public void setQueryFrom(final List<QueryFrom> queryFrom) {
-		this.queryFrom = (queryFrom == null) ? new ArrayList<>() : queryFrom;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for the related query information list</h3>
-	 * <h3 class="zh-CN">关联查询信息列表的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Related query information list</span>
-	 * <span class="zh-CN">关联查询信息列表</span>
-	 */
-	@Nonnull
-	public List<QueryJoin> getQueryJoins() {
-		return this.queryJoins;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for the related query information list</h3>
-	 * <h3 class="zh-CN">关联查询信息列表的Setter方法</h3>
-	 *
-	 * @param queryJoins <span class="en-US">Related query information list</span>
-	 *                   <span class="zh-CN">关联查询信息列表</span>
-	 */
-	public void setQueryJoins(final List<QueryJoin> queryJoins) {
-		this.queryJoins = (queryJoins == null) ? new ArrayList<>() : queryJoins;
-	}
-
-	/**
 	 * <h3 class="en-US">Getter method for the query item instance list</h3>
 	 * <h3 class="zh-CN">查询项目实例对象列表的Getter方法</h3>
 	 *
@@ -303,30 +194,6 @@ public final class QueryInfo extends BeanObject {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for the query condition instance list</h3>
-	 * <h3 class="zh-CN">查询条件实例对象列表的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Query condition instance list</span>
-	 * <span class="zh-CN">查询条件实例对象列表</span>
-	 */
-	@Nonnull
-	public List<Condition> getConditionList() {
-		return this.conditionList;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for the query condition instance list</h3>
-	 * <h3 class="zh-CN">查询条件实例对象列表的Setter方法</h3>
-	 *
-	 * @param conditionList <span class="en-US">Query condition instance list</span>
-	 *                      <span class="zh-CN">查询条件实例对象列表</span>
-	 */
-	public void setConditionList(final List<Condition> conditionList) {
-		this.conditionList = (conditionList == null) ? new ArrayList<>() : conditionList;
-		this.conditionList.sort(SortedItem.desc());
-	}
-
-	/**
 	 * <h3 class="en-US">Getter method for query order by column list</h3>
 	 * <h3 class="zh-CN">查询排序数据列列表的Getter方法</h3>
 	 *
@@ -348,53 +215,6 @@ public final class QueryInfo extends BeanObject {
 	public void setOrderByList(final List<OrderBy> orderByList) {
 		this.orderByList = (orderByList == null) ? new ArrayList<>() : orderByList;
 		this.orderByList.sort(SortedItem.desc());
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for the query group by column list</h3>
-	 * <h3 class="zh-CN">查询分组数据列列表的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Query group by columns list</span>
-	 * <span class="zh-CN">查询分组数据列列表</span>
-	 */
-	@Nonnull
-	public List<GroupBy> getGroupByList() {
-		return this.groupByList;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for the query group by column list</h3>
-	 * <h3 class="zh-CN">查询分组数据列列表的Setter方法</h3>
-	 *
-	 * @param groupByList <span class="en-US">Query group by columns list</span>
-	 *                    <span class="zh-CN">查询分组数据列列表</span>
-	 */
-	public void setGroupByList(final List<GroupBy> groupByList) {
-		this.groupByList = (groupByList == null) ? new ArrayList<>() : groupByList;
-		this.groupByList.sort(SortedItem.desc());
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for the group having condition instance list</h3>
-	 * <h3 class="zh-CN">分组筛选条件实例对象列表的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Group having condition instance list</span>
-	 * <span class="zh-CN">分组筛选条件实例对象列表</span>
-	 */
-	@Nonnull
-	public List<Condition> getHavingList() {
-		return this.havingList;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for the group having condition instance list</h3>
-	 * <h3 class="zh-CN">分组筛选条件实例对象列表的Setter方法</h3>
-	 *
-	 * @param havingList <span class="en-US">Group having condition instance list</span>
-	 *                   <span class="zh-CN">分组筛选条件实例对象列表</span>
-	 */
-	public void setHavingList(final List<Condition> havingList) {
-		this.havingList = (havingList == null) ? new ArrayList<>() : havingList;
 	}
 
 	/**

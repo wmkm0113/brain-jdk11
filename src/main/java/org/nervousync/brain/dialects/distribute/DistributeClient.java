@@ -40,6 +40,9 @@ import java.util.Map;
 public interface DistributeClient extends Closeable {
 
 	/**
+	 * <h3 class="en-US">Setup retry configure</h3>
+	 * <h3 class="zh-CN">设置获取连接的重试配置</h3>
+	 *
 	 * @param retryCount  <span class="en-US">Maximum number of connection retries</span>
 	 *                    <span class="zh-CN">连接最大重试次数</span>
 	 * @param retryPeriod <span class="en-US">Retry count if obtains connection has error</span>

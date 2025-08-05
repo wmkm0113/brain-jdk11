@@ -20,14 +20,16 @@ package org.nervousync.brain.query.param;
 import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.ItemType;
+import org.nervousync.brain.query.core.AbstractQuery;
 import org.nervousync.brain.query.core.SortedItem;
 import org.nervousync.brain.query.data.ArrayData;
-import org.nervousync.brain.query.data.QueryData;
 import org.nervousync.brain.query.data.RangesData;
 import org.nervousync.brain.query.item.CalculateItem;
 import org.nervousync.brain.query.item.ColumnItem;
 import org.nervousync.brain.query.item.FunctionItem;
 import org.nervousync.brain.query.param.impl.*;
+import org.nervousync.brain.query.subqueries.ScalarSubQuery;
+import org.nervousync.brain.query.subqueries.TableSubQuery;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.ClassUtils;
 import org.nervousync.utils.StringUtils;
@@ -70,7 +72,8 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 			@XmlElement(name = "calculate_item", type = CalculateItem.class, namespace = "https://nervousync.org/schemas/brain"),
 			@XmlElement(name = "column_item", type = ColumnItem.class, namespace = "https://nervousync.org/schemas/brain"),
 			@XmlElement(name = "function_item", type = FunctionItem.class, namespace = "https://nervousync.org/schemas/brain"),
-			@XmlElement(name = "query_data", type = QueryData.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "scalar_sub_query", type = ScalarSubQuery.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "table_sub_query", type = TableSubQuery.class, namespace = "https://nervousync.org/schemas/brain"),
 			@XmlElement(name = "ranges_data", type = RangesData.class, namespace = "https://nervousync.org/schemas/brain")
 	})
 	private T itemValue;
@@ -234,7 +237,7 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 * @return <span class="en-US">Generated object instance</span>
 	 * <span class="zh-CN">生成的对象实例</span>
 	 */
-	public static QueryParameter subQuery(final QueryData queryData) {
+	public static QueryParameter subQuery(final AbstractQuery queryData) {
 		return subQuery(queryData, Globals.DEFAULT_VALUE_STRING);
 	}
 
@@ -249,7 +252,7 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 * @return <span class="en-US">Generated object instance</span>
 	 * <span class="zh-CN">生成的对象实例</span>
 	 */
-	public static QueryParameter subQuery(final QueryData queryData, final String functionName) {
+	public static QueryParameter subQuery(final AbstractQuery queryData, final String functionName) {
 		return subQuery(queryData, functionName, Globals.DEFAULT_VALUE_INT);
 	}
 
@@ -266,7 +269,7 @@ public abstract class AbstractParameter<T> extends SortedItem implements Wrapper
 	 * @return <span class="en-US">Generated object instance</span>
 	 * <span class="zh-CN">生成的对象实例</span>
 	 */
-	public static QueryParameter subQuery(final QueryData queryData, final String functionName, final int sortCode) {
+	public static QueryParameter subQuery(final AbstractQuery queryData, final String functionName, final int sortCode) {
 		QueryParameter queryParameter = new QueryParameter();
 		queryParameter.setItemValue(queryData);
 		queryParameter.setFunctionName(StringUtils.isEmpty(functionName) ? Globals.DEFAULT_VALUE_STRING : functionName.trim());

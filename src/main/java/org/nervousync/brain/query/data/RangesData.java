@@ -29,6 +29,7 @@ import org.nervousync.beans.core.BeanObject;
  */
 @XmlType(name = "ranges_data", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "ranges_data", namespace = "https://nervousync.org/schemas/brain")
+@XmlAccessorType(XmlAccessType.NONE)
 public final class RangesData extends BeanObject {
 
 	/**

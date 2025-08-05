@@ -17,11 +17,9 @@
 
 package org.nervousync.brain.query.param.impl;
 
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlRootElement;
-import jakarta.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.ItemType;
-import org.nervousync.brain.query.data.QueryData;
+import org.nervousync.brain.query.core.AbstractQuery;
 import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.commons.Globals;
 
@@ -34,7 +32,8 @@ import org.nervousync.commons.Globals;
  */
 @XmlType(name = "query_parameter", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "query_parameter", namespace = "https://nervousync.org/schemas/brain")
-public final class QueryParameter extends AbstractParameter<QueryData> {
+@XmlAccessorType(XmlAccessType.NONE)
+public final class QueryParameter extends AbstractParameter<AbstractQuery> {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>

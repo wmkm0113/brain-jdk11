@@ -17,6 +17,8 @@
 
 package org.nervousync.brain.query.param.impl;
 
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
 import org.nervousync.brain.enumerations.query.ItemType;
@@ -32,6 +34,7 @@ import org.nervousync.brain.query.param.AbstractParameter;
  */
 @XmlType(name = "calculate_parameter", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "calculate_parameter", namespace = "https://nervousync.org/schemas/brain")
+@XmlAccessorType(XmlAccessType.NONE)
 public final class CalculateParameter extends AbstractParameter<CalculateItem> {
 
 	/**

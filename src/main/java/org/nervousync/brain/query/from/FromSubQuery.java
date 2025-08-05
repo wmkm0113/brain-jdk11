@@ -20,7 +20,7 @@ package org.nervousync.brain.query.from;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.FromType;
 import org.nervousync.brain.query.core.QueryFrom;
-import org.nervousync.brain.query.data.QueryData;
+import org.nervousync.brain.query.subqueries.NestedTableSubQuery;
 
 /**
  * <h2 class="en-US">Query from sub-query definition</h2>
@@ -44,8 +44,8 @@ public final class FromSubQuery extends QueryFrom {
 	 * <span class="en-US">Sub-query information</span>
 	 * <span class="zh-CN">子查询信息</span>
 	 */
-	@XmlElement(name = "query_data", namespace = "https://nervousync.org/schemas/brain")
-	private QueryData queryData;
+	@XmlElement(name = "nested_table_sub_query", type = NestedTableSubQuery.class, namespace = "https://nervousync.org/schemas/brain")
+	private NestedTableSubQuery queryData;
 
 	/**
 	 * <h3 class="en-US">Constructor method for the query from sub-query definition</h3>
@@ -62,7 +62,7 @@ public final class FromSubQuery extends QueryFrom {
 	 * @return <span class="en-US">Query information</span>
 	 * <span class="zh-CN">查询信息</span>
 	 */
-	public QueryData getQueryData() {
+	public NestedTableSubQuery getQueryData() {
 		return queryData;
 	}
 
@@ -73,7 +73,7 @@ public final class FromSubQuery extends QueryFrom {
 	 * @param queryData <span class="en-US">Query information</span>
 	 *                  <span class="zh-CN">查询信息</span>
 	 */
-	public void setQueryData(QueryData queryData) {
+	public void setQueryData(final NestedTableSubQuery queryData) {
 		this.queryData = queryData;
 	}
 }

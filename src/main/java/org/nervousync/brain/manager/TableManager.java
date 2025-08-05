@@ -18,13 +18,19 @@
 package org.nervousync.brain.manager;
 
 import jakarta.annotation.Nonnull;
+import org.intellij.lang.annotations.MagicConstant;
 import org.nervousync.brain.commons.BrainCommons;
+import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.utils.StringUtils;
 
 import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * <h2 class="en-US">Data table manager</h2>
@@ -93,8 +99,8 @@ public final class TableManager {
 	}
 
 	/**
-	 * <h3 class="en-US">Check whether the data source and data table are registered</h3>
-	 * <h3 class="zh-CN">检查数据源和数据表是否注册</h3>
+	 * <h3 class="en-US">Get the registered table defines information</h3>
+	 * <h3 class="zh-CN">获取注册的数据表定义信息</h3>
 	 *
 	 * @param identifyCode <span class="en-US">Data table identify code</span>
 	 *                     <span class="zh-CN">数据表识别代码</span>
@@ -114,6 +120,76 @@ public final class TableManager {
 			throw new MultilingualSQLException(0x00DB00000034L, tableName);
 		}
 		return tableDefine;
+	}
+
+	/**
+	 * <h3 class="en-US">Checks if the given array of table identification codes is in the same data source</h3>
+	 * <h3 class="zh-CN">检查给定的数据表识别代码数组是否在同一数据源中</h3>
+	 *
+	 * @param identifyCodes <span class="en-US">Data table identify codes array</span>
+	 *                      <span class="zh-CN">数据表识别代码数组</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
+	 */
+	public boolean sameSchema(@Nonnull final String... identifyCodes) {
+		if (identifyCodes.length == 0) {
+			return Boolean.TRUE;
+		}
+		List<String> schemaList = new ArrayList<>();
+		List.of(identifyCodes).forEach(identifyCode -> {
+			String tableName = this.identifyCodeMapping.getOrDefault(identifyCode, identifyCode);
+			if (StringUtils.isEmpty(tableName)) {
+				return;
+			}
+			TableDefine tableDefine = this.registeredTables.get(tableName);
+			if (tableDefine == null) {
+				return;
+			}
+			if (!schemaList.contains(tableDefine.getSchemaName())) {
+				schemaList.add(tableDefine.getSchemaName());
+			}
+		});
+		return schemaList.size() == 1;
+	}
+
+	/**
+	 * <h3 class="en-US">Get the column name of the data column in the registration data table</h3>
+	 * <h3 class="zh-CN">获取注册数据表中数据列的列名</h3>
+	 *
+	 * @param tableIdentify  <span class="en-US">Data table identify code</span>
+	 *                       <span class="zh-CN">数据表识别代码</span>
+	 * @param columnIdentify <span class="en-US">Data column identify code</span>
+	 *                       <span class="zh-CN">数据列识别代码</span>
+	 * @return <span class="en-US">Column name of the data column</span>
+	 * <span class="zh-CN">数据列的列名</span>
+	 * @throws SQLException <span class="en-US">The data table is not registered or data column not exists</span>
+	 *                      <span class="zh-CN">数据表未注册或数据列不存在</span>
+	 */
+	public String columnName(@Nonnull final String tableIdentify, @Nonnull final String columnIdentify)
+			throws SQLException {
+		return Optional.ofNullable(this.define(tableIdentify).column(columnIdentify))
+				.map(ColumnDefine::getColumnName)
+				.orElseThrow(() -> new MultilingualSQLException(0x00DB00000011L));
+	}
+
+	/**
+	 * <h3 class="en-US">Get the JDBC type code of the data column in the registration data table</h3>
+	 * <h3 class="zh-CN">获取注册数据表中数据列的JDBC类型代码</h3>
+	 *
+	 * @param tableIdentify  <span class="en-US">Data table identify code</span>
+	 *                       <span class="zh-CN">数据表识别代码</span>
+	 * @param columnIdentify <span class="en-US">Data column identify code</span>
+	 *                       <span class="zh-CN">数据列识别代码</span>
+	 * @return <span class="en-US">JDBC type code</span>
+	 * <span class="zh-CN">JDBC类型代码</span>
+	 * @throws SQLException <span class="en-US">The data table is not registered or data column not exists</span>
+	 *                      <span class="zh-CN">数据表未注册或数据列不存在</span>
+	 */
+	@MagicConstant(valuesFromClass = Types.class)
+	public int jdbcType(@Nonnull final String tableIdentify, @Nonnull final String columnIdentify) throws SQLException {
+		return Optional.ofNullable(this.define(tableIdentify).column(columnIdentify))
+				.map(ColumnDefine::getJdbcType)
+				.orElseThrow(() -> new MultilingualSQLException(0x00DB00000011L));
 	}
 
 	/**

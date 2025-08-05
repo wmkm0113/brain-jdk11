@@ -19,16 +19,12 @@ package org.nervousync.brain.query.builder;
 
 import jakarta.annotation.Nonnull;
 import org.nervousync.brain.query.core.QueryFrom;
-import org.nervousync.brain.query.data.QueryData;
 import org.nervousync.brain.query.from.FromSubQuery;
 import org.nervousync.brain.query.from.FromTable;
+import org.nervousync.brain.query.subqueries.NestedTableSubQuery;
 import org.nervousync.builder.AbstractBuilder;
 import org.nervousync.builder.ParentBuilder;
 import org.nervousync.exceptions.builder.BuilderException;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * <h2 class="en-US">Query from information lists builder</h2>
@@ -39,14 +35,14 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 28, 2020 11:46:08 $
  */
-public final class FromBuilder<P extends ParentBuilder> extends AbstractBuilder<P, FromBuilder.QueriesFrom> {
+public abstract class FromBuilder<P extends ParentBuilder, T extends QueryFrom> extends AbstractBuilder<P, T> {
 
 	/**
 	 * <span class="en-US">Query from instance lists</span>
 	 * <span class="zh-CN">查询来源实例对象列表</span>
 	 */
 	@Nonnull
-	private final List<QueryFrom> fromList;
+	protected final T queryFrom;
 
 	/**
 	 * <h3 class="en-US">Constructor method for the query from information lists builder</h3>
@@ -54,48 +50,17 @@ public final class FromBuilder<P extends ParentBuilder> extends AbstractBuilder<
 	 *
 	 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
 	 *                      <span class="zh-CN">父构建器实例对象</span>
+	 * @param queryFrom     <span class="en-US">Query from instance</span>
+	 *                      <span class="zh-CN">查询来源实例对象</span>
 	 */
-	public FromBuilder(final P parentBuilder) {
+	protected FromBuilder(final P parentBuilder, @Nonnull final T queryFrom) {
 		super(parentBuilder);
-		this.fromList = new ArrayList<>();
-	}
-
-	/**
-	 * <h3 class="en-US">Query from data table builder</h3>
-	 * <h3 class="zh-CN">查询来源数据表构建器</h3>
-	 *
-	 * @param tableName <span class="en-US">Data table name</span>
-	 *                  <span class="zh-CN">数据表名</span>
-	 * @return <span class="en-US">Query from data table builder instance object</span>
-	 * <span class="zh-CN">查询来源数据表构建器实例对象</span>
-	 */
-	public FromTableBuilder table(@Nonnull final String tableName) {
-		return new FromTableBuilder(this, tableName);
-	}
-
-	/**
-	 * <h3 class="en-US">Query from sub-query builder</h3>
-	 * <h3 class="zh-CN">查询来源子查询构建器</h3>
-	 *
-	 * @param aliasName <span class="en-US">Alias name</span>
-	 *                  <span class="zh-CN">别名</span>
-	 * @return <span class="en-US">Query from sub-query builder instance object</span>
-	 * <span class="zh-CN">查询来源子查询构建器实例对象</span>
-	 */
-	public FromSubQueryBuilder subQuery(@Nonnull final String aliasName) {
-		return new FromSubQueryBuilder(this, aliasName);
+		this.queryFrom = queryFrom;
 	}
 
 	@Override
-	public void confirm(final Object object) {
-		if (object instanceof QueryFrom) {
-			this.fromList.add((QueryFrom) object);
-		}
-	}
-
-	@Override
-	public QueriesFrom build() throws BuilderException {
-		return new QueriesFrom(this.fromList);
+	public T build() throws BuilderException {
+		return this.queryFrom;
 	}
 
 	/**
@@ -105,14 +70,7 @@ public final class FromBuilder<P extends ParentBuilder> extends AbstractBuilder<
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Oct 28, 2020 11:46:08 $
 	 */
-	public final class FromTableBuilder extends AbstractBuilder<FromBuilder<P>, FromTable> {
-
-		/**
-		 * <span class="en-US">Query item instance list</span>
-		 * <span class="zh-CN">查询项目实例对象列表</span>
-		 */
-		@Nonnull
-		private final FromTable fromTable;
+	public static final class FromTableBuilder<P extends ParentBuilder> extends FromBuilder<P, FromTable> {
 
 		/**
 		 * <h3 class="en-US">Private constructor method for the query from data table builder</h3>
@@ -123,10 +81,9 @@ public final class FromBuilder<P extends ParentBuilder> extends AbstractBuilder<
 		 * @param tableName     <span class="en-US">Data table name</span>
 		 *                      <span class="zh-CN">数据表名</span>
 		 */
-		private FromTableBuilder(final FromBuilder<P> parentBuilder, @Nonnull final String tableName) {
-			super(parentBuilder);
-			this.fromTable = new FromTable();
-			this.fromTable.setTableName(tableName);
+		public FromTableBuilder(final P parentBuilder, @Nonnull final String tableName) {
+			super(parentBuilder, new FromTable());
+			this.queryFrom.setTableName(tableName);
 		}
 
 		/**
@@ -138,8 +95,8 @@ public final class FromBuilder<P extends ParentBuilder> extends AbstractBuilder<
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public FromTableBuilder sortCode(final int sortCode) {
-			this.fromTable.setSortCode(sortCode);
+		public FromTableBuilder<P> sortCode(final int sortCode) {
+			this.queryFrom.setSortCode(sortCode);
 			return this;
 		}
 
@@ -152,14 +109,9 @@ public final class FromBuilder<P extends ParentBuilder> extends AbstractBuilder<
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public FromTableBuilder aliasName(final String aliasName) {
-			this.fromTable.setAliasName(aliasName);
+		public FromTableBuilder<P> aliasName(final String aliasName) {
+			this.queryFrom.setAliasName(aliasName);
 			return this;
-		}
-
-		@Override
-		public FromTable build() throws BuilderException {
-			return this.fromTable;
 		}
 	}
 
@@ -170,14 +122,7 @@ public final class FromBuilder<P extends ParentBuilder> extends AbstractBuilder<
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Oct 28, 2020 11:46:08 $
 	 */
-	public final class FromSubQueryBuilder extends AbstractBuilder<FromBuilder<P>, FromSubQuery> {
-
-		/**
-		 * <span class="en-US">Query item instance list</span>
-		 * <span class="zh-CN">查询项目实例对象列表</span>
-		 */
-		@Nonnull
-		private final FromSubQuery fromSubQuery;
+	public static final class FromSubQueryBuilder<P extends ParentBuilder> extends FromBuilder<P, FromSubQuery> {
 
 		/**
 		 * <h3 class="en-US">Private constructor method for the query from data table builder</h3>
@@ -188,10 +133,9 @@ public final class FromBuilder<P extends ParentBuilder> extends AbstractBuilder<
 		 * @param aliasName     <span class="en-US">Alias name</span>
 		 *                      <span class="zh-CN">别名</span>
 		 */
-		private FromSubQueryBuilder(final FromBuilder<P> parentBuilder, final String aliasName) {
-			super(parentBuilder);
-			this.fromSubQuery = new FromSubQuery();
-			this.fromSubQuery.setAliasName(aliasName);
+		public FromSubQueryBuilder(final P parentBuilder, final String aliasName) {
+			super(parentBuilder, new FromSubQuery());
+			this.queryFrom.setAliasName(aliasName);
 		}
 
 		/**
@@ -203,74 +147,28 @@ public final class FromBuilder<P extends ParentBuilder> extends AbstractBuilder<
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public FromSubQueryBuilder sortCode(final int sortCode) {
-			this.fromSubQuery.setSortCode(sortCode);
+		public FromSubQueryBuilder<P> sortCode(final int sortCode) {
+			this.queryFrom.setSortCode(sortCode);
 			return this;
 		}
 
 		/**
-		 * <h3 class="en-US">Sub-query information builder</h3>
-		 * <h3 class="zh-CN">子查询构建器</h3>
+		 * <h3 class="en-US">Query from table information builder</h3>
+		 * <h3 class="zh-CN">查询来源数据表信息构建器</h3>
 		 *
-		 * @param tableName <span class="en-US">Data table name</span>
-		 *                  <span class="zh-CN">数据表名</span>
 		 * @return <span class="en-US">Sub-query builder instance object</span>
 		 * <span class="zh-CN">子查询构建器实例对象</span>
 		 */
-		public SubQueryBuilder<FromSubQueryBuilder> queryBuilder(@Nonnull final String tableName) {
-			return new SubQueryBuilder<>(this, tableName);
+		@Nonnull
+		public SubQueryBuilder.NestedTableSubQueryBuilder<FromSubQueryBuilder<P>> builder() {
+			return new SubQueryBuilder.NestedTableSubQueryBuilder<>(this);
 		}
 
 		@Override
 		public void confirm(final Object object) {
-			if (object instanceof QueryData) {
-				this.fromSubQuery.setQueryData((QueryData) object);
+			if (object instanceof NestedTableSubQuery) {
+				this.queryFrom.setQueryData((NestedTableSubQuery) object);
 			}
-		}
-
-		@Override
-		public FromSubQuery build() throws BuilderException {
-			return this.fromSubQuery;
-		}
-	}
-
-	/**
-	 * <h2 class="en-US">Query from information lists</h2>
-	 * <h2 class="zh-CN">查询来源信息列表</h2>
-	 *
-	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
-	 * @version $Revision: 1.0.0 $ $Date: Oct 28, 2020 11:46:08 $
-	 */
-	public static final class QueriesFrom {
-
-		/**
-		 * <span class="en-US">Query item instance list</span>
-		 * <span class="zh-CN">查询项目实例对象列表</span>
-		 */
-		@Nonnull
-		private final List<QueryFrom> fromList;
-
-		/**
-		 * <h3 class="en-US">Private constructor method for the query from information lists</h3>
-		 * <h3 class="zh-CN">查询来源信息列表的私有构造方法</h3>
-		 *
-		 * @param fromList <span class="en-US">Query item instance list</span>
-		 *                 <span class="zh-CN">查询项目实例对象列表</span>
-		 */
-		private QueriesFrom(@Nonnull final List<QueryFrom> fromList) {
-			this.fromList = fromList.isEmpty() ? Collections.emptyList() : fromList;
-		}
-
-		/**
-		 * <h3 class="en-US">Getter method for the query item instance list</h3>
-		 * <h3 class="zh-CN">查询项目实例对象列表的Getter方法</h3>
-		 *
-		 * @return <span class="en-US">Query item instance list</span>
-		 * <span class="zh-CN">查询项目实例对象列表</span>
-		 */
-		@Nonnull
-		public List<QueryFrom> getFromList() {
-			return this.fromList;
 		}
 	}
 }

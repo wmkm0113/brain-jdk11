@@ -21,8 +21,8 @@ import jakarta.annotation.Nonnull;
 import org.intellij.lang.annotations.MagicConstant;
 import org.nervousync.brain.enumerations.query.CalculateCode;
 import org.nervousync.brain.manager.TableManager;
+import org.nervousync.brain.query.core.AbstractQuery;
 import org.nervousync.brain.query.core.QueryItem;
-import org.nervousync.brain.query.data.QueryData;
 import org.nervousync.brain.query.item.*;
 import org.nervousync.builder.AbstractBuilder;
 import org.nervousync.builder.ParentBuilder;
@@ -32,7 +32,6 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * <h2 class="en-US">Query items information list builder</h2>
@@ -46,10 +45,11 @@ import java.util.Optional;
 public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder<P, ItemsBuilder.Items> {
 
 	/**
-	 * <span class="en-US">Query items information list instance object</span>
-	 * <span class="zh-CN">查询项目信息列表实例对象</span>
+	 * <span class="en-US">Query item instance list</span>
+	 * <span class="zh-CN">查询项目实例对象列表</span>
 	 */
-	private final Items items;
+	@Nonnull
+	private final List<QueryItem> itemList = new ArrayList<>();
 
 	/**
 	 * <h3 class="en-US">Constructor method for the query items information list builder</h3>
@@ -57,10 +57,14 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 	 *
 	 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
 	 *                      <span class="zh-CN">父构建器实例对象</span>
+	 * @param itemList      <span class="en-US">Query item instance list</span>
+	 *                      <span class="zh-CN">查询项目实例对象列表</span>
 	 */
-	public ItemsBuilder(final P parentBuilder) {
+	public ItemsBuilder(final P parentBuilder, final List<QueryItem> itemList) {
 		super(parentBuilder);
-		this.items = new Items();
+		if (itemList != null) {
+			this.itemList.addAll(itemList);
+		}
 	}
 
 	/**
@@ -129,7 +133,8 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 	 * <span class="zh-CN">函数查询项构建器实例对象</span>
 	 */
 	public ItemsBuilder.FunctionItemBuilder<ItemsBuilder<P>> function(@Nonnull final String functionName,
-	                                                                  @MagicConstant(valuesFromClass = Types.class) final int jdbcType) {
+	                                                                  @MagicConstant(valuesFromClass = Types.class)
+	                                                                  final int jdbcType) {
 		return new FunctionItemBuilder<>(this, functionName, jdbcType);
 	}
 
@@ -147,13 +152,13 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 	@Override
 	public void confirm(final Object object) {
 		if (object instanceof QueryItem) {
-			this.items.addItem((QueryItem) object);
+			this.itemList.add((QueryItem) object);
 		}
 	}
 
 	@Override
 	public Items build() {
-		return this.items;
+		return new Items(this.itemList);
 	}
 
 	/**
@@ -176,19 +181,8 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 * <h3 class="en-US">Constructor method for the query items information</h3>
 		 * <h3 class="zh-CN">查询项目信息列表的构造方法</h3>
 		 */
-		private Items() {
-			this.itemList = new ArrayList<>();
-		}
-
-		/**
-		 * <h3 class="en-US">Add query item information</h3>
-		 * <h3 class="zh-CN">添加查询项</h3>
-		 *
-		 * @param item <span class="en-US">Query item information instance object</span>
-		 *             <span class="zh-CN">查询项信息实例对象</span>
-		 */
-		private void addItem(@Nonnull final QueryItem item) {
-			this.itemList.add(item);
+		private Items(@Nonnull final List<QueryItem> itemList) {
+			this.itemList = itemList;
 		}
 
 		/**
@@ -281,7 +275,7 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 * <span class="zh-CN">参数信息构建器实例对象</span>
 		 */
 		public ItemsBuilder<CalculateItemBuilder<P>> parameters() {
-			return new ItemsBuilder<>(this);
+			return new ItemsBuilder<>(this, this.item.getCalculateItems());
 		}
 
 		/**
@@ -348,8 +342,7 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 			super(parentBuilder, new ColumnItem());
 			this.item.setTableName(tableName);
 			this.item.setColumnName(columnName);
-			Optional.ofNullable(TableManager.getInstance().define(tableName).column(columnName))
-					.ifPresent(columnDefine -> this.item.setJdbcType(columnDefine.getJdbcType()));
+			this.item.setJdbcType(TableManager.getInstance().jdbcType(tableName, columnName));
 		}
 
 		/**
@@ -505,7 +498,7 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 * <span class="zh-CN">函数参数信息构建器实例对象</span>
 		 */
 		public ParametersBuilder<FunctionItemBuilder<P>> parameters() {
-			return new ParametersBuilder<>(this);
+			return new ParametersBuilder<>(this, this.item.getFunctionParams());
 		}
 
 		@Override
@@ -570,13 +563,11 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 * <h3 class="en-US">Condition match sub-query information builder</h3>
 		 * <h3 class="zh-CN">匹配子查询构建器</h3>
 		 *
-		 * @param tableName <span class="en-US">Data table name</span>
-		 *                  <span class="zh-CN">数据表名</span>
 		 * @return <span class="en-US">Sub-query builder instance object</span>
 		 * <span class="zh-CN">子查询构建器实例对象</span>
 		 */
-		public SubQueryBuilder<SubQueryItemBuilder<P>> subQuery(final String tableName) {
-			return new SubQueryBuilder<>(this, tableName);
+		public SubQueryBuilder.ScalarSubQueryBuilder<SubQueryItemBuilder<P>> scalarQuery() {
+			return new SubQueryBuilder.ScalarSubQueryBuilder<>(this);
 		}
 
 		/**
@@ -595,8 +586,8 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 
 		@Override
 		public void confirm(final Object object) {
-			if (object instanceof QueryData) {
-				this.item.setQueryData((QueryData) object);
+			if (object instanceof AbstractQuery) {
+				this.item.setQueryData((AbstractQuery) object);
 			}
 		}
 	}

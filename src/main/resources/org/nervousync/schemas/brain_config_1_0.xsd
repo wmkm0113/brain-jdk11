@@ -591,7 +591,9 @@
                     <xsd:annotation>
                         <xsd:documentation>Sub-query information</xsd:documentation>
                     </xsd:annotation>
-                    <xsd:element name="query_data" type="sub_query_data"/>
+                    <xsd:choice>
+                        <xsd:group ref="sub_query_group" />
+                    </xsd:choice>
                 </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>
@@ -685,6 +687,9 @@
         <xsd:complexContent>
             <xsd:extension base="abstract_parameter">
                 <xsd:sequence>
+                    <xsd:choice>
+                        <xsd:group ref="sub_query_group" />
+                    </xsd:choice>
                     <xsd:element name="query_info" type="query_info"/>
                 </xsd:sequence>
             </xsd:extension>
@@ -833,9 +838,9 @@
         <xsd:complexContent>
             <xsd:extension base="query_from">
                 <xsd:sequence>
-                    <xsd:element name="query_data" type="sub_query_data">
+                    <xsd:element name="query_data" type="nested_table_sub_query">
                         <xsd:annotation>
-                            <xsd:documentation>Sub-query information</xsd:documentation>
+                            <xsd:documentation>Nested table sub-query information</xsd:documentation>
                         </xsd:annotation>
                     </xsd:element>
                 </xsd:sequence>
@@ -956,9 +961,9 @@
         <xsd:complexContent>
             <xsd:extension base="query_join">
                 <xsd:sequence>
-                    <xsd:element name="sub_query_data" type="sub_query_data">
+                    <xsd:element name="sub_query_data" type="nested_table_sub_query">
                         <xsd:annotation>
-                            <xsd:documentation>Sub-query information</xsd:documentation>
+                            <xsd:documentation>Nested table sub-query information</xsd:documentation>
                         </xsd:annotation>
                     </xsd:element>
                 </xsd:sequence>
@@ -1018,23 +1023,14 @@
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
-    <xsd:complexType name="sub_query_data">
-        <xsd:all>
-            <xsd:element name="table_name" type="xsd:string">
+    <xsd:complexType name="abstract_query" abstract="true">
+        <xsd:sequence>
+            <xsd:choice>
                 <xsd:annotation>
-                    <xsd:documentation>Query driven table name</xsd:documentation>
+                    <xsd:documentation>Query from information</xsd:documentation>
                 </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="item_list">
-                <xsd:annotation>
-                    <xsd:documentation>Query item instance list</xsd:documentation>
-                </xsd:annotation>
-                <xsd:complexType>
-                    <xsd:sequence>
-                        <xsd:group ref="item_group" maxOccurs="unbounded"/>
-                    </xsd:sequence>
-                </xsd:complexType>
-            </xsd:element>
+                <xsd:group ref="from_group" />
+            </xsd:choice>
             <xsd:element name="join_list">
                 <xsd:annotation>
                     <xsd:documentation>Related query information list</xsd:documentation>
@@ -1075,123 +1071,138 @@
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-        </xsd:all>
+        </xsd:sequence>
     </xsd:complexType>
+    <xsd:complexType name="scalar_sub_query">
+        <xsd:complexContent>
+            <xsd:extension base="abstract_query">
+                <xsd:sequence>
+                    <xsd:choice>
+                        <xsd:annotation>
+                            <xsd:documentation>Query item information</xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:group ref="item_group" />
+                    </xsd:choice>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="table_sub_query">
+        <xsd:complexContent>
+            <xsd:extension base="abstract_query">
+                <xsd:sequence>
+                    <xsd:element name="item_list">
+                        <xsd:annotation>
+                            <xsd:documentation>Query item instance list</xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:group ref="item_group" maxOccurs="unbounded"/>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="nested_table_sub_query">
+        <xsd:complexContent>
+            <xsd:extension base="abstract_query">
+                <xsd:sequence>
+                    <xsd:element name="item_list">
+                        <xsd:annotation>
+                            <xsd:documentation>Query item instance list</xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:group ref="item_group" maxOccurs="unbounded"/>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:group name="sub_query_group">
+        <xsd:choice>
+            <xsd:element name="scalar_sub_query" type="scalar_sub_query"/>
+            <xsd:element name="table_sub_query" type="table_sub_query"/>
+        </xsd:choice>
+    </xsd:group>
     <xsd:complexType name="query_info">
-        <xsd:all>
-            <xsd:element name="cache_key" type="xsd:string">
-                <xsd:annotation>
-                    <xsd:documentation>Query information cache key value</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="from_list">
-                <xsd:annotation>
-                    <xsd:documentation>Query from information list</xsd:documentation>
-                </xsd:annotation>
-                <xsd:complexType>
-                    <xsd:sequence>
-                        <xsd:group ref="from_group" maxOccurs="unbounded"/>
-                    </xsd:sequence>
-                </xsd:complexType>
-            </xsd:element>
-            <xsd:element name="join_list">
-                <xsd:annotation>
-                    <xsd:documentation>Related query information list</xsd:documentation>
-                </xsd:annotation>
-                <xsd:complexType>
-                    <xsd:sequence>
-                        <xsd:group ref="join_group" minOccurs="0" maxOccurs="unbounded"/>
-                    </xsd:sequence>
-                </xsd:complexType>
-            </xsd:element>
-            <xsd:element name="item_list">
-                <xsd:annotation>
-                    <xsd:documentation>Query item instance list</xsd:documentation>
-                </xsd:annotation>
-                <xsd:complexType>
-                    <xsd:sequence>
-                        <xsd:group ref="item_group" maxOccurs="unbounded"/>
-                    </xsd:sequence>
-                </xsd:complexType>
-            </xsd:element>
-            <xsd:element name="condition_list">
-                <xsd:annotation>
-                    <xsd:documentation>Query condition instance list</xsd:documentation>
-                </xsd:annotation>
-                <xsd:complexType>
-                    <xsd:sequence>
-                        <xsd:group ref="condition_group" minOccurs="0" maxOccurs="unbounded"/>
-                    </xsd:sequence>
-                </xsd:complexType>
-            </xsd:element>
-            <xsd:element name="order_list">
-                <xsd:annotation>
-                    <xsd:documentation>Query order by columns list</xsd:documentation>
-                </xsd:annotation>
-                <xsd:complexType>
-                    <xsd:sequence>
-                        <xsd:element name="order_by" type="order_by" minOccurs="0" maxOccurs="unbounded"/>
-                    </xsd:sequence>
-                </xsd:complexType>
-            </xsd:element>
-            <xsd:element name="group_list">
-                <xsd:annotation>
-                    <xsd:documentation>Query group by columns list</xsd:documentation>
-                </xsd:annotation>
-                <xsd:complexType>
-                    <xsd:sequence>
-                        <xsd:element name="group_by" type="group_by" minOccurs="0" maxOccurs="unbounded"/>
-                    </xsd:sequence>
-                </xsd:complexType>
-            </xsd:element>
-            <xsd:element name="having_list">
-                <xsd:annotation>
-                    <xsd:documentation>Query having condition instance list</xsd:documentation>
-                </xsd:annotation>
-                <xsd:complexType>
-                    <xsd:sequence>
-                        <xsd:group ref="condition_group" minOccurs="0" maxOccurs="unbounded"/>
-                    </xsd:sequence>
-                </xsd:complexType>
-            </xsd:element>
-            <xsd:element name="cacheables" type="xsd:boolean">
-                <xsd:annotation>
-                    <xsd:documentation>Query result read from cache server first</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="page_number" type="xsd:integer" minOccurs="0">
-                <xsd:annotation>
-                    <xsd:documentation>Current page number</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="page_limit" type="xsd:integer" minOccurs="0">
-                <xsd:annotation>
-                    <xsd:documentation>Page limit records count</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="for_update" type="xsd:boolean">
-                <xsd:annotation>
-                    <xsd:documentation>Query result using for update record</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="lock_option">
-                <xsd:annotation>
-                    <xsd:documentation>Query record lock option</xsd:documentation>
-                </xsd:annotation>
-                <xsd:simpleType>
-                    <xsd:restriction base="xsd:string">
-                        <xsd:enumeration value="READ"/>
-                        <xsd:enumeration value="WRITE"/>
-                        <xsd:enumeration value="OPTIMISTIC"/>
-                        <xsd:enumeration value="OPTIMISTIC_FORCE_INCREMENT"/>
-                        <xsd:enumeration value="PESSIMISTIC_READ"/>
-                        <xsd:enumeration value="PESSIMISTIC_WRITE"/>
-                        <xsd:enumeration value="PESSIMISTIC_FORCE_INCREMENT"/>
-                        <xsd:enumeration value="NONE"/>
-                    </xsd:restriction>
-                </xsd:simpleType>
-            </xsd:element>
-        </xsd:all>
+        <xsd:complexContent>
+            <xsd:extension base="abstract_query">
+                <xsd:sequence>
+                    <xsd:element name="cache_key" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Query information cache key value</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="sheet_name" type="xsd:string" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Sheet name</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="item_list">
+                        <xsd:annotation>
+                            <xsd:documentation>Query item instance list</xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:group ref="item_group" maxOccurs="unbounded"/>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="order_list">
+                        <xsd:annotation>
+                            <xsd:documentation>Query order by columns list</xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="order_by" type="order_by" minOccurs="0" maxOccurs="unbounded"/>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="cacheables" type="xsd:boolean">
+                        <xsd:annotation>
+                            <xsd:documentation>Query result read from cache server first</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="page_number" type="xsd:integer" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Current page number</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="page_limit" type="xsd:integer" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>Page limit records count</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="for_update" type="xsd:boolean">
+                        <xsd:annotation>
+                            <xsd:documentation>Query result using for update record</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="lock_option">
+                        <xsd:annotation>
+                            <xsd:documentation>Query record lock option</xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:simpleType>
+                            <xsd:restriction base="xsd:string">
+                                <xsd:enumeration value="READ"/>
+                                <xsd:enumeration value="WRITE"/>
+                                <xsd:enumeration value="OPTIMISTIC"/>
+                                <xsd:enumeration value="OPTIMISTIC_FORCE_INCREMENT"/>
+                                <xsd:enumeration value="PESSIMISTIC_READ"/>
+                                <xsd:enumeration value="PESSIMISTIC_WRITE"/>
+                                <xsd:enumeration value="PESSIMISTIC_FORCE_INCREMENT"/>
+                                <xsd:enumeration value="NONE"/>
+                            </xsd:restriction>
+                        </xsd:simpleType>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
     </xsd:complexType>
     <xsd:element name="query_info" type="query_info">
         <xsd:annotation>
@@ -1274,6 +1285,16 @@
                 <xsd:complexType>
                     <xsd:group ref="schema_group" maxOccurs="unbounded"/>
                 </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="optimizer_name" type="xsd:string" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Used identification code of query optimizer implementation class</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="pool_size" type="xsd:integer" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>Query optimizer instance objects pool size</xsd:documentation>
+                </xsd:annotation>
             </xsd:element>
             <xsd:element name="last_modified" type="xsd:long">
                 <xsd:annotation>

@@ -59,10 +59,10 @@ public final class CalculateItem extends QueryItem {
 	 */
 	@XmlElementWrapper(name = "calculate_item_list")
 	@XmlElementRefs({
-			@XmlElementRef(name = "calculate_item", type = CalculateItem.class),
-			@XmlElementRef(name = "constant_item", type = ConstantItem.class),
-			@XmlElementRef(name = "column_item", type = ColumnItem.class),
-			@XmlElementRef(name = "function_item", type = FunctionItem.class)
+			@XmlElementRef(name = "calculate_item", type = CalculateItem.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElementRef(name = "constant_item", type = ConstantItem.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElementRef(name = "column_item", type = ColumnItem.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElementRef(name = "function_item", type = FunctionItem.class, namespace = "https://nervousync.org/schemas/brain")
 	})
 	private List<QueryItem> calculateItems;
 

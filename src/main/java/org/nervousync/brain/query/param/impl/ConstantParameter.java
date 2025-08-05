@@ -30,6 +30,7 @@ import org.nervousync.brain.query.param.AbstractParameter;
  */
 @XmlType(name = "constant_parameter", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "constant_parameter", namespace = "https://nervousync.org/schemas/brain")
+@XmlAccessorType(XmlAccessType.NONE)
 public final class ConstantParameter extends AbstractParameter<Object> {
 
 	/**

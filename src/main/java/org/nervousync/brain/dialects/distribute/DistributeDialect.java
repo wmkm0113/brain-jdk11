@@ -21,11 +21,6 @@ import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.dialects.core.BaseDialect;
 import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.dialects.DialectException;
-import org.nervousync.brain.query.param.AbstractParameter;
-import org.nervousync.commons.Globals;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * <h2 class="en-US">Distribute database dialect abstract class</h2>
@@ -45,12 +40,6 @@ public abstract class DistributeDialect extends BaseDialect {
 	 */
 	protected DistributeDialect() throws DialectException {
 		super(DialectType.Distribute);
-	}
-
-	@Override
-	protected String parameterValue(final Map<String, String> aliasMap, final AbstractParameter<?> abstractParameter,
-	                                final List<Object> values) {
-		return Globals.DEFAULT_VALUE_STRING;
 	}
 
 	/**

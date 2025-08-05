@@ -27,10 +27,10 @@ import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
 import org.nervousync.brain.query.condition.impl.GroupCondition;
+import org.nervousync.brain.query.core.AbstractQuery;
 import org.nervousync.brain.query.core.QueryFrom;
 import org.nervousync.brain.query.core.QueryItem;
 import org.nervousync.brain.query.core.SortedItem;
-import org.nervousync.brain.query.data.QueryData;
 import org.nervousync.brain.query.from.FromSubQuery;
 import org.nervousync.brain.query.from.FromTable;
 import org.nervousync.brain.query.item.*;
@@ -41,6 +41,9 @@ import org.nervousync.brain.query.param.impl.*;
 import org.nervousync.brain.query.sort.GroupBy;
 import org.nervousync.brain.query.sort.OrderBy;
 import org.nervousync.brain.query.join.QueryJoin;
+import org.nervousync.brain.query.subqueries.NestedTableSubQuery;
+import org.nervousync.brain.query.subqueries.ScalarSubQuery;
+import org.nervousync.brain.query.subqueries.TableSubQuery;
 import org.nervousync.builder.Builder;
 import org.nervousync.builder.ParentBuilder;
 import org.nervousync.commons.Globals;
@@ -51,10 +54,7 @@ import org.nervousync.utils.SecurityUtils;
 import org.nervousync.utils.StringUtils;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * <h2 class="en-US">Query information builder</h2>
@@ -80,7 +80,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 * <span class="en-US">Query from information list</span>
 	 * <span class="zh-CN">查询来源信息列表</span>
 	 */
-	private final List<QueryFrom> queryFrom;
+	private QueryFrom queryFrom = null;
 	/**
 	 * <span class="en-US">Related query information list</span>
 	 * <span class="zh-CN">关联查询信息列表</span>
@@ -142,7 +142,6 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 * <h3 class="zh-CN">查询计划构建器的构造方法</h3>
 	 */
 	public BrainQueryBuilder() {
-		this.queryFrom = new ArrayList<>();
 		this.queryJoins = new ArrayList<>();
 		this.itemList = new ArrayList<>();
 		this.conditionList = new ArrayList<>();
@@ -173,18 +172,33 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 * <span class="zh-CN">查询项目列表构建器实例对象</span>
 	 */
 	public ItemsBuilder<BrainQueryBuilder> items() {
-		return new ItemsBuilder<>(this);
+		return new ItemsBuilder<>(this, this.itemList);
 	}
 
 	/**
-	 * <h3 class="en-US">Query from information list builder</h3>
-	 * <h3 class="zh-CN">查询来源信息列表构建器</h3>
+	 * <h3 class="en-US">Query from table information builder</h3>
+	 * <h3 class="zh-CN">查询来源数据表信息构建器</h3>
 	 *
+	 * @param tableName <span class="en-US">Data table name</span>
+	 *                  <span class="zh-CN">数据表名</span>
 	 * @return <span class="en-US">Query from information list builder instance object</span>
 	 * <span class="zh-CN">查询来源信息列表构建器实例对象</span>
 	 */
-	public FromBuilder<BrainQueryBuilder> from() {
-		return new FromBuilder<>(this);
+	public FromBuilder.FromTableBuilder<BrainQueryBuilder> fromTable(@Nonnull final String tableName) {
+		return new FromBuilder.FromTableBuilder<>(this, tableName);
+	}
+
+	/**
+	 * <h3 class="en-US">Query from table sub-query information builder</h3>
+	 * <h3 class="zh-CN">查询来源子查询信息构建器</h3>
+	 *
+	 * @param aliasName <span class="en-US">Alias name</span>
+	 *                  <span class="zh-CN">别名</span>
+	 * @return <span class="en-US">Query from information list builder instance object</span>
+	 * <span class="zh-CN">查询来源信息列表构建器实例对象</span>
+	 */
+	public FromBuilder.FromSubQueryBuilder<BrainQueryBuilder> fromSubQuery(@Nonnull final String aliasName) {
+		return new FromBuilder.FromSubQueryBuilder<>(this, aliasName);
 	}
 
 	/**
@@ -195,7 +209,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 * <span class="zh-CN">查询关联信息列表构建器构建器实例对象</span>
 	 */
 	public JoinsBuilder<BrainQueryBuilder> joins() {
-		return new JoinsBuilder<>(this);
+		return new JoinsBuilder<>(this, this.queryJoins);
 	}
 
 	/**
@@ -206,7 +220,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 * <span class="zh-CN">查询条件组构建器实例对象</span>
 	 */
 	public ConditionsBuilder<BrainQueryBuilder> where() {
-		return new ConditionsBuilder<>(this, Boolean.FALSE);
+		return new ConditionsBuilder<>(this, Boolean.FALSE, this.conditionList);
 	}
 
 	/**
@@ -217,7 +231,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 * <span class="zh-CN">分组数据列构建器实例对象</span>
 	 */
 	public SortsBuilder.GroupItemsBuilder<BrainQueryBuilder> groups() {
-		return new SortsBuilder.GroupItemsBuilder<>(this);
+		return new SortsBuilder.GroupItemsBuilder<>(this, this.groupByList);
 	}
 
 	/**
@@ -228,7 +242,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 * <span class="zh-CN">Having条件组构建器实例对象</span>
 	 */
 	public ConditionsBuilder<BrainQueryBuilder> having() {
-		return new ConditionsBuilder<>(this, Boolean.TRUE);
+		return new ConditionsBuilder<>(this, Boolean.TRUE, this.havingList);
 	}
 
 	/**
@@ -239,7 +253,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 * <span class="zh-CN">排序数据列构建器实例对象</span>
 	 */
 	public SortsBuilder.OrderItemsBuilder<BrainQueryBuilder> orders() {
-		return new SortsBuilder.OrderItemsBuilder<>(this);
+		return new SortsBuilder.OrderItemsBuilder<>(this, this.orderByList);
 	}
 
 	/**
@@ -329,9 +343,8 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 		} else if (object instanceof ItemsBuilder.Items) {
 			this.itemList.clear();
 			this.itemList.addAll(((ItemsBuilder.Items) object).getItemList());
-		} else if (object instanceof FromBuilder.QueriesFrom) {
-			this.queryFrom.clear();
-			this.queryFrom.addAll(((FromBuilder.QueriesFrom) object).getFromList());
+		} else if (object instanceof QueryFrom) {
+			this.queryFrom = (QueryFrom) object;
 		} else if (object instanceof JoinsBuilder.Joins) {
 			this.queryJoins.clear();
 			this.queryJoins.addAll(((JoinsBuilder.Joins) object).getJoinList());
@@ -359,7 +372,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 		}
 		TreeMap<String, Object> cacheMap = new TreeMap<>();
 		cacheMap.put("items", this.itemsList(this.itemList));
-		cacheMap.put("from", this.fromList(this.queryFrom));
+		cacheMap.put("from", this.cacheMap(this.queryFrom));
 		cacheMap.put("joins", this.joinsList(this.queryJoins));
 		cacheMap.put("where", this.conditionsList(this.conditionList));
 		cacheMap.put("having", this.conditionsList(this.havingList));
@@ -387,7 +400,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	private List<TreeMap<String, Object>> itemsList(@Nonnull final List<QueryItem> itemList) {
 		itemList.sort(SortedItem.desc());
 		List<TreeMap<String, Object>> parameterList = new ArrayList<>();
-		itemList.forEach(queryItem -> parameterList.add(cacheMap(queryItem)));
+		itemList.stream().filter(Objects::nonNull).forEach(queryItem -> parameterList.add(cacheMap(queryItem)));
 		return parameterList;
 	}
 
@@ -429,23 +442,6 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 				break;
 		}
 		return cacheMap;
-	}
-
-	/**
-	 * <h3 class="en-US">Convert the query from information list into the list of data mapping table</h3>
-	 * <h3 class="zh-CN">转换查询来源信息列表为数据映射表列表</h3>
-	 *
-	 * @param queryFromList <span class="en-US">Query from information list</span>
-	 *                      <span class="zh-CN">查询来源信息列表</span>
-	 * @return <span class="en-US">List of data mapping table</span>
-	 * <span class="zh-CN">数据映射表列表</span>
-	 */
-	@Nonnull
-	private List<TreeMap<String, Object>> fromList(@Nonnull final List<QueryFrom> queryFromList) {
-		queryFromList.sort(SortedItem.desc());
-		List<TreeMap<String, Object>> parameterList = new ArrayList<>();
-		queryFromList.forEach(queryFrom -> parameterList.add(this.cacheMap(queryFrom)));
-		return parameterList;
 	}
 
 	/**
@@ -553,10 +549,22 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 * <span class="zh-CN">数据映射表</span>
 	 */
 	@Nonnull
-	private TreeMap<String, Object> cacheMap(@Nonnull final QueryData queryData) {
+	private TreeMap<String, Object> cacheMap(@Nonnull final AbstractQuery queryData) {
 		TreeMap<String, Object> cacheMap = new TreeMap<>();
-		cacheMap.put("items", this.itemsList(queryData.getItemList()));
-		cacheMap.put("from", queryData.getTableName());
+		List<QueryItem> itemList = new ArrayList<>();
+		switch (queryData.getQueryType()) {
+			case SCALAR:
+				itemList.add(((ScalarSubQuery) queryData).getQueryItem());
+				break;
+			case TABLE:
+				itemList.addAll(((TableSubQuery) queryData).getItemList());
+				break;
+			case NESTED_TABLE:
+				itemList.addAll(((NestedTableSubQuery) queryData).getItemList());
+				break;
+		}
+		cacheMap.put("items", this.itemsList(itemList));
+		cacheMap.put("from", this.cacheMap(queryData.getQueryFrom()));
 		cacheMap.put("joins", this.joinsList(queryData.getQueryJoins()));
 		cacheMap.put("where", this.conditionsList(queryData.getConditionList()));
 		cacheMap.put("having", this.conditionsList(queryData.getHavingList()));

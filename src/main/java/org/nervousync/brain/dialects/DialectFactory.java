@@ -170,4 +170,11 @@ public final class DialectFactory {
 		return Optional.ofNullable(REGISTERED_DIALECTS.get(dialectName))
 				.orElseThrow(() -> new MultilingualSQLException(0x00DB00000001L, dialectName));
 	}
+
+	/**
+	 * <h3 class="en-US">Private constructor method</h3>
+	 * <h3 class="zh-CN">私有构造方法</h3>
+	 */
+	private DialectFactory() {
+	}
 }

@@ -35,6 +35,10 @@ import java.security.cert.X509Certificate;
  * <h2 class="en-US">Abstract class of the authentication information</h2>
  * <h2 class="zh-CN">认证信息构建器的抽象类</h2>
  *
+ * @param <P> <span class="en-US">Generics Type of parent builder</span>
+ *            <span class="zh-CN">父构建器泛型类</span>
+ * @param <T> <span class="en-US">Generics Type of authentication</span>
+ *            <span class="zh-CN">身份认证信息泛型类</span>
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
  */
@@ -78,6 +82,8 @@ public abstract class AuthenticationBuilder<P extends ParentBuilder, T extends A
 	 * <h2 class="en-US">Builder implementation class of use the authentication information of the X.509 certificate in the certificate store</h2>
 	 * <h2 class="zh-CN">使用证书库中X.509证书的认证信息的构建器</h2>
 	 *
+	 * @param <T> <span class="en-US">Generics Type of parent builder</span>
+	 *            <span class="zh-CN">父构建器泛型类</span>
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
 	 */
@@ -146,6 +152,8 @@ public abstract class AuthenticationBuilder<P extends ParentBuilder, T extends A
 	 * <h2 class="en-US">Builder implementation class of basic authentication information</h2>
 	 * <h2 class="zh-CN">基本身份认证信息的构建器</h2>
 	 *
+	 * @param <T> <span class="en-US">Generics Type of parent builder</span>
+	 *            <span class="zh-CN">父构建器泛型类</span>
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
 	 */
@@ -195,6 +203,8 @@ public abstract class AuthenticationBuilder<P extends ParentBuilder, T extends A
 	 * <h2 class="en-US">Builder implementation class of X.509 certificate authentication information</h2>
 	 * <h2 class="zh-CN">X.509证书认证信息的构建器</h2>
 	 *
+	 * @param <T> <span class="en-US">Generics Type of parent builder</span>
+	 *            <span class="zh-CN">父构建器泛型类</span>
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
 	 */

@@ -241,6 +241,8 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 	 * <h2 class="en-US">Implementation class of trust store configure information builder</h2>
 	 * <h2 class="zh-CN">信任证书库配置信息构建器实现类</h2>
 	 *
+	 * @param <T> <span class="en-US">Generics Type of parent builder</span>
+	 *            <span class="zh-CN">父构建器泛型类</span>
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Jun 23, 2025 15:56:28 $
 	 */
@@ -297,6 +299,8 @@ public abstract class SchemaConfigBuilder<T extends SchemaConfig> extends Abstra
 	 * <h2 class="en-US">Implementation class of database server configure information builder</h2>
 	 * <h2 class="zh-CN">数据库服务器配置信息构建器实现类</h2>
 	 *
+	 * @param <T> <span class="en-US">Generics Type of parent builder</span>
+	 *            <span class="zh-CN">父构建器泛型类</span>
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Jun 23, 2025 15:56:28 $
 	 */

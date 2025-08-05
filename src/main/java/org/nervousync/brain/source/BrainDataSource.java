@@ -20,6 +20,8 @@ package org.nervousync.brain.source;
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.LockModeType;
 import org.nervousync.annotations.jmx.Monitor;
+import org.nervousync.annotations.provider.Provider;
+import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.BrainConfigure;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
@@ -40,6 +42,7 @@ import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.query.core.QueryFrom;
 import org.nervousync.brain.query.from.FromSubQuery;
 import org.nervousync.brain.query.from.FromTable;
+import org.nervousync.brain.query.optimizer.QueryOptimizer;
 import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.brain.schemas.distribute.DistributeSchema;
 import org.nervousync.brain.schemas.jdbc.JdbcSchema;
@@ -51,6 +54,9 @@ import org.nervousync.utils.StringUtils;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -74,6 +80,11 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <span class="zh-CN">JMX对象ObjectName的前缀字符串</span>
 	 */
 	private static final String JMX_OBJECT_NAME_PREFIX = "org.nervousync:type=DataSource,name=";
+	/**
+	 * <span class="en-US">Registered implementation class of query optimizer</span>
+	 * <span class="zh-CN">注册的查询优化器实现类</span>
+	 */
+	private static final Hashtable<String, Class<?>> REGISTERED_OPTIMIZERS = new Hashtable<>();
 
 	/**
 	 * <span class="en-US">Data source initialize status</span>
@@ -95,6 +106,16 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <span class="zh-CN">数据源初始化状态</span>
 	 */
 	private DDLType ddlType;
+	/**
+	 * <span class="en-US">Used identification code of query optimizer implementation class</span>
+	 * <span class="zh-CN">使用的查询优化器实现类识别代码</span>
+	 */
+	private String optimizerName;
+	/**
+	 * <span class="en-US">Query optimizer pool size</span>
+	 * <span class="zh-CN">查询优化器对象池大小</span>
+	 */
+	private int poolSize = BrainCommons.DEFAULT_OPTIMIZER_POOL_SIZE;
 
 	/**
 	 * <span class="en-US">Registered data source instance mapping table</span>
@@ -113,12 +134,37 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	private long lastModified = Globals.DEFAULT_VALUE_LONG;
 
 	/**
+	 * <span class="en-US">Schedule task executor instance object</span>
+	 * <span class="zh-CN">定时任务调度执行器</span>
+	 */
+	private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+	/**
+	 * <span class="en-US">Query optimizer instance objects pool</span>
+	 * <span class="zh-CN">查询分析器实例对象池</span>
+	 */
+	private final Queue<QueryOptimizer> optimizersPool = new LinkedList<>();
+	/**
+	 * <span class="en-US">Schedule task running flag</span>
+	 * <span class="zh-CN">调度任务执行标记</span>
+	 */
+	private boolean scheduleRunning = Boolean.FALSE;
+
+	static {
+		ServiceLoader.load(QueryOptimizer.class)
+				.forEach(queryOptimizer ->
+						Optional.ofNullable(queryOptimizer.getClass().getAnnotation(Provider.class))
+								.ifPresent(provider ->
+										REGISTERED_OPTIMIZERS.put(provider.name(), queryOptimizer.getClass())));
+	}
+
+	/**
 	 * <h3 class="en-US">Default constructor method for the data source</h3>
 	 * <h3 class="zh-CN">数据源的默认构造方法</h3>
 	 */
 	BrainDataSource() {
 		this.registeredSchemas = new Hashtable<>();
 		this.tableManager = TableManager.getInstance();
+		this.scheduledExecutorService.scheduleAtFixedRate(this::schedule, 0L, 1000L, TimeUnit.MILLISECONDS);
 	}
 
 	/**
@@ -151,6 +197,8 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 		if (this.lastModified != Globals.DEFAULT_VALUE_LONG && this.lastModified == configure.getLastModified()) {
 			return;
 		}
+		this.optimizerName = configure.getOptimizerName();
+		this.poolSize = configure.getPoolSize();
 		this.ddlType = (configure.getDdlType() == null) ? DDLType.NONE : configure.getDdlType();
 		this.jmxEnabled(configure.isJmxMonitor());
 		for (SchemaConfig schemaConfig : configure.getSchemaConfigs()) {
@@ -197,6 +245,25 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 		try {
 			return Optional.of(this.retrieveSchema(schemaName))
 					.map(schema -> schema.match(dialectType))
+					.orElse(Boolean.FALSE);
+		} catch (SQLException e) {
+			return Boolean.FALSE;
+		}
+	}
+
+	/**
+	 * <h3 class="en-US">Checks whether the given data source supports relational queries</h3>
+	 * <h3 class="zh-CN">检查给定的数据源是否支持关联查询</h3>
+	 *
+	 * @param schemaName <span class="en-US">Data schema name</span>
+	 *                   <span class="zh-CN">数据源名称</span>
+	 * @return <span class="en-US">Support join query</span>
+	 * <span class="zh-CN">支持关联查询</span>
+	 */
+	public boolean supportJoin(final String schemaName) {
+		try {
+			return Optional.of(this.retrieveSchema(schemaName))
+					.map(BaseSchema::supportJoin)
 					.orElse(Boolean.FALSE);
 		} catch (SQLException e) {
 			return Boolean.FALSE;
@@ -313,6 +380,22 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 		for (final BaseSchema<?> schema : this.registeredSchemas.values()) {
 			schema.commit();
 		}
+	}
+
+	/**
+	 * <h3 class="en-US">Checks if the given array of table identification codes is in the same database</h3>
+	 * <h3 class="zh-CN">检查给定的数据表识别代码数组是否在同一数据库中</h3>
+	 *
+	 * @param identifyCodes <span class="en-US">Data table identify codes array</span>
+	 *                      <span class="zh-CN">数据表识别代码数组</span>
+	 * @return <span class="en-US">Check result</span>
+	 * <span class="zh-CN">检查结果</span>
+	 * @throws SQLException <span class="en-US">The data source or data table is not registered</span>
+	 *                      <span class="zh-CN">数据源或数据表未注册</span>
+	 */
+	public boolean sameCatalog(final String... identifyCodes) throws SQLException {
+		return this.tableManager.sameSchema(identifyCodes)
+				&& this.sameCatalog(List.of(identifyCodes), Collections.emptyList(), Collections.emptyList());
 	}
 
 	/**
@@ -515,6 +598,36 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	}
 
 	/**
+	 * <h3 class="en-US">Direct execute query record command</h3>
+	 * <h3 class="zh-CN">直接执行数据检索命令</h3>
+	 *
+	 * @param queryInfo <span class="en-US">Query record information</span>
+	 *                  <span class="zh-CN">数据检索信息</span>
+	 * @return <span class="en-US">List of data mapping tables for queried records</span>
+	 * <span class="zh-CN">查询到记录的数据映射表列表</span>
+	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
+	 *                      <span class="zh-CN">执行过程中出错</span>
+	 */
+	public PartialCollection directQuery(@Nonnull final QueryInfo queryInfo) throws Exception {
+		return this.retrieveSchema(queryInfo.getQueryFrom()).query(queryInfo);
+	}
+
+	/**
+	 * <h3 class="en-US">Direct execute query total record count</h3>
+	 * <h3 class="zh-CN">直接执行查询总记录数</h3>
+	 *
+	 * @param queryInfo <span class="en-US">Query record information</span>
+	 *                  <span class="zh-CN">数据检索信息</span>
+	 * @return <span class="en-US">Total record count</span>
+	 * <span class="zh-CN">总记录条数</span>
+	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
+	 *                      <span class="zh-CN">执行过程中出错</span>
+	 */
+	public Long directQueryTotal(@Nonnull final QueryInfo queryInfo) throws Exception {
+		return this.retrieveSchema(queryInfo.getQueryFrom()).queryTotal(queryInfo);
+	}
+
+	/**
 	 * <h3 class="en-US">Execute query record command</h3>
 	 * <h3 class="zh-CN">执行数据检索命令</h3>
 	 *
@@ -526,56 +639,12 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
 	public PartialCollection query(@Nonnull final QueryInfo queryInfo) throws Exception {
-		return this.retrieveSchema(queryInfo.getQueryFrom()).query(queryInfo);
-	}
-
-	/**
-	 * <h3 class="en-US">Retrieve target data schema</h3>
-	 * <h3 class="zh-CN">获取目标数据源</h3>
-	 *
-	 * @param fromList <span class="en-US">Query from information list</span>
-	 *                 <span class="zh-CN">查询来源信息列表</span>
-	 * @return <span class="en-US">Data schema instance object</span>
-	 * <span class="zh-CN">数据源实例对象</span>
-	 * @throws SQLException <span class="en-US">If data schema not found</span>
-	 *                      <span class="zh-CN">如果数据源未找到</span>
-	 */
-	private BaseSchema<?> retrieveSchema(@Nonnull final List<QueryFrom> fromList) throws SQLException {
-		if (fromList.isEmpty()) {
-			throw new MultilingualSQLException(0x00DB00000047L);
-		}
-
-		QueryFrom queryFrom = fromList.get(0);
-		TableDefine drivenTableDefine;
-		if (queryFrom instanceof FromTable) {
-			drivenTableDefine = this.tableManager.define(((FromTable) queryFrom).getTableName());
-		} else if (queryFrom instanceof FromSubQuery) {
-			drivenTableDefine = this.tableManager.define(((FromSubQuery) queryFrom).getQueryData().getTableName());
+		QueryOptimizer optimizer = this.optimizer();
+		if (optimizer == null) {
+			return this.directQuery(queryInfo);
 		} else {
-			throw new MultilingualSQLException(0x00DB00000032L);
+			return optimizer.query(this, queryInfo);
 		}
-		return this.retrieveSchema(drivenTableDefine.getSchemaName());
-	}
-
-	/**
-	 * <h3 class="en-US">Retrieve target data schema</h3>
-	 * <h3 class="zh-CN">获取目标数据源</h3>
-	 *
-	 * @param schemaName <span class="en-US">Data schema name</span>
-	 *                   <span class="zh-CN">数据源名称</span>
-	 * @return <span class="en-US">Data schema instance object</span>
-	 * <span class="zh-CN">数据源实例对象</span>
-	 * @throws SQLException <span class="en-US">If data schema not found</span>
-	 *                      <span class="zh-CN">如果数据源未找到</span>
-	 */
-	private BaseSchema<?> retrieveSchema(final String schemaName) throws SQLException {
-		this.initialize();
-		BaseSchema<?> baseSchema =
-				this.registeredSchemas.get(StringUtils.isEmpty(schemaName) ? this.defaultName : schemaName);
-		if (baseSchema == null) {
-			throw new MultilingualSQLException(0x00DB00000032L, schemaName);
-		}
-		return baseSchema;
 	}
 
 	/**
@@ -590,7 +659,12 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
 	public Long queryTotal(@Nonnull final QueryInfo queryInfo) throws Exception {
-		return this.retrieveSchema(queryInfo.getQueryFrom()).queryTotal(queryInfo);
+		QueryOptimizer optimizer = this.optimizer();
+		if (optimizer == null) {
+			return this.directQueryTotal(queryInfo);
+		} else {
+			return optimizer.queryTotal(this, queryInfo);
+		}
 	}
 
 	/**
@@ -598,6 +672,8 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <h3 class="zh-CN">销毁当前数据源</h3>
 	 */
 	public synchronized void close() {
+		this.scheduledExecutorService.shutdown();
+		this.optimizersPool.clear();
 		if (DDLType.CREATE_DROP.equals(this.ddlType)) {
 			for (final BaseSchema<?> schema : this.registeredSchemas.values()) {
 				try {
@@ -636,6 +712,109 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 		this.initialized = Boolean.FALSE;
 		this.defaultName = Globals.DEFAULT_VALUE_STRING;
 		TableManager.destroy();
+	}
+
+	/**
+	 * <h3 class="en-US">The scheduling method is used to maintain the query optimizer object pool</h3>
+	 * <h3 class="zh-CN">调度方法用于维护查询优化器对象池</h3>
+	 */
+	private void schedule() {
+		if (this.scheduleRunning) {
+			return;
+		}
+
+		this.scheduleRunning = Boolean.TRUE;
+		if (StringUtils.isEmpty(this.optimizerName) || !REGISTERED_OPTIMIZERS.containsKey(this.optimizerName)) {
+			if (!this.optimizersPool.isEmpty()) {
+				this.optimizersPool.clear();
+			}
+		} else {
+			Class<?> optimizerClass = REGISTERED_OPTIMIZERS.get(this.optimizerName);
+			this.optimizersPool.removeIf(queryOptimizer -> !queryOptimizer.getClass().equals(optimizerClass));
+
+			while (this.optimizersPool.size() < this.poolSize) {
+				this.optimizersPool.offer(newOptimizer());
+			}
+
+			while (this.poolSize < this.optimizersPool.size()) {
+				this.optimizersPool.poll();
+			}
+		}
+		this.scheduleRunning = Boolean.FALSE;
+	}
+
+	/**
+	 * <h3 class="en-US">Get the query optimizer implementation class instance object</h3>
+	 * <h3 class="zh-CN">获取查询优化器实例对象</h3>
+	 *
+	 * @return <span class="en-US">Query optimizer implementation class instance object</span>
+	 * <span class="zh-CN">查询优化器实现类实例对象</span>
+	 */
+	private QueryOptimizer optimizer() {
+		QueryOptimizer optimizer = this.optimizersPool.poll();
+		if (optimizer == null) {
+			optimizer = newOptimizer();
+		}
+		return optimizer;
+	}
+
+	/**
+	 * <h3 class="en-US">Initialize the query optimizer implementation class instance object</h3>
+	 * <h3 class="zh-CN">初始化查询优化器实现类实例对象</h3>
+	 *
+	 * @return <span class="en-US">Query optimizer implementation class instance object</span>
+	 * <span class="zh-CN">查询优化器实现类实例对象</span>
+	 */
+	private QueryOptimizer newOptimizer() {
+		return (QueryOptimizer) Optional.ofNullable(this.optimizerName)
+				.filter(StringUtils::notBlank)
+				.filter(REGISTERED_OPTIMIZERS::containsKey)
+				.map(REGISTERED_OPTIMIZERS::get)
+				.map(ObjectUtils::newInstance)
+				.orElse(null);
+	}
+
+	/**
+	 * <h3 class="en-US">Retrieve target data schema</h3>
+	 * <h3 class="zh-CN">获取目标数据源</h3>
+	 *
+	 * @param queryFrom <span class="en-US">Query from information</span>
+	 *                  <span class="zh-CN">查询来源信息</span>
+	 * @return <span class="en-US">Data schema instance object</span>
+	 * <span class="zh-CN">数据源实例对象</span>
+	 * @throws SQLException <span class="en-US">If data schema not found</span>
+	 *                      <span class="zh-CN">如果数据源未找到</span>
+	 */
+	private BaseSchema<?> retrieveSchema(@Nonnull final QueryFrom queryFrom) throws SQLException {
+		if (queryFrom instanceof FromTable) {
+			return this.retrieveSchema(this.tableManager.define(((FromTable) queryFrom).getTableName()).getSchemaName());
+		} else if (queryFrom instanceof FromSubQuery) {
+			return this.retrieveSchema(((FromSubQuery) queryFrom).getQueryData().getQueryFrom());
+		} else {
+			throw new MultilingualSQLException(0x00DB00000032L);
+		}
+	}
+
+	/**
+	 * <h3 class="en-US">Retrieve target data schema</h3>
+	 * <h3 class="zh-CN">获取目标数据源</h3>
+	 *
+	 * @param schemaName <span class="en-US">Data schema name</span>
+	 *                   <span class="zh-CN">数据源名称</span>
+	 * @return <span class="en-US">Data schema instance object</span>
+	 * <span class="zh-CN">数据源实例对象</span>
+	 * @throws SQLException <span class="en-US">If data schema not found</span>
+	 *                      <span class="zh-CN">如果数据源未找到</span>
+	 */
+	@Nonnull
+	private BaseSchema<?> retrieveSchema(final String schemaName) throws SQLException {
+		this.initialize();
+		BaseSchema<?> baseSchema =
+				this.registeredSchemas.get(StringUtils.isEmpty(schemaName) ? this.defaultName : schemaName);
+		if (baseSchema == null) {
+			throw new MultilingualSQLException(0x00DB00000032L, schemaName);
+		}
+		return baseSchema;
 	}
 
 	/**

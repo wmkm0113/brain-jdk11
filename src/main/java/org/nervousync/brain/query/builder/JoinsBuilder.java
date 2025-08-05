@@ -21,11 +21,11 @@ import jakarta.annotation.Nonnull;
 import org.nervousync.brain.enumerations.query.ConditionCode;
 import org.nervousync.brain.enumerations.query.ConnectionCode;
 import org.nervousync.brain.enumerations.query.JoinType;
-import org.nervousync.brain.query.data.QueryData;
 import org.nervousync.brain.query.join.JoinInfo;
 import org.nervousync.brain.query.join.QueryJoin;
 import org.nervousync.brain.query.join.SubQueryJoin;
 import org.nervousync.brain.query.join.TableQueryJoin;
+import org.nervousync.brain.query.subqueries.NestedTableSubQuery;
 import org.nervousync.builder.AbstractBuilder;
 import org.nervousync.builder.ParentBuilder;
 import org.nervousync.exceptions.builder.BuilderException;
@@ -46,11 +46,11 @@ import java.util.List;
 public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder<P, JoinsBuilder.Joins> {
 
 	/**
-	 * <span class="en-US">Query join information list</span>
-	 * <span class="zh-CN">查询关联信息列表</span>
+	 * <span class="en-US">Related query joins information lists</span>
+	 * <span class="zh-CN">关联查询信息列表</span>
 	 */
 	@Nonnull
-	private final Joins joins;
+	private final List<QueryJoin> joinList = new ArrayList<>();
 
 	/**
 	 * <h3 class="en-US">Constructor method for the query join information list builder</h3>
@@ -58,10 +58,14 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 	 *
 	 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
 	 *                      <span class="zh-CN">父构建器实例对象</span>
+	 * @param joinList      <span class="en-US">Related query joins information lists</span>
+	 *                      <span class="zh-CN">关联查询信息列表</span>
 	 */
-	public JoinsBuilder(final P parentBuilder) {
+	public JoinsBuilder(final P parentBuilder, final List<QueryJoin> joinList) {
 		super(parentBuilder);
-		this.joins = new Joins();
+		if (joinList != null) {
+			this.joinList.addAll(joinList);
+		}
 	}
 
 	/**
@@ -102,14 +106,14 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 	@Override
 	public void confirm(final Object object) {
 		if (object instanceof QueryJoin) {
-			this.joins.addJoin((QueryJoin) object);
+			this.joinList.add((QueryJoin) object);
 		}
 	}
 
 	@Override
 	@Nonnull
 	public Joins build() throws BuilderException {
-		return this.joins;
+		return new Joins(this.joinList);
 	}
 
 	/**
@@ -132,19 +136,8 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 * <h3 class="en-US">Constructor method for the query join information list</h3>
 		 * <h3 class="zh-CN">查询关联信息列表的构造方法</h3>
 		 */
-		private Joins() {
-			this.joinList = new ArrayList<>();
-		}
-
-		/**
-		 * <h3 class="en-US">Add query join information</h3>
-		 * <h3 class="zh-CN">添加关联查询信息</h3>
-		 *
-		 * @param join <span class="en-US">Query join information instance object</span>
-		 *             <span class="zh-CN">关联查询信息实例对象</span>
-		 */
-		private void addJoin(@Nonnull final QueryJoin join) {
-			this.joinList.add(join);
+		private Joins(@Nonnull final List<QueryJoin> joinList) {
+			this.joinList = joinList;
 		}
 
 		/**
@@ -390,19 +383,17 @@ public final class JoinsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 * <h3 class="en-US">Sub-query builder instance object</h3>
 		 * <h3 class="zh-CN">子查询构建器实例对象</h3>
 		 *
-		 * @param tableName <span class="en-US">Data table name</span>
-		 *                  <span class="zh-CN">数据表名</span>
 		 * @return <span class="en-US">Sub-query builder instance object</span>
 		 * <span class="zh-CN">子查询构建器实例对象</span>
 		 */
-		public SubQueryBuilder<SubQueryJoinBuilder<P>> subQueryBuilder(@Nonnull final String tableName) {
-			return new SubQueryBuilder<>(this, tableName);
+		public SubQueryBuilder.NestedTableSubQueryBuilder<SubQueryJoinBuilder<P>> subQueryBuilder() {
+			return new SubQueryBuilder.NestedTableSubQueryBuilder<>(this);
 		}
 
 		@Override
 		public void confirm(final Object object) {
-			if (object instanceof QueryData) {
-				this.queryJoin.setSubQuery((QueryData) object);
+			if (object instanceof NestedTableSubQuery) {
+				this.queryJoin.setSubQuery((NestedTableSubQuery) object);
 			} else {
 				super.confirm(object);
 			}

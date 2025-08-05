@@ -36,6 +36,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <h2 class="en-US">Abstract class for cached statement</h2>
  * <h2 class="zh-CN">可缓存的查询执行器抽象类</h2>
  *
+ * @param <S> <span class="en-US">Generics Type of prepared statement</span>
+ *            <span class="zh-CN">查询执行器泛型类</span>
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 21, 2019 14:27:33 $
  */

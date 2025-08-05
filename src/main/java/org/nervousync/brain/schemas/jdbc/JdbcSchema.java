@@ -40,13 +40,16 @@ import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
+import org.nervousync.brain.query.core.AbstractQuery;
 import org.nervousync.brain.query.core.QueryFrom;
 import org.nervousync.brain.query.core.QueryItem;
-import org.nervousync.brain.query.data.QueryData;
 import org.nervousync.brain.query.from.FromSubQuery;
 import org.nervousync.brain.query.from.FromTable;
 import org.nervousync.brain.query.item.SubQueryItem;
 import org.nervousync.brain.query.sort.OrderBy;
+import org.nervousync.brain.query.subqueries.NestedTableSubQuery;
+import org.nervousync.brain.query.subqueries.ScalarSubQuery;
+import org.nervousync.brain.query.subqueries.TableSubQuery;
 import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.*;
@@ -59,6 +62,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * <h2 class="en-US">JDBC data source implementation class</h2>
@@ -708,47 +712,49 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		return totalCount;
 	}
 
-	private List<String> dbKeys(@Nonnull final QueryInfo queryInfo) {
-		List<String> catalogs = new ArrayList<>();
-		for (QueryFrom queryFrom : queryInfo.getQueryFrom()) {
-			if (queryFrom instanceof FromTable) {
-				this.dbKeys(((FromTable) queryFrom).getTableName(), queryInfo.getConditionList())
-						.stream()
-						.filter(catalog -> !catalogs.contains(catalog))
-						.forEach(catalogs::add);
-			} else if (queryFrom instanceof FromSubQuery) {
-				this.dbKeys(((FromSubQuery) queryFrom).getQueryData())
-						.stream()
-						.filter(catalog -> !catalogs.contains(catalog))
-						.forEach(catalogs::add);
-			}
-		}
-		for (QueryItem queryItem : queryInfo.getItemList()) {
-			if (queryItem instanceof SubQueryItem) {
-				this.dbKeys(((SubQueryItem) queryItem).getQueryData())
-						.stream()
-						.filter(catalog -> !catalogs.contains(catalog))
-						.forEach(catalogs::add);
-			}
-		}
-		return catalogs;
-	}
-
 	@Nonnull
-	private List<String> dbKeys(@Nonnull final String tableName, @Nonnull final List<Condition> conditionList) {
+	private List<String> dbKeys(@Nonnull final String tableName, @Nonnull final List<Condition> whereClause,
+	                            final List<Condition> havingClause) {
 		return Optional.ofNullable(this.strategyConfigs.get(tableName))
-				.map(strategyConfig -> strategyConfig.dbKeys(conditionList))
+				.map(strategyConfig ->
+						strategyConfig.dbKeys(
+								Stream.concat(whereClause.stream(), havingClause.stream())
+										.collect(Collectors.toList())))
 				.orElse(Collections.emptyList());
 	}
 
 	@Nonnull
-	private List<String> dbKeys(@Nonnull QueryData queryData) {
+	private List<String> dbKeys(@Nonnull AbstractQuery queryData) {
 		List<String> catalogs = new ArrayList<>();
-		this.dbKeys(queryData.getTableName(), queryData.getConditionList())
-				.stream()
-				.filter(catalog -> !catalogs.contains(catalog))
-				.forEach(catalogs::add);
-		for (QueryItem queryItem : queryData.getItemList()) {
+		QueryFrom queryFrom = queryData.getQueryFrom();
+		if (queryFrom instanceof FromTable) {
+			this.dbKeys(((FromTable) queryFrom).getTableName(), queryData.getConditionList(), queryData.getHavingList())
+					.stream()
+					.filter(catalog -> !catalogs.contains(catalog))
+					.forEach(catalogs::add);
+		} else if (queryFrom instanceof FromSubQuery) {
+			this.dbKeys(((FromSubQuery) queryFrom).getQueryData())
+					.stream()
+					.filter(catalog -> !catalogs.contains(catalog))
+					.forEach(catalogs::add);
+		}
+
+		List<QueryItem> itemList = new ArrayList<>();
+		switch (queryData.getQueryType()) {
+			case SCALAR:
+				itemList.add(((ScalarSubQuery) queryData).getQueryItem());
+				break;
+			case TABLE:
+				itemList.addAll(((TableSubQuery) queryData).getItemList());
+				break;
+			case NESTED_TABLE:
+				itemList.addAll(((NestedTableSubQuery) queryData).getItemList());
+				break;
+			case NORMAL:
+				itemList.addAll(((QueryInfo) queryData).getItemList());
+				break;
+		}
+		for (QueryItem queryItem : itemList) {
 			if (queryItem instanceof SubQueryItem) {
 				this.dbKeys(((SubQueryItem) queryItem).getQueryData())
 						.stream()

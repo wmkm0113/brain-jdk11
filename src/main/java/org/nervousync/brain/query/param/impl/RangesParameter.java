@@ -31,6 +31,7 @@ import org.nervousync.brain.query.param.AbstractParameter;
  */
 @XmlType(name = "ranges_parameter", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "ranges_parameter", namespace = "https://nervousync.org/schemas/brain")
+@XmlAccessorType(XmlAccessType.NONE)
 public final class RangesParameter extends AbstractParameter<RangesData> {
 
 	/**

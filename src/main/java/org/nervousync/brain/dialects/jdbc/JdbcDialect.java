@@ -39,11 +39,11 @@ import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
 import org.nervousync.brain.query.condition.impl.ConstantCondition;
 import org.nervousync.brain.query.condition.impl.GroupCondition;
+import org.nervousync.brain.query.core.AbstractQuery;
 import org.nervousync.brain.query.core.QueryFrom;
 import org.nervousync.brain.query.core.QueryItem;
 import org.nervousync.brain.query.core.SortedItem;
 import org.nervousync.brain.query.data.ArrayData;
-import org.nervousync.brain.query.data.QueryData;
 import org.nervousync.brain.query.data.RangesData;
 import org.nervousync.brain.query.from.FromSubQuery;
 import org.nervousync.brain.query.from.FromTable;
@@ -56,6 +56,9 @@ import org.nervousync.brain.query.join.SubQueryJoin;
 import org.nervousync.brain.query.join.TableQueryJoin;
 import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.brain.query.param.impl.*;
+import org.nervousync.brain.query.subqueries.NestedTableSubQuery;
+import org.nervousync.brain.query.subqueries.ScalarSubQuery;
+import org.nervousync.brain.query.subqueries.TableSubQuery;
 import org.nervousync.commons.Globals;
 import org.nervousync.utils.*;
 
@@ -856,8 +859,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @param trustStore <span class="en-US">Trust certificate store configure information</span>
 	 *                   <span class="zh-CN">信任证书库配置信息</span>
 	 */
-	protected void trustStoreProperties(@Nonnull final Properties properties, final TrustStore trustStore) {
-	}
+	protected abstract void trustStoreProperties(@Nonnull final Properties properties, final TrustStore trustStore);
 
 	/**
 	 * <h3 class="en-US">Process authentication parameter information required for connection</h3>
@@ -868,8 +870,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @param authentication <span class="en-US">Authentication information</span>
 	 *                       <span class="zh-CN">身份认证信息</span>
 	 */
-	protected void authProperties(@Nonnull final Properties properties, final Authentication authentication) {
-	}
+	protected abstract void authProperties(@Nonnull final Properties properties, final Authentication authentication);
 
 	/**
 	 * <h3 class="en-US">SQL command to get sequence generator values</h3>
@@ -1202,14 +1203,13 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
 	public final GeneratedCommand queryCommand(final QueryInfo queryInfo, final boolean pagerQuery) throws SQLException {
-		if (!queryInfo.getQueryJoins().isEmpty() && !this.isSupportJoin()) {
+		if (!queryInfo.getQueryJoins().isEmpty() && !this.supportJoin()) {
 			throw new MultilingualSQLException(0x00DB00000010L);
 		}
 		final Map<String, String> aliasMap = new HashMap<>();
 		this.aliasNames(aliasMap, queryInfo.getQueryFrom(), queryInfo.getItemList(), queryInfo.getQueryJoins());
 
-		Map<String, Integer> jdbcTypeMap = new HashMap<>();
-		this.handlerTypes(jdbcTypeMap, aliasMap, queryInfo.getItemList());
+		Map<String, Integer> jdbcTypeMap = this.handlerTypes(aliasMap, queryInfo.getItemList());
 
 		List<Object> values = new ArrayList<>();
 		String itemCommand = this.itemCommand(aliasMap, queryInfo.getItemList(), values);
@@ -1234,9 +1234,7 @@ public abstract class JdbcDialect extends BaseDialect {
 		String whereClause = this.lockWhereClause(this.whereClause(aliasMap, queryInfo.getConditionList(), values),
 				queryInfo.isForUpdate(), queryInfo.getLockOption());
 		if (StringUtils.notBlank(whereClause)) {
-			sqlBuilder.append(WHERE_COMMAND)
-					.append(BrainCommons.DEFAULT_WHERE_CLAUSE)
-					.append(whereClause);
+			sqlBuilder.append(whereClause);
 		}
 		String orderBy = this.orderBy(aliasMap, queryInfo.getOrderByList());
 		if (StringUtils.notBlank(orderBy)) {
@@ -1272,42 +1270,49 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *
 	 * @param aliasMap      <span class="en-US">Alias name mapping table</span>
 	 *                      <span class="zh-CN">别名映射表</span>
-	 * @param fromList      <span class="en-US">Query from information list</span>
-	 *                      <span class="zh-CN">查询来源信息列表</span>
+	 * @param queryFrom     <span class="en-US">Query from information</span>
+	 *                      <span class="zh-CN">查询来源信息</span>
 	 * @param itemList      <span class="en-US">Query item instance list</span>
 	 *                      <span class="zh-CN">查询项目实例对象列表</span>
 	 * @param queryJoinList <span class="en-US">Related query information list</span>
 	 *                      <span class="zh-CN">关联查询信息列表</span>
 	 */
-	private void aliasNames(@Nonnull final Map<String, String> aliasMap, @Nonnull final List<QueryFrom> fromList,
+	private void aliasNames(@Nonnull final Map<String, String> aliasMap, @Nonnull final QueryFrom queryFrom,
 	                        final List<QueryItem> itemList, final List<QueryJoin> queryJoinList) throws SQLException {
-		for (QueryFrom queryFrom : fromList) {
-			if (queryFrom instanceof FromTable) {
-				FromTable fromTable = (FromTable) queryFrom;
-				if (!aliasMap.containsKey(fromTable.getTableName())) {
-					String aliasName = fromTable.getAliasName();
-					if (StringUtils.isEmpty(aliasName)) {
-						aliasName = "t_" + aliasMap.size();
-					}
-					if (aliasMap.containsValue(aliasName)) {
-						throw new MultilingualSQLException(0x00DB00000048L);
-					}
-					aliasMap.put(fromTable.getTableName(), aliasName);
+		if (queryFrom instanceof FromTable) {
+			FromTable fromTable = (FromTable) queryFrom;
+			if (!aliasMap.containsKey(fromTable.getTableName())) {
+				String aliasName = fromTable.getAliasName();
+				if (StringUtils.isEmpty(aliasName)) {
+					aliasName = "t_" + aliasMap.size();
 				}
-			} else if (queryFrom instanceof FromSubQuery) {
-				QueryData queryData = ((FromSubQuery) queryFrom).getQueryData();
-				FromTable fromTable = new FromTable();
-				fromTable.setTableName(queryData.getTableName());
-				this.aliasNames(aliasMap, List.of(fromTable), queryData.getItemList(), queryData.getQueryJoins());
+				if (aliasMap.containsValue(aliasName)) {
+					throw new MultilingualSQLException(0x00DB00000048L);
+				}
+				aliasMap.put(fromTable.getTableName(), aliasName);
 			}
+		} else if (queryFrom instanceof FromSubQuery) {
+			NestedTableSubQuery queryData = ((FromSubQuery) queryFrom).getQueryData();
+			this.aliasNames(aliasMap, queryData.getQueryFrom(), queryData.getItemList(), queryData.getQueryJoins());
 		}
 		if (itemList != null && !itemList.isEmpty()) {
 			for (QueryItem item : itemList) {
 				if (item instanceof SubQueryItem) {
-					QueryData queryData = ((SubQueryItem) item).getQueryData();
-					FromTable fromTable = new FromTable();
-					fromTable.setTableName(queryData.getTableName());
-					this.aliasNames(aliasMap, List.of(fromTable), queryData.getItemList(), queryData.getQueryJoins());
+					AbstractQuery queryData = ((SubQueryItem) item).getQueryData();
+					switch (queryData.getQueryType()) {
+						case SCALAR:
+							this.aliasNames(aliasMap, queryData.getQueryFrom(),
+									List.of(((ScalarSubQuery) queryData).getQueryItem()), queryData.getQueryJoins());
+							break;
+						case TABLE:
+							this.aliasNames(aliasMap, queryData.getQueryFrom(),
+									((TableSubQuery) queryData).getItemList(), queryData.getQueryJoins());
+							break;
+						case NESTED_TABLE:
+							this.aliasNames(aliasMap, queryData.getQueryFrom(),
+									((NestedTableSubQuery) queryData).getItemList(), queryData.getQueryJoins());
+							break;
+					}
 				}
 			}
 		}
@@ -1315,10 +1320,8 @@ public abstract class JdbcDialect extends BaseDialect {
 			for (QueryJoin queryJoin : queryJoinList) {
 				if (queryJoin instanceof SubQueryJoin) {
 					SubQueryJoin subQueryJoin = (SubQueryJoin) queryJoin;
-					QueryData queryData = subQueryJoin.getSubQuery();
-					FromTable fromTable = new FromTable();
-					fromTable.setTableName(queryData.getTableName());
-					this.aliasNames(aliasMap, List.of(fromTable), queryData.getItemList(), queryData.getQueryJoins());
+					NestedTableSubQuery queryData = subQueryJoin.getSubQuery();
+					this.aliasNames(aliasMap, queryData.getQueryFrom(), queryData.getItemList(), queryData.getQueryJoins());
 					if (!aliasMap.containsKey(subQueryJoin.getAliasName())) {
 						aliasMap.put(subQueryJoin.getAliasName(), subQueryJoin.getAliasName());
 					}
@@ -1343,8 +1346,8 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *
 	 * @param jdbcTypeMap <span class="en-US">Data column label and types mapping table</span>
 	 *                    <span class="zh-CN">数据列类型映射表</span>
-	 * @param tableName   <span class="en-US">Data table name</span>
-	 *                    <span class="zh-CN">数据表名</span>
+	 * @param queryFrom   <span class="en-US">Query from information</span>
+	 *                    <span class="zh-CN">查询来源信息</span>
 	 * @param aliasName   <span class="en-US">Sub-query alias name</span>
 	 *                    <span class="zh-CN">子查询别名</span>
 	 * @param itemList    <span class="en-US">Query item instance list</span>
@@ -1352,32 +1355,54 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @throws SQLException <span class="en-US">The data table is not registered</span>
 	 *                      <span class="zh-CN">数据表未注册</span>
 	 */
-	private void handlerTypes(@Nonnull final Map<String, Integer> jdbcTypeMap, @Nonnull final String tableName,
+	private void handlerTypes(@Nonnull final Map<String, Integer> jdbcTypeMap, @Nonnull final QueryFrom queryFrom,
 	                          @Nonnull final String aliasName, @Nonnull final List<QueryItem> itemList)
 			throws SQLException {
 		if (itemList.isEmpty()) {
 			return;
 		}
-		TableDefine tableDefine = this.tableManager.define(tableName);
-		String prefixAlias = aliasName + BrainCommons.DEFAULT_NAME_SPLIT;
-		for (QueryItem queryItem : itemList) {
-			if (StringUtils.isEmpty(queryItem.getAliasName())) {
-				if (queryItem instanceof ColumnItem) {
-					ColumnItem columnItem = (ColumnItem) queryItem;
-					Optional.ofNullable(tableDefine.column(columnItem.getColumnName()))
-							.ifPresent(columnDefine ->
-									jdbcTypeMap.put(prefixAlias + columnDefine.getColumnName(),
-											columnDefine.getJdbcType()));
+		String prefixAlias = Globals.DEFAULT_VALUE_STRING;
+		if (StringUtils.notBlank(aliasName)) {
+			prefixAlias = aliasName + BrainCommons.DEFAULT_NAME_SPLIT;
+		}
+		switch (queryFrom.getFromType()) {
+			case Table:
+				String tableName = ((FromTable) queryFrom).getTableName();
+				for (QueryItem queryItem : itemList) {
+					if (StringUtils.isEmpty(queryItem.getAliasName())) {
+						if (queryItem instanceof ColumnItem) {
+							ColumnItem columnItem = (ColumnItem) queryItem;
+							jdbcTypeMap.put(prefixAlias + this.tableManager.columnName(tableName, columnItem.getColumnName()),
+									this.tableManager.jdbcType(tableName, columnItem.getColumnName()));
+						}
+					} else {
+						if (queryItem instanceof SubQueryItem) {
+							AbstractQuery queryData = ((SubQueryItem) queryItem).getQueryData();
+							List<QueryItem> queryItems = new ArrayList<>();
+							switch (queryData.getQueryType()) {
+								case SCALAR:
+									queryItems.add(((ScalarSubQuery) queryData).getQueryItem());
+									break;
+								case TABLE:
+									queryItems.addAll(((TableSubQuery) queryData).getItemList());
+									break;
+								case NESTED_TABLE:
+									queryItems.addAll(((NestedTableSubQuery) queryData).getItemList());
+									break;
+							}
+							this.handlerTypes(jdbcTypeMap, queryData.getQueryFrom(),
+									prefixAlias + queryItem.getAliasName(), queryItems);
+						} else {
+							jdbcTypeMap.put(prefixAlias + queryItem.getAliasName(), queryItem.getJdbcType());
+						}
+					}
 				}
-			} else {
-				if (queryItem instanceof SubQueryItem) {
-					QueryData queryData = ((SubQueryItem) queryItem).getQueryData();
-					this.handlerTypes(jdbcTypeMap, queryData.getTableName(),
-							prefixAlias + queryItem.getAliasName(), queryData.getItemList());
-				} else {
-					jdbcTypeMap.put(prefixAlias + queryItem.getAliasName(), queryItem.getJdbcType());
-				}
-			}
+				break;
+			case SubQuery:
+				NestedTableSubQuery queryData = ((FromSubQuery) queryFrom).getQueryData();
+				this.handlerTypes(jdbcTypeMap, queryData.getQueryFrom(),
+						prefixAlias + queryFrom.getAliasName(), queryData.getItemList());
+				break;
 		}
 	}
 
@@ -1385,39 +1410,56 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * <h3 class="en-US">Handle the mapping relationship between data columns and data types</h3>
 	 * <h3 class="zh-CN">处理数据列和数据类型的映射关系</h3>
 	 *
-	 * @param jdbcTypeMap <span class="en-US">Data column label and types mapping table</span>
-	 *                    <span class="zh-CN">数据列类型映射表</span>
-	 * @param aliasMap    <span class="en-US">Alias name mapping table</span>
-	 *                    <span class="zh-CN">别名映射表</span>
-	 * @param itemList    <span class="en-US">Query item instance list</span>
-	 *                    <span class="zh-CN">查询项目实例对象列表</span>
+	 * @param aliasMap <span class="en-US">Alias name mapping table</span>
+	 *                 <span class="zh-CN">别名映射表</span>
+	 * @param itemList <span class="en-US">Query item instance list</span>
+	 *                 <span class="zh-CN">查询项目实例对象列表</span>
 	 * @throws SQLException <span class="en-US">The data table is not registered</span>
 	 *                      <span class="zh-CN">数据表未注册</span>
 	 */
-	private void handlerTypes(@Nonnull final Map<String, Integer> jdbcTypeMap, @Nonnull final Map<String, String> aliasMap,
-	                          @Nonnull final List<QueryItem> itemList) throws SQLException {
+	private Map<String, Integer> handlerTypes(@Nonnull final Map<String, String> aliasMap,
+	                                          @Nonnull final List<QueryItem> itemList) throws SQLException {
 		if (itemList.isEmpty()) {
-			return;
+			return new HashMap<>();
 		}
+		Map<String, Integer> jdbcTypeMap = new HashMap<>();
 		for (QueryItem queryItem : itemList) {
-			if (StringUtils.isEmpty(queryItem.getAliasName())) {
-				if (queryItem instanceof ColumnItem) {
+			String identifyKey = Globals.DEFAULT_VALUE_STRING;
+			switch (queryItem.getItemType()) {
+				case COLUMN:
 					ColumnItem columnItem = (ColumnItem) queryItem;
-					Optional.of(this.tableManager.define(columnItem.getTableName()))
-							.map(tableDefine -> tableDefine.column(columnItem.getColumnName()))
-							.ifPresent(columnDefine ->
-									jdbcTypeMap.put(this.columnName(aliasMap, columnItem), columnDefine.getJdbcType()));
-				}
-			} else {
-				if (queryItem instanceof SubQueryItem) {
-					QueryData queryData = ((SubQueryItem) queryItem).getQueryData();
-					this.handlerTypes(jdbcTypeMap, queryData.getTableName(),
-							queryItem.getAliasName(), queryData.getItemList());
-				} else {
-					jdbcTypeMap.put(queryItem.getAliasName(), queryItem.getJdbcType());
-				}
+					if (StringUtils.isEmpty(queryItem.getAliasName())) {
+						identifyKey = this.columnName(aliasMap, columnItem);
+					} else {
+						identifyKey = queryItem.getAliasName();
+					}
+					break;
+				case QUERY:
+					AbstractQuery queryData = ((SubQueryItem) queryItem).getQueryData();
+					List<QueryItem> queryItems = new ArrayList<>();
+					switch (queryData.getQueryType()) {
+						case SCALAR:
+							queryItems.add(((ScalarSubQuery) queryData).getQueryItem());
+							break;
+						case TABLE:
+							queryItems.addAll(((TableSubQuery) queryData).getItemList());
+							break;
+						case NESTED_TABLE:
+							queryItems.addAll(((NestedTableSubQuery) queryData).getItemList());
+							break;
+					}
+					this.handlerTypes(jdbcTypeMap, queryData.getQueryFrom(), queryItem.getAliasName(), queryItems);
+					break;
+				default:
+					identifyKey = queryItem.getAliasName();
+					break;
+			}
+
+			if (StringUtils.notBlank(identifyKey)) {
+				jdbcTypeMap.put(identifyKey, queryItem.getJdbcType());
 			}
 		}
+		return jdbcTypeMap;
 	}
 
 	/**
@@ -1561,30 +1603,28 @@ public abstract class JdbcDialect extends BaseDialect {
 		return itemBuilder.toString();
 	}
 
-	private String fromCommand(@Nonnull final Map<String, String> aliasMap, @Nonnull final List<QueryFrom> fromList,
+	private String fromCommand(@Nonnull final Map<String, String> aliasMap, @Nonnull final QueryFrom queryFrom,
 	                           @Nonnull final List<Object> values)
 			throws SQLException {
 		StringBuilder sqlBuilder = new StringBuilder();
 		String aliasCommand = this.aliasCommand();
-		for (QueryFrom queryFrom : fromList) {
-			sqlBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER);
-			if (queryFrom instanceof FromTable) {
-				FromTable fromTable = (FromTable) queryFrom;
-				sqlBuilder.append(this.nameCase(fromTable.getTableName()))
+		sqlBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER);
+		if (queryFrom instanceof FromTable) {
+			FromTable fromTable = (FromTable) queryFrom;
+			sqlBuilder.append(this.nameCase(fromTable.getTableName()))
+					.append(aliasCommand)
+					.append(BrainCommons.WHITE_SPACE)
+					.append(aliasMap.get(fromTable.getTableName()));
+		} else if (queryFrom instanceof FromSubQuery) {
+			FromSubQuery fromSubQuery = (FromSubQuery) queryFrom;
+			String subQueryCommand = this.subQuery(aliasMap, fromSubQuery.getQueryData(), values);
+			if (StringUtils.notBlank(subQueryCommand)) {
+				sqlBuilder.append(BrainCommons.BRACKETS_BEGIN)
+						.append(subQueryCommand)
+						.append(BrainCommons.BRACKETS_END)
 						.append(aliasCommand)
 						.append(BrainCommons.WHITE_SPACE)
-						.append(aliasMap.get(fromTable.getTableName()));
-			} else if (queryFrom instanceof FromSubQuery) {
-				FromSubQuery fromSubQuery = (FromSubQuery) queryFrom;
-				String subQueryCommand = this.subQuery(aliasMap, fromSubQuery.getQueryData(), values);
-				if (StringUtils.notBlank(subQueryCommand)) {
-					sqlBuilder.append(BrainCommons.BRACKETS_BEGIN)
-							.append(subQueryCommand)
-							.append(BrainCommons.BRACKETS_END)
-							.append(aliasCommand)
-							.append(BrainCommons.WHITE_SPACE)
-							.append(fromSubQuery.getAliasName());
-				}
+						.append(fromSubQuery.getAliasName());
 			}
 		}
 		return sqlBuilder.length() == 0
@@ -1750,12 +1790,37 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @throws SQLException <span class="en-US">An error occurred while generating the SQL command</span>
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
-	private String subQuery(final Map<String, String> aliasMap, @Nonnull final QueryData queryData,
+	private String subQuery(final Map<String, String> aliasMap, @Nonnull final AbstractQuery queryData,
 	                        final List<Object> values) throws SQLException {
-		StringBuilder sqlBuilder = new StringBuilder(SELECT_COMMAND)
-				.append(this.itemCommand(aliasMap, queryData.getItemList(), values))
-				.append(FROM_COMMAND)
-				.append(this.nameCase(queryData.getTableName()));
+		StringBuilder sqlBuilder = new StringBuilder(SELECT_COMMAND);
+		switch (queryData.getQueryType()) {
+			case SCALAR:
+				ScalarSubQuery scalarSubQuery = (ScalarSubQuery) queryData;
+				sqlBuilder.append(this.itemCommand(aliasMap, List.of(scalarSubQuery.getQueryItem()), values));
+				break;
+			case TABLE:
+				sqlBuilder.append(this.itemCommand(aliasMap, ((TableSubQuery) queryData).getItemList(), values));
+				break;
+			case NESTED_TABLE:
+				sqlBuilder.append(this.itemCommand(aliasMap, ((NestedTableSubQuery) queryData).getItemList(), values));
+				break;
+		}
+
+		QueryFrom queryFrom = queryData.getQueryFrom();
+		switch (queryFrom.getFromType()) {
+			case Table:
+				sqlBuilder.append(FROM_COMMAND).append(this.nameCase(((FromTable) queryFrom).getTableName()));
+				break;
+			case SubQuery:
+				sqlBuilder.append(FROM_COMMAND)
+						.append(BrainCommons.BRACKETS_BEGIN)
+						.append(this.subQuery(aliasMap, ((FromSubQuery) queryFrom).getQueryData(), values))
+						.append(BrainCommons.BRACKETS_END);
+				break;
+		}
+		if (StringUtils.notBlank(queryFrom.getAliasName())) {
+			sqlBuilder.append(this.aliasCommand()).append(queryFrom.getAliasName());
+		}
 		String whereClause = this.whereClause(aliasMap, queryData.getConditionList(), values);
 		if (StringUtils.notBlank(whereClause)) {
 			sqlBuilder.append(WHERE_COMMAND).append(BrainCommons.DEFAULT_WHERE_CLAUSE).append(whereClause);

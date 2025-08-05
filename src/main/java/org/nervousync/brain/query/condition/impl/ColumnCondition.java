@@ -71,13 +71,13 @@ public final class ColumnCondition extends Condition {
 	 * <span class="zh-CN">匹配结果</span>
 	 */
 	@XmlElements({
-			@XmlElement(name = "arrays_parameter", type = ArraysParameter.class),
-			@XmlElement(name = "calculate_parameter", type = CalculateParameter.class),
-			@XmlElement(name = "column_parameter", type = ColumnParameter.class),
-			@XmlElement(name = "constant_parameter", type = ConstantParameter.class),
-			@XmlElement(name = "function_parameter", type = FunctionParameter.class),
-			@XmlElement(name = "query_parameter", type = QueryParameter.class),
-			@XmlElement(name = "ranges_parameter", type = RangesParameter.class)
+			@XmlElement(name = "arrays_parameter", type = ArraysParameter.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "calculate_parameter", type = CalculateParameter.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "column_parameter", type = ColumnParameter.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "constant_parameter", type = ConstantParameter.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "function_parameter", type = FunctionParameter.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "query_parameter", type = QueryParameter.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "ranges_parameter", type = RangesParameter.class, namespace = "https://nervousync.org/schemas/brain")
 	})
 	private AbstractParameter<?> conditionParameter;
 

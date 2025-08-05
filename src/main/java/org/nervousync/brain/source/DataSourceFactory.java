@@ -38,6 +38,13 @@ import java.util.Hashtable;
  */
 public final class DataSourceFactory implements ObjectFactory {
 
+	/**
+	 * <h3 class="en-US">Constructor method for the data source factory implementation class</h3>
+	 * <h3 class="zh-CN">数据源工厂实现类的构造方法</h3>
+	 */
+	public DataSourceFactory() {
+	}
+
 	@Override
 	public Object getObjectInstance(final Object obj, final Name name, final Context nameCtx,
 	                                final Hashtable<?, ?> environment) throws Exception {

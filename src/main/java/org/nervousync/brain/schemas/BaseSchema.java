@@ -44,6 +44,8 @@ import java.util.*;
  * <h2 class="en-US">Data source abstract implementation classes</h2>
  * <h2 class="zh-CN">数据源抽象实现类</h2>
  *
+ * @param <D> <span class="en-US">Generics Type of database dialect</span>
+ *            <span class="zh-CN">数据库方言泛型类</span>
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:15:08 $
  */
@@ -142,6 +144,17 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 */
 	public final boolean match(final long lastModified) {
 		return lastModified != Globals.DEFAULT_VALUE_LONG && this.lastModified == lastModified;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the support join query</h3>
+	 * <h3 class="zh-CN">支持关联查询的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Support join query</span>
+	 * <span class="zh-CN">支持关联查询</span>
+	 */
+	public final boolean supportJoin() {
+		return this.dialect.supportJoin();
 	}
 
 	/**

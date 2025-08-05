@@ -17,6 +17,9 @@
 
 package org.nervousync.brain.query.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import org.nervousync.brain.enumerations.query.FromType;
@@ -33,6 +36,7 @@ import java.sql.Wrapper;
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:30:54 $
  */
 @XmlTransient
+@XmlAccessorType(XmlAccessType.NONE)
 public abstract class QueryFrom extends SortedItem implements Wrapper {
 
 	/**
@@ -45,6 +49,7 @@ public abstract class QueryFrom extends SortedItem implements Wrapper {
 	 * <span class="en-US">Enumeration value of the query from type</span>
 	 * <span class="zh-CN">查询来源类型的枚举值</span>
 	 */
+	@JsonIgnore
 	private final FromType fromType;
 	/**
 	 * <span class="en-US">Item alias name</span>

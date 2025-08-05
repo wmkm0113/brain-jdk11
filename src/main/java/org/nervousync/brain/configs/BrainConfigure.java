@@ -20,6 +20,7 @@ package org.nervousync.brain.configs;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.beans.core.BeanObject;
+import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
@@ -79,6 +80,18 @@ public final class BrainConfigure extends BeanObject {
 			@XmlElementRef(name = "remote_schema", type = RemoteSchemaConfig.class)
 	})
 	private List<SchemaConfig> schemaConfigs;
+	/**
+	 * <span class="en-US">Used identification code of query optimizer implementation class</span>
+	 * <span class="zh-CN">使用的查询优化器实现类识别代码</span>
+	 */
+	@XmlElement(name = "optimizer_name")
+	private String optimizerName = Globals.DEFAULT_VALUE_STRING;
+	/**
+	 * <span class="en-US">Query optimizer instance objects pool size</span>
+	 * <span class="zh-CN">查询优化器对象池大小</span>
+	 */
+	@XmlElement(name = "pool_size")
+	private Integer poolSize = BrainCommons.DEFAULT_OPTIMIZER_POOL_SIZE;
 	/**
 	 * <span class="en-US">Last modified timestamp</span>
 	 * <span class="zh-CN">最后修改时间戳</span>
@@ -180,6 +193,52 @@ public final class BrainConfigure extends BeanObject {
 	 */
 	public void setSchemaConfigs(final List<SchemaConfig> schemaConfigs) {
 		this.schemaConfigs = schemaConfigs;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the used identification code of query optimizer implementation class</h3>
+	 * <h3 class="zh-CN">使用的查询优化器实现类识别代码的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Used identification code of query optimizer implementation class</span>
+	 * <span class="zh-CN">使用的查询优化器实现类识别代码</span>
+	 */
+	public String getOptimizerName() {
+		return this.optimizerName;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the used identification code of query optimizer implementation class</h3>
+	 * <h3 class="zh-CN">使用的查询优化器实现类识别代码的Setter方法</h3>
+	 *
+	 * @param optimizerName <span class="en-US">Used identification code of query optimizer implementation class</span>
+	 *                      <span class="zh-CN">使用的查询优化器实现类识别代码</span>
+	 */
+	public void setOptimizerName(final String optimizerName) {
+		this.optimizerName = optimizerName;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the query optimizer pool size</h3>
+	 * <h3 class="zh-CN">查询优化器对象池大小的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Query optimizer pool size</span>
+	 * <span class="zh-CN">查询优化器对象池大小</span>
+	 */
+	public Integer getPoolSize() {
+		return this.poolSize;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the query optimizer pool size</h3>
+	 * <h3 class="zh-CN">查询优化器对象池大小的Setter方法</h3>
+	 *
+	 * @param poolSize <span class="en-US">Query optimizer pool size</span>
+	 *                 <span class="zh-CN">查询优化器对象池大小</span>
+	 */
+	public void setPoolSize(final Integer poolSize) {
+		this.poolSize = (poolSize == null || poolSize < Globals.INITIALIZE_INT_VALUE)
+				? BrainCommons.DEFAULT_OPTIMIZER_POOL_SIZE
+				: poolSize;
 	}
 
 	/**

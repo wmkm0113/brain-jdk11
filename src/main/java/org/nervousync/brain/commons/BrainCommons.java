@@ -32,6 +32,11 @@ import org.nervousync.utils.StringUtils;
 public final class BrainCommons {
 
 	/**
+	 * <span class="en-US">Default query optimizer pool size</span>
+	 * <span class="zh-CN">默认查询优化器对象池大小</span>
+	 */
+	public static final int DEFAULT_OPTIMIZER_POOL_SIZE = 5;
+	/**
 	 * <span class="en-US">Default page number</span>
 	 * <span class="zh-CN">默认起始页</span>
 	 */
@@ -228,5 +233,12 @@ public final class BrainCommons {
 			return Globals.DEFAULT_VALUE_STRING;
 		}
 		return ConvertUtils.bytesToHex(SecurityUtils.SHA256(string));
+	}
+
+	/**
+	 * <h3 class="en-US">Private constructor method</h3>
+	 * <h3 class="zh-CN">私有构造方法</h3>
+	 */
+	private BrainCommons() {
 	}
 }

@@ -51,6 +51,13 @@ public abstract class SortedItem extends BeanObject {
 	private int sortCode;
 
 	/**
+	 * <h3 class="en-US">Constructor method for the sort item define</h3>
+	 * <h3 class="zh-CN">排序项定义的构造方法</h3>
+	 */
+	public SortedItem() {
+	}
+
+	/**
 	 * <h3 class="en-US">Getter method for sort code</h3>
 	 * <h3 class="zh-CN">排序代码的Getter方法</h3>
 	 *

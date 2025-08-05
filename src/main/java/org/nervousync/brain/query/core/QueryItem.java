@@ -17,9 +17,7 @@
 
 package org.nervousync.brain.query.core;
 
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlSeeAlso;
-import jakarta.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.ItemType;
 import org.nervousync.brain.query.item.*;
 import org.nervousync.utils.ClassUtils;
@@ -37,6 +35,7 @@ import java.sql.Wrapper;
  */
 @XmlSeeAlso({CalculateItem.class, ColumnItem.class, ConstantItem.class, FunctionItem.class, SubQueryItem.class})
 @XmlTransient
+@XmlAccessorType(XmlAccessType.NONE)
 public abstract class QueryItem extends SortedItem implements Wrapper {
 
 	/**

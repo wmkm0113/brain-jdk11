@@ -23,7 +23,7 @@ import org.nervousync.brain.enumerations.query.ConnectionCode;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
 import org.nervousync.brain.query.condition.impl.GroupCondition;
-import org.nervousync.brain.query.data.QueryData;
+import org.nervousync.brain.query.core.AbstractQuery;
 import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.brain.query.param.impl.FunctionParameter;
 import org.nervousync.builder.AbstractBuilder;
@@ -45,10 +45,16 @@ import java.util.List;
 public final class ConditionsBuilder<P extends ParentBuilder> extends AbstractBuilder<P, ConditionsBuilder.Conditions> {
 
 	/**
-	 * <span class="en-US">Query conditions information instance object</span>
-	 * <span class="zh-CN">查询条件信息列表实例对象</span>
+	 * <span class="en-US">Query condition instance list</span>
+	 * <span class="zh-CN">查询条件实例对象列表</span>
 	 */
-	private final Conditions conditions;
+	@Nonnull
+	private final List<Condition> conditions = new ArrayList<>();
+	/**
+	 * <span class="en-US">Having condition flag</span>
+	 * <span class="zh-CN">Having字句条件标记</span>
+	 */
+	private final boolean having;
 
 	/**
 	 * <h3 class="en-US">Protected constructor for AbstractBuilder</h3>
@@ -58,10 +64,15 @@ public final class ConditionsBuilder<P extends ParentBuilder> extends AbstractBu
 	 *                      <span class="zh-CN">父构建器实例对象</span>
 	 * @param having        <span class="en-US">Having condition flag</span>
 	 *                      <span class="zh-CN">Having字句条件标记</span>
+	 * @param conditions    <span class="en-US">Query condition instance list</span>
+	 *                      <span class="zh-CN">查询条件实例对象列表</span>
 	 */
-	public ConditionsBuilder(final P parentBuilder, final boolean having) {
+	public ConditionsBuilder(final P parentBuilder, final boolean having, final List<Condition> conditions) {
 		super(parentBuilder);
-		this.conditions = new Conditions(having);
+		this.having = having;
+		if (conditions != null) {
+			this.conditions.addAll(conditions);
+		}
 	}
 
 	/**
@@ -619,13 +630,13 @@ public final class ConditionsBuilder<P extends ParentBuilder> extends AbstractBu
 	@Override
 	public void confirm(final Object object) {
 		if (object instanceof Condition) {
-			this.conditions.addCondition((Condition) object);
+			this.conditions.add((Condition) object);
 		}
 	}
 
 	@Override
 	public Conditions build() throws BuilderException {
-		return this.conditions;
+		return new Conditions(this.conditions, this.having);
 	}
 
 	/**
@@ -674,23 +685,14 @@ public final class ConditionsBuilder<P extends ParentBuilder> extends AbstractBu
 		 * <h3 class="en-US">Constructor method for the query conditions information</h3>
 		 * <h3 class="zh-CN">查询条件信息列表的构造方法</h3>
 		 *
-		 * @param having <span class="en-US">Having condition flag</span>
-		 *               <span class="zh-CN">Having字句条件标记</span>
+		 * @param conditions <span class="en-US">Query condition instance list</span>
+		 *                   <span class="zh-CN">查询条件实例对象列表</span>
+		 * @param having     <span class="en-US">Having condition flag</span>
+		 *                   <span class="zh-CN">Having字句条件标记</span>
 		 */
-		private Conditions(final boolean having) {
-			this.conditions = new ArrayList<>();
+		private Conditions(@Nonnull final List<Condition> conditions, final boolean having) {
+			this.conditions = conditions;
 			this.having = having;
-		}
-
-		/**
-		 * <h3 class="en-US">Add condition information</h3>
-		 * <h3 class="zh-CN">添加查询条件</h3>
-		 *
-		 * @param condition <span class="en-US">Query condition instance object</span>
-		 *                  <span class="zh-CN">查询条件实例对象</span>
-		 */
-		void addCondition(final Condition condition) {
-			this.conditions.add(condition);
 		}
 
 		/**
@@ -893,22 +895,20 @@ public final class ConditionsBuilder<P extends ParentBuilder> extends AbstractBu
 		}
 
 		/**
-		 * <h3 class="en-US">Condition match sub-query information builder</h3>
-		 * <h3 class="zh-CN">匹配子查询构建器</h3>
+		 * <h3 class="en-US">Condition matches the scalar sub-query information builder</h3>
+		 * <h3 class="zh-CN">匹配标量子查询构建器</h3>
 		 *
-		 * @param tableName <span class="en-US">Data table name</span>
-		 *                  <span class="zh-CN">数据表名</span>
 		 * @return <span class="en-US">Sub-query builder instance object</span>
 		 * <span class="zh-CN">子查询构建器实例对象</span>
 		 */
-		public SubQueryBuilder<ColumnConditionBuilder<P>> matchQuery(final String tableName) {
-			return new SubQueryBuilder<>(this, tableName);
+		public SubQueryBuilder.ScalarSubQueryBuilder<ColumnConditionBuilder<P>> matchQuery() {
+			return new SubQueryBuilder.ScalarSubQueryBuilder<>(this);
 		}
 
 		@Override
 		public void confirm(final Object object) {
-			if (object instanceof QueryData) {
-				this.condition.setConditionParameter(AbstractParameter.subQuery((QueryData) object));
+			if (object instanceof AbstractQuery) {
+				this.condition.setConditionParameter(AbstractParameter.subQuery((AbstractQuery) object));
 			} else if (object instanceof FunctionParameter) {
 				this.condition.setConditionParameter((FunctionParameter) object);
 			}

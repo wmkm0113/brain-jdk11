@@ -1,7 +1,6 @@
 # 資料庫通用介面
-
-[![Maven Central](https://img.shields.io/maven-central/v/org.nervousync/brain-jdk11?color=green)](https://mvnrepository.com/artifact/org.nervousync/brain-jdk11)
-![Maven Snapshot](https://img.shields.io/nexus/s/org.nervousync/brain-jdk11?label=Snapshot&server=https://oss.sonatype.org)
+[![Maven Central](https://img.shields.io/maven-central/v/org.nervousync/brain-jdk11?color=green&label=Release)](https://mvnrepository.com/artifact/org.nervousync/brain-jdk11)
+![Maven Snapshot](https://img.shields.io/maven-metadata/v?label=Snapshot&metadataUrl=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Forg%2Fnervousync%2Fbrain-jdk11%2Fmaven-metadata.xml)
 [![License](https://img.shields.io/github/license/wmkm0113/brain-jdk11)](https://github.com/wmkm0113/brain-jdk11/blob/mainline/LICENSE)
 ![Language](https://img.shields.io/badge/language-Java-green)
 [![Twitter:wmkm0113](https://img.shields.io/twitter/follow/wmkm0113?label=Follow)](https://twitter.com/wmkm0113)

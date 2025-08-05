@@ -181,6 +181,27 @@ public final class BrainConfigureBuilder<P extends ParentBuilder> extends Abstra
 	}
 
 	/**
+	 * <h3 class="en-US">Configure query optimizer information</h3>
+	 * <h3 class="zh-CN">设置查询优化器相关信息</h3>
+	 *
+	 * @param optimizerName <span class="en-US">Used identification code of query optimizer implementation class</span>
+	 *                      <span class="zh-CN">使用的查询优化器实现类识别代码</span>
+	 * @param poolSize      <span class="en-US">Query optimizer pool size</span>
+	 *                      <span class="zh-CN">查询优化器对象池大小</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实现类实例对象</span>
+	 */
+	public BrainConfigureBuilder<P> queryOptimizer(final String optimizerName, final Integer poolSize) {
+		if (!ObjectUtils.nullSafeEquals(this.configure.getOptimizerName(), optimizerName)
+				|| !ObjectUtils.nullSafeEquals(this.configure.getPoolSize(), poolSize)) {
+			this.configure.setOptimizerName(optimizerName);
+			this.configure.setPoolSize(poolSize);
+			this.modified = Boolean.TRUE;
+		}
+		return this;
+	}
+
+	/**
 	 * <h3 class="en-US">Set default data schema</h3>
 	 * <h3 class="zh-CN">设置默认数据源</h3>
 	 *

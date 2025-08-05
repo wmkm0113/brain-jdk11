@@ -48,11 +48,11 @@ import java.util.List;
 public final class ParametersBuilder<P extends ParentBuilder> extends AbstractBuilder<P, ParametersBuilder.Parameters> {
 
 	/**
-	 * <span class="en-US">Function parameters information list instance object</span>
-	 * <span class="zh-CN">函数参数信息列表实例对象</span>
+	 * <span class="en-US">Function arguments list</span>
+	 * <span class="zh-CN">函数参数列表</span>
 	 */
 	@Nonnull
-	private final Parameters parameters;
+	private final List<AbstractParameter<?>> parameterList = new ArrayList<>();
 
 	/**
 	 * <h3 class="en-US">Constructor method for the function parameters information list builder</h3>
@@ -60,10 +60,14 @@ public final class ParametersBuilder<P extends ParentBuilder> extends AbstractBu
 	 *
 	 * @param parentBuilder <span class="en-US">Parent builder instance object</span>
 	 *                      <span class="zh-CN">父构建器实例对象</span>
+	 * @param parameterList <span class="en-US">Function arguments list</span>
+	 *                      <span class="zh-CN">函数参数列表</span>
 	 */
-	public ParametersBuilder(final P parentBuilder) {
+	public ParametersBuilder(final P parentBuilder, final List<AbstractParameter<?>> parameterList) {
 		super(parentBuilder);
-		this.parameters = new Parameters();
+		if (parameterList != null) {
+			this.parameterList.addAll(parameterList);
+		}
 	}
 
 	/**
@@ -113,13 +117,13 @@ public final class ParametersBuilder<P extends ParentBuilder> extends AbstractBu
 	@Override
 	public void confirm(final Object object) {
 		if (object instanceof AbstractParameter<?>) {
-			this.parameters.addParameter((AbstractParameter<?>) object);
+			this.parameterList.add((AbstractParameter<?>) object);
 		}
 	}
 
 	@Override
 	public Parameters build() throws BuilderException {
-		return this.parameters;
+		return new Parameters(this.parameterList);
 	}
 
 	/**
@@ -141,20 +145,12 @@ public final class ParametersBuilder<P extends ParentBuilder> extends AbstractBu
 		/**
 		 * <h3 class="en-US">Constructor method for the function parameters information list</h3>
 		 * <h3 class="zh-CN">函数参数信息列表的构造方法</h3>
-		 */
-		private Parameters() {
-			this.functionParams = new ArrayList<>();
-		}
-
-		/**
-		 * <span class="en-US">Add function argument</span>
-		 * <span class="zh-CN">添加函数参数信息</span>
 		 *
-		 * @param parameter <span class="en-US">Function argument</span>
-		 *                  <span class="zh-CN">函数参数信息</span>
+		 * @param functionParams <span class="en-US">Function arguments list</span>
+		 *                       <span class="zh-CN">函数参数列表</span>
 		 */
-		private void addParameter(final AbstractParameter<?> parameter) {
-			this.functionParams.add(parameter);
+		private Parameters(@Nonnull final List<AbstractParameter<?>> functionParams) {
+			this.functionParams = functionParams;
 		}
 
 		/**

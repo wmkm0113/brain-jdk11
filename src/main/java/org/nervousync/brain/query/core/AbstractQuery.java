@@ -1,6 +1,6 @@
 /*
  * Licensed to the Nervousync Studio (NSYC) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
+ * contributor license agreements. See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
@@ -15,60 +15,65 @@
  * limitations under the License.
  */
 
-package org.nervousync.brain.query.data;
+package org.nervousync.brain.query.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.*;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.beans.core.BeanObject;
+import org.nervousync.brain.enumerations.query.QueryType;
+import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
 import org.nervousync.brain.query.condition.impl.GroupCondition;
-import org.nervousync.brain.query.core.QueryItem;
-import org.nervousync.brain.query.core.SortedItem;
-import org.nervousync.brain.query.item.*;
+import org.nervousync.brain.query.from.FromSubQuery;
+import org.nervousync.brain.query.from.FromTable;
 import org.nervousync.brain.query.join.QueryJoin;
 import org.nervousync.brain.query.join.SubQueryJoin;
 import org.nervousync.brain.query.join.TableQueryJoin;
 import org.nervousync.brain.query.sort.GroupBy;
+import org.nervousync.brain.query.subqueries.NestedTableSubQuery;
+import org.nervousync.brain.query.subqueries.ScalarSubQuery;
+import org.nervousync.brain.query.subqueries.TableSubQuery;
+import org.nervousync.utils.StringUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <h2 class="en-US">Sub-query define</h2>
- * <h2 class="zh-CN">子查询定义</h2>
+ * <h2 class="en-US">Abstract class of the query defines</h2>
+ * <h2 class="zh-CN">查询抽象类定义</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 18:19:42 $
  */
-@XmlType(name = "sub_query_data", namespace = "https://nervousync.org/schemas/brain")
-@XmlRootElement(name = "sub_query_data", namespace = "https://nervousync.org/schemas/brain")
-public final class QueryData extends BeanObject {
+@XmlSeeAlso({QueryInfo.class, NestedTableSubQuery.class, ScalarSubQuery.class, TableSubQuery.class})
+@XmlTransient
+@XmlAccessorType(XmlAccessType.NONE)
+@OutputConfig(formatted = true, defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
+public abstract class AbstractQuery extends BeanObject {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>
 	 * <span class="zh-CN">序列化UID</span>
 	 */
-	private static final long serialVersionUID = 904613011408758201L;
+	private static final long serialVersionUID = -3561111209756721789L;
 
 	/**
-	 * <span class="en-US">Data table name</span>
-	 * <span class="zh-CN">数据表名</span>
+	 * <span class="en-US">Sub-query type enumeration value</span>
+	 * <span class="zh-CN">子查询类型枚举值</span>
 	 */
-	@XmlElement(name = "table_name")
-	private String tableName;
+	@JsonIgnore
+	private final QueryType queryType;
 	/**
-	 * <span class="en-US">Query item instance list</span>
-	 * <span class="zh-CN">查询项目实例对象列表</span>
+	 * <span class="en-US">Query from information</span>
+	 * <span class="zh-CN">查询来源信息</span>
 	 */
 	@XmlElements({
-			@XmlElement(name = "calculate_item", type = CalculateItem.class),
-			@XmlElement(name = "column_item", type = ColumnItem.class),
-			@XmlElement(name = "constant_item", type = ConstantItem.class),
-			@XmlElement(name = "function_item", type = FunctionItem.class),
-			@XmlElement(name = "sub_query_item", type = SubQueryItem.class)
+			@XmlElement(name = "from_sub_query", type = FromSubQuery.class, namespace = "https://nervousync.org/schemas/brain"),
+			@XmlElement(name = "from_table", type = FromTable.class, namespace = "https://nervousync.org/schemas/brain")
 	})
-	@XmlElementWrapper(name = "item_list")
-	private List<QueryItem> itemList;
+	private QueryFrom queryFrom;
 	/**
 	 * <span class="en-US">Related query information list</span>
 	 * <span class="zh-CN">关联查询信息列表</span>
@@ -93,7 +98,7 @@ public final class QueryData extends BeanObject {
 	 * <span class="en-US">Identify key</span>
 	 * <span class="zh-CN">分组识别代码列表</span>
 	 */
-	@XmlElement(name = "group_by")
+	@XmlElement(name = "group_by", type = GroupBy.class, namespace = "https://nervousync.org/schemas/brain")
 	@XmlElementWrapper(name = "group_list")
 	private List<GroupBy> groupByList;
 	/**
@@ -108,58 +113,48 @@ public final class QueryData extends BeanObject {
 	private List<Condition> havingList;
 
 	/**
-	 * <h3 class="en-US">Constructor method for sub-query define</h3>
-	 * <h3 class="zh-CN">子查询定义的构造方法</h3>
+	 * <h3 class="en-US">Constructor method for the abstract class of sub-query defines</h3>
+	 * <h3 class="zh-CN">子查询抽象类定义的构造方法</h3>
+	 *
+	 * @param queryType <span class="en-US">Sub-query type enumeration value</span>
+	 *                  <span class="zh-CN">子查询类型枚举值</span>
 	 */
-	public QueryData() {
-		this.conditionList = new ArrayList<>();
-		this.groupByList = new ArrayList<>();
-		this.havingList = new ArrayList<>();
+	protected AbstractQuery(@Nonnull final QueryType queryType) {
+		this.queryType = queryType;
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for data table name</h3>
-	 * <h3 class="zh-CN">数据表名的Getter方法</h3>
+	 * <h3 class="en-US">Getter method for the sub-query type enumeration value</h3>
+	 * <h3 class="zh-CN">子查询类型枚举值的Getter方法</h3>
 	 *
-	 * @return <span class="en-US">Data table name</span>
-	 * <span class="zh-CN">数据表名</span>
+	 * @return <span class="en-US">Sub-query type enumeration value</span>
+	 * <span class="zh-CN">子查询类型枚举值</span>
 	 */
-	public String getTableName() {
-		return this.tableName;
+	public QueryType getQueryType() {
+		return this.queryType;
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for data table name</h3>
-	 * <h3 class="zh-CN">数据表名的Setter方法</h3>
+	 * <h3 class="en-US">Getter method for the query from information</h3>
+	 * <h3 class="zh-CN">查询来源信息的Getter方法</h3>
 	 *
-	 * @param tableName <span class="en-US">Data table name</span>
-	 *                  <span class="zh-CN">数据表名</span>
+	 * @return <span class="en-US">Query from information</span>
+	 * <span class="zh-CN">查询来源信息</span>
 	 */
-	public void setTableName(final String tableName) {
-		this.tableName = tableName;
+	@Nonnull
+	public QueryFrom getQueryFrom() {
+		return this.queryFrom;
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for the query item instance list</h3>
-	 * <h3 class="zh-CN">查询项目实例对象列表的Getter方法</h3>
+	 * <h3 class="en-US">Setter method for the query from information</h3>
+	 * <h3 class="zh-CN">查询来源信息的Setter方法</h3>
 	 *
-	 * @return <span class="en-US">Query item instance list</span>
-	 * <span class="zh-CN">查询项目实例对象列表</span>
+	 * @param queryFrom <span class="en-US">Query from information</span>
+	 *                  <span class="zh-CN">查询来源信息</span>
 	 */
-	public List<QueryItem> getItemList() {
-		return this.itemList;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for the query item instance list</h3>
-	 * <h3 class="zh-CN">查询项目实例对象列表的Setter方法</h3>
-	 *
-	 * @param itemList <span class="en-US">Query item instance list</span>
-	 *                 <span class="zh-CN">查询项目实例对象列表</span>
-	 */
-	public void setItemList(final List<QueryItem> itemList) {
-		this.itemList = (itemList == null) ? new ArrayList<>() : itemList;
-		this.itemList.sort(SortedItem.desc());
+	public void setQueryFrom(final QueryFrom queryFrom) {
+		this.queryFrom = queryFrom;
 	}
 
 	/**
@@ -200,7 +195,7 @@ public final class QueryData extends BeanObject {
 	 * <h3 class="zh-CN">查询条件实例对象列表的Setter方法</h3>
 	 *
 	 * @param conditionList <span class="en-US">Query condition instance list</span>
-	 *                   <span class="zh-CN">查询条件实例对象列表</span>
+	 *                      <span class="zh-CN">查询条件实例对象列表</span>
 	 */
 	public void setConditionList(final List<Condition> conditionList) {
 		this.conditionList = conditionList;
@@ -222,7 +217,7 @@ public final class QueryData extends BeanObject {
 	 * <h3 class="zh-CN">分组识别代码列表的Setter方法</h3>
 	 *
 	 * @param groupByList <span class="en-US">Group identify key</span>
-	 *                <span class="zh-CN">分组识别代码列表</span>
+	 *                    <span class="zh-CN">分组识别代码列表</span>
 	 */
 	public void setGroupByList(final List<GroupBy> groupByList) {
 		this.groupByList = groupByList;
