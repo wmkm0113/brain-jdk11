@@ -1298,21 +1298,9 @@ public abstract class JdbcDialect extends BaseDialect {
 		if (itemList != null && !itemList.isEmpty()) {
 			for (QueryItem item : itemList) {
 				if (item instanceof SubQueryItem) {
-					AbstractQuery queryData = ((SubQueryItem) item).getQueryData();
-					switch (queryData.getQueryType()) {
-						case SCALAR:
-							this.aliasNames(aliasMap, queryData.getQueryFrom(),
-									List.of(((ScalarSubQuery) queryData).getQueryItem()), queryData.getQueryJoins());
-							break;
-						case TABLE:
-							this.aliasNames(aliasMap, queryData.getQueryFrom(),
-									((TableSubQuery) queryData).getItemList(), queryData.getQueryJoins());
-							break;
-						case NESTED_TABLE:
-							this.aliasNames(aliasMap, queryData.getQueryFrom(),
-									((NestedTableSubQuery) queryData).getItemList(), queryData.getQueryJoins());
-							break;
-					}
+					ScalarSubQuery queryData = ((SubQueryItem) item).getQueryData();
+					this.aliasNames(aliasMap, queryData.getQueryFrom(),
+							List.of(((SubQueryItem) item).getQueryData().getQueryItem()), queryData.getQueryJoins());
 				}
 			}
 		}
@@ -1377,21 +1365,9 @@ public abstract class JdbcDialect extends BaseDialect {
 						}
 					} else {
 						if (queryItem instanceof SubQueryItem) {
-							AbstractQuery queryData = ((SubQueryItem) queryItem).getQueryData();
-							List<QueryItem> queryItems = new ArrayList<>();
-							switch (queryData.getQueryType()) {
-								case SCALAR:
-									queryItems.add(((ScalarSubQuery) queryData).getQueryItem());
-									break;
-								case TABLE:
-									queryItems.addAll(((TableSubQuery) queryData).getItemList());
-									break;
-								case NESTED_TABLE:
-									queryItems.addAll(((NestedTableSubQuery) queryData).getItemList());
-									break;
-							}
+							ScalarSubQuery queryData = ((SubQueryItem) queryItem).getQueryData();
 							this.handlerTypes(jdbcTypeMap, queryData.getQueryFrom(),
-									prefixAlias + queryItem.getAliasName(), queryItems);
+									prefixAlias + queryItem.getAliasName(), List.of(queryData.getQueryItem()));
 						} else {
 							jdbcTypeMap.put(prefixAlias + queryItem.getAliasName(), queryItem.getJdbcType());
 						}
@@ -1435,20 +1411,9 @@ public abstract class JdbcDialect extends BaseDialect {
 					}
 					break;
 				case QUERY:
-					AbstractQuery queryData = ((SubQueryItem) queryItem).getQueryData();
-					List<QueryItem> queryItems = new ArrayList<>();
-					switch (queryData.getQueryType()) {
-						case SCALAR:
-							queryItems.add(((ScalarSubQuery) queryData).getQueryItem());
-							break;
-						case TABLE:
-							queryItems.addAll(((TableSubQuery) queryData).getItemList());
-							break;
-						case NESTED_TABLE:
-							queryItems.addAll(((NestedTableSubQuery) queryData).getItemList());
-							break;
-					}
-					this.handlerTypes(jdbcTypeMap, queryData.getQueryFrom(), queryItem.getAliasName(), queryItems);
+					ScalarSubQuery queryData = ((SubQueryItem) queryItem).getQueryData();
+					this.handlerTypes(jdbcTypeMap, queryData.getQueryFrom(), queryItem.getAliasName(),
+							List.of(queryData.getQueryItem()));
 					break;
 				default:
 					identifyKey = queryItem.getAliasName();

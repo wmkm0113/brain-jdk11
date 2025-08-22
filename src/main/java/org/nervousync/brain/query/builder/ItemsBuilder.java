@@ -21,9 +21,9 @@ import jakarta.annotation.Nonnull;
 import org.intellij.lang.annotations.MagicConstant;
 import org.nervousync.brain.enumerations.query.CalculateCode;
 import org.nervousync.brain.manager.TableManager;
-import org.nervousync.brain.query.core.AbstractQuery;
 import org.nervousync.brain.query.core.QueryItem;
 import org.nervousync.brain.query.item.*;
+import org.nervousync.brain.query.subqueries.ScalarSubQuery;
 import org.nervousync.builder.AbstractBuilder;
 import org.nervousync.builder.ParentBuilder;
 import org.nervousync.exceptions.builder.BuilderException;
@@ -586,8 +586,8 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 
 		@Override
 		public void confirm(final Object object) {
-			if (object instanceof AbstractQuery) {
-				this.item.setQueryData((AbstractQuery) object);
+			if (object instanceof ScalarSubQuery) {
+				this.item.setQueryData((ScalarSubQuery) object);
 			}
 		}
 	}

@@ -32,6 +32,12 @@ import org.nervousync.brain.source.BrainDataSource;
 public interface QueryOptimizer {
 
 	/**
+	 * <h3 class="en-US">Reset the current query optimizer instance object</h3>
+	 * <h3 class="zh-CN">重置当前查询优化器实例对象</h3>
+	 */
+	void reset();
+
+	/**
 	 * <h3 class="en-US">Analyze and optimize query plan, execute the optimized result and return query results</h3>
 	 * <h3 class="zh-CN">分析优化查询步骤并执行查询</h3>
 	 *

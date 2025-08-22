@@ -591,9 +591,7 @@
                     <xsd:annotation>
                         <xsd:documentation>Sub-query information</xsd:documentation>
                     </xsd:annotation>
-                    <xsd:choice>
-                        <xsd:group ref="sub_query_group" />
-                    </xsd:choice>
+					<xsd:element name="scalar_sub_query" type="scalar_sub_query"/>
                 </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>
@@ -688,9 +686,9 @@
             <xsd:extension base="abstract_parameter">
                 <xsd:sequence>
                     <xsd:choice>
-                        <xsd:group ref="sub_query_group" />
+						<xsd:element name="scalar_sub_query" type="scalar_sub_query"/>
+						<xsd:element name="table_sub_query" type="table_sub_query"/>
                     </xsd:choice>
-                    <xsd:element name="query_info" type="query_info"/>
                 </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>
@@ -1123,12 +1121,6 @@
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
-    <xsd:group name="sub_query_group">
-        <xsd:choice>
-            <xsd:element name="scalar_sub_query" type="scalar_sub_query"/>
-            <xsd:element name="table_sub_query" type="table_sub_query"/>
-        </xsd:choice>
-    </xsd:group>
     <xsd:complexType name="query_info">
         <xsd:complexContent>
             <xsd:extension base="abstract_query">

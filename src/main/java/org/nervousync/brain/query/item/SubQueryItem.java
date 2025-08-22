@@ -19,14 +19,12 @@ package org.nervousync.brain.query.item;
 
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.ItemType;
-import org.nervousync.brain.query.core.AbstractQuery;
 import org.nervousync.brain.query.core.QueryItem;
 import org.nervousync.brain.query.subqueries.ScalarSubQuery;
-import org.nervousync.brain.query.subqueries.TableSubQuery;
 
 /**
- * <h2 class="en-US">Sub-query information define</h2>
- * <h2 class="zh-CN">子查询信息定义</h2>
+ * <h2 class="en-US">Scalar sub-query information define</h2>
+ * <h2 class="zh-CN">标量子查询信息定义</h2>
  *
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:42:19 $
@@ -43,17 +41,14 @@ public final class SubQueryItem extends QueryItem {
 	private static final long serialVersionUID = -8885263317043765606L;
 
 	/**
-	 * <span class="en-US">Sub-query information</span>
-	 * <span class="zh-CN">子查询信息</span>
+	 * <span class="en-US">Scalar sub-query information</span>
+	 * <span class="zh-CN">标量子查询信息</span>
 	 */
-	@XmlElements({
-			@XmlElement(name = "scalar_sub_query", type = ScalarSubQuery.class, namespace = "https://nervousync.org/schemas/brain"),
-			@XmlElement(name = "table_sub_query", type = TableSubQuery.class, namespace = "https://nervousync.org/schemas/brain")
-	})
-	private AbstractQuery queryData;
+	@XmlElement(name = "scalar_sub_query")
+	private ScalarSubQuery queryData;
 
 	/**
-	 * <h3 class="en-US">Protect constructor method for abstract query item define</h3>
+	 * <h3 class="en-US">Constructor method for abstract query item define</h3>
 	 * <h3 class="zh-CN">抽象查询项信息定义的构造方法</h3>
 	 */
 	public SubQueryItem() {
@@ -61,24 +56,24 @@ public final class SubQueryItem extends QueryItem {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for query information</h3>
-	 * <h3 class="zh-CN">查询信息的Getter方法</h3>
+	 * <h3 class="en-US">Getter method for the scalar sub-query information</h3>
+	 * <h3 class="zh-CN">标量子查询信息的Getter方法</h3>
 	 *
-	 * @return <span class="en-US">Query information</span>
-	 * <span class="zh-CN">查询信息</span>
+	 * @return <span class="en-US">Scalar sub-query information</span>
+	 * <span class="zh-CN">标量子查询信息</span>
 	 */
-	public AbstractQuery getQueryData() {
+	public ScalarSubQuery getQueryData() {
 		return queryData;
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for query information</h3>
-	 * <h3 class="zh-CN">查询信息的Setter方法</h3>
+	 * <h3 class="en-US">Setter method for the scalar sub-query information</h3>
+	 * <h3 class="zh-CN">标量子查询信息的Setter方法</h3>
 	 *
-	 * @param queryData <span class="en-US">Query information</span>
-	 *                  <span class="zh-CN">查询信息</span>
+	 * @param queryData <span class="en-US">Scalar sub-query information</span>
+	 *                  <span class="zh-CN">标量子查询信息</span>
 	 */
-	public void setQueryData(final AbstractQuery queryData) {
+	public void setQueryData(final ScalarSubQuery queryData) {
 		this.queryData = queryData;
 	}
 }

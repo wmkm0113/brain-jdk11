@@ -38,7 +38,6 @@ import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.manager.TableManager;
 import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
-import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.query.core.QueryFrom;
 import org.nervousync.brain.query.from.FromSubQuery;
 import org.nervousync.brain.query.from.FromTable;
@@ -57,8 +56,6 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * <h2 class="en-US">Nervousync brain data source</h2>
@@ -383,58 +380,6 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	}
 
 	/**
-	 * <h3 class="en-US">Checks if the given array of table identification codes is in the same database</h3>
-	 * <h3 class="zh-CN">检查给定的数据表识别代码数组是否在同一数据库中</h3>
-	 *
-	 * @param identifyCodes <span class="en-US">Data table identify codes array</span>
-	 *                      <span class="zh-CN">数据表识别代码数组</span>
-	 * @return <span class="en-US">Check result</span>
-	 * <span class="zh-CN">检查结果</span>
-	 * @throws SQLException <span class="en-US">The data source or data table is not registered</span>
-	 *                      <span class="zh-CN">数据源或数据表未注册</span>
-	 */
-	public boolean sameCatalog(final String... identifyCodes) throws SQLException {
-		return this.tableManager.sameSchema(identifyCodes)
-				&& this.sameCatalog(List.of(identifyCodes), Collections.emptyList(), Collections.emptyList());
-	}
-
-	/**
-	 * <h3 class="en-US">Checks whether two tables are in the same database, according to the given query conditions</h3>
-	 * <h3 class="zh-CN">根据给定的查询条件检查两个数据表是否在同一数据库中</h3>
-	 *
-	 * @param identifyCodes <span class="en-US">Data table identify code list</span>
-	 *                      <span class="zh-CN">数据表识别代码列表</span>
-	 * @param whereClause   <span class="en-US">Where clause query conditions</span>
-	 *                      <span class="zh-CN">Where字句查询条件</span>
-	 * @param havingClause  <span class="en-US">Having clause query conditions</span>
-	 *                      <span class="zh-CN">Having字句查询条件</span>
-	 * @return <span class="en-US">Check result</span>
-	 * <span class="zh-CN">检查结果</span>
-	 * @throws SQLException <span class="en-US">The data source or data table is not registered</span>
-	 *                      <span class="zh-CN">数据源或数据表未注册</span>
-	 */
-	public boolean sameCatalog(@Nonnull final List<String> identifyCodes,
-	                           @Nonnull final List<Condition> whereClause, @Nonnull final List<Condition> havingClause)
-			throws SQLException {
-		if (identifyCodes.isEmpty() || identifyCodes.size() == 1) {
-			return Boolean.TRUE;
-		}
-		String catalog = this.tableManager.define(identifyCodes.get(0)).getCatalog();
-		for (int i = 0; i < identifyCodes.size(); i++) {
-			if (!ObjectUtils.nullSafeEquals(catalog, this.tableManager.define(identifyCodes.get(0)).getCatalog())) {
-				return Boolean.FALSE;
-			}
-		}
-
-		BaseSchema<?> schema = this.retrieveSchema(catalog);
-		if (schema instanceof JdbcSchema) {
-			return ((JdbcSchema) schema).sameCatalog(identifyCodes,
-					Stream.concat(whereClause.stream(), havingClause.stream()).collect(Collectors.toList()));
-		}
-		return Boolean.TRUE;
-	}
-
-	/**
 	 * <h3 class="en-US">Truncate all data tables</h3>
 	 * <h3 class="zh-CN">清空所有数据表</h3>
 	 *
@@ -639,11 +584,13 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
 	public PartialCollection query(@Nonnull final QueryInfo queryInfo) throws Exception {
-		QueryOptimizer optimizer = this.optimizer();
+		QueryOptimizer optimizer = this.borrowOptimizer();
 		if (optimizer == null) {
 			return this.directQuery(queryInfo);
 		} else {
-			return optimizer.query(this, queryInfo);
+			PartialCollection partialCollection = optimizer.query(this, queryInfo);
+			this.returnOptimizer(optimizer);
+			return partialCollection;
 		}
 	}
 
@@ -659,11 +606,13 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
 	public Long queryTotal(@Nonnull final QueryInfo queryInfo) throws Exception {
-		QueryOptimizer optimizer = this.optimizer();
+		QueryOptimizer optimizer = this.borrowOptimizer();
 		if (optimizer == null) {
 			return this.directQueryTotal(queryInfo);
 		} else {
-			return optimizer.queryTotal(this, queryInfo);
+			Long totalCount = optimizer.queryTotal(this, queryInfo);
+			this.returnOptimizer(optimizer);
+			return totalCount;
 		}
 	}
 
@@ -750,12 +699,26 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * @return <span class="en-US">Query optimizer implementation class instance object</span>
 	 * <span class="zh-CN">查询优化器实现类实例对象</span>
 	 */
-	private QueryOptimizer optimizer() {
+	private QueryOptimizer borrowOptimizer() {
 		QueryOptimizer optimizer = this.optimizersPool.poll();
 		if (optimizer == null) {
 			optimizer = newOptimizer();
 		}
 		return optimizer;
+	}
+
+	/**
+	 * <h3 class="en-US">Return the query optimizer implementation class instance object</h3>
+	 * <h3 class="zh-CN">归还查询优化器实例对象</h3>
+	 *
+	 * @param optimizer <span class="en-US">Query optimizer implementation class instance object</span>
+	 *                  <span class="zh-CN">查询优化器实现类实例对象</span>
+	 */
+	private void returnOptimizer(@Nonnull final QueryOptimizer optimizer) {
+		optimizer.reset();
+		if (this.optimizersPool.size() < this.poolSize) {
+			this.optimizersPool.offer(optimizer);
+		}
 	}
 
 	/**
