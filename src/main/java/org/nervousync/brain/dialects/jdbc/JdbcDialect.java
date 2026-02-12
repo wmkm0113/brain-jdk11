@@ -260,7 +260,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 */
 	private static final String COMMAND_JOIN_INNER = " INNER JOIN ";
 	/**
-	 * <span class="en-US">Cross join</span>
+	 * <span class="en-US">Cross-join</span>
 	 * <span class="zh-CN">交叉连接</span>
 	 */
 	private static final String COMMAND_JOIN_CROSS = " CROSS JOIN ";
@@ -300,7 +300,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Commands to add column</h3>
+	 * <h3 class="en-US">Commands to add a column</h3>
 	 * <h3 class="zh-CN">添加数据列的命令</h3>
 	 *
 	 * @return <span class="en-US">Command string</span>
@@ -322,7 +322,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Commands to drop column</h3>
+	 * <h3 class="en-US">Commands to drop a column</h3>
 	 * <h3 class="zh-CN">删除数据列的命令</h3>
 	 *
 	 * @return <span class="en-US">Command string</span>
@@ -491,7 +491,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Create sharded database command</h3>
+	 * <h3 class="en-US">Create the sharded database command</h3>
 	 * <h3 class="zh-CN">创建分片数据库命令</h3>
 	 *
 	 * @param shardingName       <span class="en-US">Sharding database name</span>
@@ -524,7 +524,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	                                       @Nonnull List<Object> values);
 
 	/**
-	 * <h3 class="en-US">Create view name by the given data table name</h3>
+	 * <h3 class="en-US">Create the view name by the given data table name</h3>
 	 * <h3 class="zh-CN">通过给定的数据表名生成视图名称</h3>
 	 *
 	 * @param tableName <span class="en-US">Data table name</span>
@@ -653,7 +653,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Generate SQL commands to create index</h3>
+	 * <h3 class="en-US">Generate SQL commands to create the indexes</h3>
 	 * <h3 class="zh-CN">生成创建索引的SQL命令</h3>
 	 *
 	 * @param tableDefine   <span class="en-US">Database table defines information</span>
@@ -833,7 +833,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Generate SQL commands to insert record</h3>
+	 * <h3 class="en-US">Generate SQL commands to insert a record</h3>
 	 * <h3 class="zh-CN">生成插入记录的SQL命令</h3>
 	 *
 	 * @param tableDefine <span class="en-US">Table defines information</span>
@@ -855,14 +855,15 @@ public abstract class JdbcDialect extends BaseDialect {
 		final StringBuilder columnBuilder = new StringBuilder();
 		final StringBuilder valueBuilder = new StringBuilder();
 		final List<Object> values = new ArrayList<>();
-		dataMap.forEach((key, value) -> tableDefine.column(key)
-				.ifPresent(columnDefine -> {
-					columnBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER)
-							.append(this.nameCase(columnDefine.getColumnName()));
-					valueBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER)
-							.append(BrainCommons.DEFAULT_PLACE_HOLDER);
-					values.add(value);
-				}));
+		dataMap.forEach((key, value) ->
+				Optional.ofNullable(tableDefine.column(key))
+						.ifPresent(columnDefine -> {
+							columnBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER)
+									.append(this.nameCase(columnDefine.getColumnName()));
+							valueBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER)
+									.append(BrainCommons.DEFAULT_PLACE_HOLDER);
+							values.add(value);
+						}));
 		Map<String, Integer> jdbcTypeMap = new HashMap<>();
 		Map<String, String> keyMap = new HashMap<>();
 		tableDefine.getColumnDefines()
@@ -927,6 +928,12 @@ public abstract class JdbcDialect extends BaseDialect {
 				.append(columnBuilder.substring(BrainCommons.DEFAULT_SPLIT_CHARACTER.length()))
 				.append(WHERE_COMMAND)
 				.append(BrainCommons.CONSTANT_CLAUSE_FALSE);
+		this.processWhereClause(sqlBuilder, filterMap, values);
+		return new GeneratedCommand(sqlBuilder.toString(), values, Map.of(), Map.of());
+	}
+
+	private void processWhereClause(@Nonnull final StringBuilder sqlBuilder, @Nonnull final Map<String, Object> filterMap,
+	                                final List<Object> values) {
 		Optional.of(this.whereClause(filterMap, values))
 				.filter(StringUtils::notBlank)
 				.ifPresent(whereClause ->
@@ -936,7 +943,20 @@ public abstract class JdbcDialect extends BaseDialect {
 								.append(BrainCommons.BRACKETS_BEGIN)
 								.append(whereClause)
 								.append(BrainCommons.BRACKETS_END));
-		return new GeneratedCommand(sqlBuilder.toString(), values, Map.of(), Map.of());
+	}
+
+	private void processWhereClause(@Nonnull final StringBuilder sqlBuilder, @Nonnull final Map<String, String> aliasMap,
+	                                @Nonnull final List<Condition> conditionList, final List<Object> values)
+			throws SQLException {
+		Optional.of(this.whereClause(aliasMap, conditionList, values))
+				.filter(StringUtils::notBlank)
+				.ifPresent(whereClause ->
+						sqlBuilder.append(BrainCommons.WHITE_SPACE)
+								.append(ConnectionCode.OR)
+								.append(BrainCommons.WHITE_SPACE)
+								.append(BrainCommons.BRACKETS_BEGIN)
+								.append(whereClause)
+								.append(BrainCommons.BRACKETS_END));
 	}
 
 	/**
@@ -961,15 +981,7 @@ public abstract class JdbcDialect extends BaseDialect {
 		List<Object> values = new ArrayList<>();
 		sqlBuilder.append(WHERE_COMMAND)
 				.append(BrainCommons.CONSTANT_CLAUSE_FALSE);
-		Optional.of(this.whereClause(filterMap, values))
-				.filter(StringUtils::notBlank)
-				.ifPresent(whereClause ->
-						sqlBuilder.append(BrainCommons.WHITE_SPACE)
-								.append(ConnectionCode.OR)
-								.append(BrainCommons.WHITE_SPACE)
-								.append(BrainCommons.BRACKETS_BEGIN)
-								.append(whereClause)
-								.append(BrainCommons.BRACKETS_END));
+		this.processWhereClause(sqlBuilder, filterMap, values);
 		return new GeneratedCommand(sqlBuilder.toString(), values, Map.of(), Map.of());
 	}
 
@@ -1042,17 +1054,8 @@ public abstract class JdbcDialect extends BaseDialect {
 				sqlBuilder.append(this.joinCommand(aliasMap, queryJoin, values));
 			}
 		}
-		sqlBuilder.append(WHERE_COMMAND)
-				.append(BrainCommons.CONSTANT_CLAUSE_TRUE);
-		Optional.of(this.whereClause(aliasMap, queryInfo.getConditionList(), values))
-				.filter(StringUtils::notBlank)
-				.ifPresent(whereClause ->
-						sqlBuilder.append(BrainCommons.WHITE_SPACE)
-								.append(ConnectionCode.AND)
-								.append(BrainCommons.WHITE_SPACE)
-								.append(BrainCommons.BRACKETS_BEGIN)
-								.append(whereClause)
-								.append(BrainCommons.BRACKETS_END));
+		sqlBuilder.append(WHERE_COMMAND).append(BrainCommons.CONSTANT_CLAUSE_TRUE);
+		this.processWhereClause(sqlBuilder, aliasMap, queryInfo.getConditionList(), values);
 		return new GeneratedCommand(sqlBuilder.toString(), values, Map.of(), Map.of());
 	}
 
@@ -1134,7 +1137,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Generate SQL commands to modify the name of data column</h3>
+	 * <h3 class="en-US">Generate SQL commands to modify the name of the data column</h3>
 	 * <h3 class="zh-CN">生成修改数据列名称的SQL命令</h3>
 	 *
 	 * @param tableName    <span class="en-US">Database table name</span>
@@ -1158,7 +1161,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Generate SQL commands to modify the default value of data column</h3>
+	 * <h3 class="en-US">Generate SQL commands to modify the default value of the data column</h3>
 	 * <h3 class="zh-CN">生成修改数据列默认值的SQL命令</h3>
 	 *
 	 * @param tableName    <span class="en-US">Database table name</span>
@@ -1221,7 +1224,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Generate SQL commands to lock record</h3>
+	 * <h3 class="en-US">Generate SQL commands to lock the record</h3>
 	 * <h3 class="zh-CN">生成数据锁定的SQL命令</h3>
 	 *
 	 * @param whereClause <span class="en-US">Generated where sentences</span>
@@ -1281,7 +1284,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * <h3 class="en-US">Check whether the data column default value definition has changed</h3>
 	 * <h3 class="zh-CN">检查数据列默认值定义是否有变化</h3>
 	 *
-	 * @param existColumn  <span class="en-US">Data column define information read from the database</span>
+	 * @param existColumn  <span class="en-US">Data column defines information read from the database</span>
 	 *                     <span class="zh-CN">数据库读取的数据列定义</span>
 	 * @param columnDefine <span class="en-US">Data column define</span>
 	 *                     <span class="zh-CN">数据列定义</span>
@@ -1315,7 +1318,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">SQL command to get current date</h3>
+	 * <h3 class="en-US">SQL command to get the current date</h3>
 	 * <h3 class="zh-CN">获取当前日期的SQL命令</h3>
 	 *
 	 * @return <span class="en-US">Command string</span>
@@ -1326,7 +1329,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">SQL command to get current time</h3>
+	 * <h3 class="en-US">SQL command to get the current time</h3>
 	 * <h3 class="zh-CN">获取当前时间的SQL命令</h3>
 	 *
 	 * @return <span class="en-US">Command string</span>
@@ -1337,7 +1340,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">SQL command to get current timestamp</h3>
+	 * <h3 class="en-US">SQL command to get the current timestamp</h3>
 	 * <h3 class="zh-CN">获取当前时间戳的SQL命令</h3>
 	 *
 	 * @return <span class="en-US">Command string</span>
@@ -1688,7 +1691,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Generate SQL commands from table</h3>
+	 * <h3 class="en-US">Generate SQL commands from a table</h3>
 	 * <h3 class="zh-CN">生成查询数据表命令</h3>
 	 *
 	 * @param aliasMap  <span class="en-US">Data table alias mapping table</span>
@@ -1732,7 +1735,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	/**
-	 * <h3 class="en-US">Generate SQL commands to join table</h3>
+	 * <h3 class="en-US">Generate SQL commands to join a table</h3>
 	 * <h3 class="zh-CN">生成关联数据表命令</h3>
 	 *
 	 * @param aliasMap  <span class="en-US">Data table alias mapping table</span>
@@ -1920,15 +1923,7 @@ public abstract class JdbcDialect extends BaseDialect {
 			sqlBuilder.append(this.aliasCommand()).append(queryFrom.getAliasName());
 		}
 		sqlBuilder.append(WHERE_COMMAND).append(BrainCommons.CONSTANT_CLAUSE_TRUE);
-		Optional.of(this.whereClause(aliasMap, queryData.getConditionList(), values))
-				.filter(StringUtils::notBlank)
-				.ifPresent(whereClause ->
-						sqlBuilder.append(BrainCommons.WHITE_SPACE)
-								.append(ConnectionCode.AND)
-								.append(BrainCommons.WHITE_SPACE)
-								.append(BrainCommons.BRACKETS_BEGIN)
-								.append(whereClause)
-								.append(BrainCommons.BRACKETS_END));
+		this.processWhereClause(sqlBuilder, aliasMap, queryData.getConditionList(), values);
 		if (queryData.getGroupByList() != null && !queryData.getGroupByList().isEmpty()) {
 			StringBuilder groupByClause = new StringBuilder();
 			for (GroupBy groupBy : queryData.getGroupByList()) {

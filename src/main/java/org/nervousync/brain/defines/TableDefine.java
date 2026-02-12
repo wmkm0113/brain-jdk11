@@ -28,7 +28,6 @@ import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * <h2 class="en-US">Data table define</h2>
@@ -224,18 +223,6 @@ public final class TableDefine implements Serializable {
 		this.indexDefines = indexDefines;
 	}
 
-	private boolean notExistsColumn(final String columnName) {
-		return this.columnDefines.stream().noneMatch(columnDefine -> columnDefine.getColumnName().equalsIgnoreCase(columnName));
-	}
-
-	private boolean modifiedColumn(final ColumnDefine existColumn, final String columnName) {
-		return this.columnDefines.stream()
-				.filter(columnDefine -> columnDefine.getColumnName().equalsIgnoreCase(columnName))
-				.findFirst()
-				.map(existColumn::modified)
-				.orElse(Boolean.FALSE);
-	}
-
 	/**
 	 * <h3 class="en-US">Find data column definition information based on the given data column name</h3>
 	 * <h3 class="zh-CN">根据给定的数据列名查找数据列定义信息</h3>
@@ -245,11 +232,13 @@ public final class TableDefine implements Serializable {
 	 * @return <span class="en-US">Data column define</span>
 	 * <span class="zh-CN">数据列定义</span>
 	 */
-	public Optional<ColumnDefine> column(final String columnName) {
-		return this.columnDefines
-				.stream()
-				.filter(columnDefine -> columnDefine.getColumnName().equalsIgnoreCase(columnName))
-				.findFirst();
+	public ColumnDefine column(final String columnName) {
+		for (ColumnDefine columnDefine : this.columnDefines) {
+			if (columnDefine.getColumnName().equalsIgnoreCase(columnName)) {
+				return columnDefine;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -271,10 +260,11 @@ public final class TableDefine implements Serializable {
 		StringBuilder newColumns = new StringBuilder();
 		for (ColumnDefine existColumn : existColumns) {
 			String columnName = existColumn.getColumnName();
-			if (this.modifiedColumn(existColumn, columnName)) {
-				modifiedColumns.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnName);
-			} else if (this.notExistsColumn(columnName)) {
+			ColumnDefine columnDefine = this.column(columnName);
+			if (columnDefine == null) {
 				notFoundColumns.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnName);
+			} else if (existColumn.modified(columnDefine)) {
+				modifiedColumns.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnName);
 			}
 			checkedColumns.add(existColumn);
 		}

@@ -30,6 +30,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * <h2 class="en-US">Data table manager</h2>
@@ -167,7 +168,7 @@ public final class TableManager {
 	 */
 	public String columnName(@Nonnull final String tableIdentify, @Nonnull final String columnIdentify)
 			throws SQLException {
-		return this.define(tableIdentify).column(columnIdentify)
+		return Optional.ofNullable(this.define(tableIdentify).column(columnIdentify))
 				.map(ColumnDefine::getColumnName)
 				.orElseThrow(() -> new MultilingualSQLException(0x00DB00000011L));
 	}
@@ -187,7 +188,7 @@ public final class TableManager {
 	 */
 	@MagicConstant(valuesFromClass = Types.class)
 	public int jdbcType(@Nonnull final String tableIdentify, @Nonnull final String columnIdentify) throws SQLException {
-		return this.define(tableIdentify).column(columnIdentify)
+		return Optional.ofNullable(this.define(tableIdentify).column(columnIdentify))
 				.map(ColumnDefine::getJdbcType)
 				.orElseThrow(() -> new MultilingualSQLException(0x00DB00000011L));
 	}
