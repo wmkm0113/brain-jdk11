@@ -45,6 +45,7 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 28, 2020 11:46:08 $
  */
+@SuppressWarnings("unused")
 public final class ParametersBuilder<P extends ParentBuilder> extends AbstractBuilder<P, ParametersBuilder.Parameters> {
 
 	/**
@@ -149,7 +150,7 @@ public final class ParametersBuilder<P extends ParentBuilder> extends AbstractBu
 		 * @param functionParams <span class="en-US">Function arguments list</span>
 		 *                       <span class="zh-CN">函数参数列表</span>
 		 */
-		private Parameters(@Nonnull final List<AbstractParameter<?>> functionParams) {
+		public Parameters(@Nonnull final List<AbstractParameter<?>> functionParams) {
 			this.functionParams = functionParams;
 		}
 

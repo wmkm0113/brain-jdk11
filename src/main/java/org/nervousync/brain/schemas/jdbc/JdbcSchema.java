@@ -25,7 +25,6 @@ import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.server.ServerInfo;
 import org.nervousync.brain.configs.sharding.StrategyConfig;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
-import org.nervousync.brain.defines.InitOption;
 import org.nervousync.brain.defines.StrategyDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.DialectFactory;
@@ -47,15 +46,16 @@ import org.nervousync.brain.query.from.FromSubQuery;
 import org.nervousync.brain.query.from.FromTable;
 import org.nervousync.brain.query.item.SubQueryItem;
 import org.nervousync.brain.query.sort.OrderBy;
-import org.nervousync.brain.query.subqueries.NestedTableSubQuery;
 import org.nervousync.brain.query.subqueries.ScalarSubQuery;
 import org.nervousync.brain.query.subqueries.TableSubQuery;
 import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.*;
+import org.nervousync.enumerations.beans.StringType;
+import org.nervousync.utils.core.BeanUtils;
+import org.nervousync.utils.core.ObjectUtils;
+import org.nervousync.utils.core.StringUtils;
 
 import java.sql.*;
-import java.sql.Date;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -187,18 +187,16 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		super(schemaConfig, DialectFactory.retrieve(schemaConfig.getDialectName()).unwrap(JdbcDialect.class));
 		this.pooled = schemaConfig.isPooled();
 		this.jdbcUrl = schemaConfig.getJdbcUrl();
-		String defaultCatalog = Globals.DEFAULT_VALUE_STRING;
 		if (schemaConfig.isSharding()) {
 			if (this.dialect.isDatabaseSharding()) {
 				if (!this.jdbcUrl.contains("{catalog}")) {
 					throw new MultilingualSQLException(0x00DB00000025L, this.jdbcUrl);
 				}
-				defaultCatalog = schemaConfig.getShardingDefault();
 			} else {
 				this.logger.warn("");
 			}
 		}
-		this.defaultCatalog = defaultCatalog;
+		this.defaultCatalog = Optional.ofNullable(schemaConfig.getCatalog()).orElse(Globals.DEFAULT_VALUE_STRING);
 		this.sharding = schemaConfig.isSharding() && this.dialect.isDatabaseSharding();
 		this.databaseParameters = schemaConfig.getDatabaseParameters();
 		this.cachedLimitSize = schemaConfig.getCachedLimitSize();
@@ -366,7 +364,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	}
 
 	int identifyCode(final ServerInfo serverInfo) throws SQLException {
-		if (serverInfo == null) {
+		if (serverInfo == null || StringUtils.isEmpty(serverInfo.getServerAddress())) {
 			return this.jdbcUrl.hashCode();
 		}
 		String serverAddress = serverInfo.info();
@@ -419,14 +417,13 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * @return <span class="en-US">JDBC connection url string</span>
 	 * <span class="zh-CN">JDBC连接字符串</span>
 	 */
-	String shardingUrl(final ServerInfo serverInfo) throws SQLException {
+	String shardingUrl(final ServerInfo serverInfo) {
 		String shardingUrl = this.jdbcUrl;
 		if (serverInfo != null) {
 			String serverAddress = serverInfo.info();
-			if (StringUtils.isEmpty(serverAddress)) {
-				throw new MultilingualSQLException(0x00DB00000026L);
+			if (StringUtils.notBlank(serverAddress)) {
+				shardingUrl = StringUtils.replace(shardingUrl, "{serverAddress}", serverAddress);
 			}
-			shardingUrl = StringUtils.replace(shardingUrl, "{serverAddress}", serverAddress);
 		}
 		return shardingUrl;
 	}
@@ -527,8 +524,13 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		if (connectionPool == null) {
 			throw new MultilingualSQLException(0x00DB00000027L);
 		}
-		connectionPool.initTable(tableDefine, catalog, shardingName, strategyConfig.shardingTable(), Map.of());
+		if (this.dialect.isDatabaseSharding()) {
+			connectionPool.initTable(tableDefine, strategyConfig, catalog, shardingName);
+		}
 		GeneratedCommand sqlCommand = this.dialect.insertCommand(tableDefine, shardingName, dataMap);
+		if (this.logger.isDebugEnabled()) {
+			this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
+		}
 		try (Connection connection = this.obtainConnection(Boolean.TRUE, catalog);
 		     PreparedStatement statement =
 				     connection.prepareStatement(sqlCommand.getCommand(), Statement.RETURN_GENERATED_KEYS)) {
@@ -541,18 +543,18 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 			if (statement.executeUpdate() == 1) {
 				ResultSet resultSet = statement.getGeneratedKeys();
 				if (resultSet.next()) {
-					return this.parseResultSet(sqlCommand.getJdbcTypeMap(), resultSet, this.dialect);
+					return this.parseResultSet(sqlCommand, resultSet, this.dialect);
 				}
 				return Map.of();
 			}
-			throw new InsertException(0x00DB00000038L, tableDefine.getTableName(),
-					StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.TRUE));
+			throw new InsertException(0x00DB00000038L,
+					tableDefine.getTableName(), BeanUtils.objectToString(dataMap, StringType.JSON));
 		} catch (SQLException | InsertException e) {
 			if (e instanceof InsertException) {
 				throw e;
 			}
-			throw new InsertException(0x00DB00000039L, e, tableDefine.getTableName(),
-					StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.TRUE));
+			throw new InsertException(0x00DB00000039L, e,
+					tableDefine.getTableName(), BeanUtils.objectToString(dataMap, StringType.JSON));
 		}
 	}
 
@@ -567,6 +569,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		String queryColumns = StringUtils.isEmpty(columns) ? SELECT_ALL_COLUMNS : columns;
 		GeneratedCommand sqlCommand =
 				this.dialect.retrieveCommand(tableDefine, shardingTable, queryColumns, filterMap, forUpdate, lockOption);
+		if (this.logger.isDebugEnabled()) {
+			this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
+		}
 		try (Connection connection = this.obtainConnection(forUpdate, catalog);
 		     PreparedStatement statement = connection.prepareStatement(sqlCommand.getCommand())) {
 			this.configTimeout(statement);
@@ -579,10 +584,10 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 			Map<String, Object> resultMap = new HashMap<>();
 			while (resultSet.next()) {
 				if (!resultMap.isEmpty()) {
-					throw new RetrieveException(0x00DB00000028L, tableDefine.getTableName(),
-							StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.TRUE));
+					throw new RetrieveException(0x00DB00000028L,
+							tableDefine.getTableName(), BeanUtils.objectToString(filterMap, StringType.JSON));
 				}
-				resultMap.putAll(this.parseResultSet(sqlCommand.getJdbcTypeMap(), resultSet, this.dialect));
+				resultMap.putAll(this.parseResultSet(sqlCommand, resultSet, this.dialect));
 			}
 			return resultMap;
 		}
@@ -598,13 +603,15 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		String newCatalog = strategyConfig.dbKey(updatedMap);
 		if (!ObjectUtils.nullSafeEquals(catalog, newCatalog)) {
 			//  After update operated, will result of data migration
-			throw new UpdateException(0x00DB00000043L, tableDefine.getTableName(),
-					StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.TRUE),
-					StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.TRUE),
-					catalog, newCatalog);
+			throw new UpdateException(0x00DB00000043L,
+					tableDefine.getTableName(), BeanUtils.objectToString(dataMap, StringType.JSON),
+					BeanUtils.objectToString(filterMap, StringType.JSON), catalog, newCatalog);
 		}
 		String tableName = strategyConfig.tableKey(filterMap);
 		GeneratedCommand sqlCommand = this.dialect.updateCommand(tableName, dataMap, filterMap);
+		if (this.logger.isDebugEnabled()) {
+			this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
+		}
 		int count = Globals.INITIALIZE_INT_VALUE;
 		try (Connection connection = this.obtainConnection(Boolean.TRUE, catalog);
 		     PreparedStatement statement = connection.prepareStatement(sqlCommand.getCommand())) {
@@ -616,9 +623,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 			}
 			count += statement.executeUpdate();
 		} catch (SQLException e) {
-			throw new UpdateException(0x00DB00000040L, e, tableDefine.getTableName(),
-					StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.TRUE),
-					StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.TRUE));
+			throw new UpdateException(0x00DB00000040L, e,
+					tableDefine.getTableName(), BeanUtils.objectToString(dataMap, StringType.JSON),
+					BeanUtils.objectToString(filterMap, StringType.JSON));
 		}
 		return count;
 	}
@@ -629,6 +636,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
 		String tableName = strategyConfig.tableKey(filterMap);
 		GeneratedCommand sqlCommand = this.dialect.deleteCommand(tableName, filterMap);
+		if (this.logger.isDebugEnabled()) {
+			this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
+		}
 		int count = Globals.INITIALIZE_INT_VALUE;
 		for (String catalog : strategyConfig.dbKeys(filterMap)) {
 			try (Connection connection = this.obtainConnection(Boolean.TRUE, catalog);
@@ -641,8 +651,8 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 				}
 				count += statement.executeUpdate();
 			} catch (SQLException e) {
-				throw new DropException(0x00DB00000041L, e, tableDefine.getTableName(),
-						StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.TRUE));
+				throw new DropException(0x00DB00000041L, e,
+						tableDefine.getTableName(), BeanUtils.objectToString(filterMap, StringType.JSON));
 			}
 		}
 		return count;
@@ -651,6 +661,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	@Override
 	public Long queryTotal(final QueryInfo queryInfo) throws Exception {
 		GeneratedCommand sqlCommand = this.dialect.queryTotalCommand(queryInfo);
+		if (this.logger.isDebugEnabled()) {
+			this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
+		}
 		long totalCount = 0L;
 		for (String catalog : this.dbKeys(queryInfo)) {
 			try (Connection connection = this.obtainConnection(Boolean.TRUE, catalog);
@@ -673,10 +686,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 
 	@Override
 	public void clearTransactional() throws SQLException {
-		if (this.txConfig.get() != null
-				&& this.txConfig.get().getIsolation() != Connection.TRANSACTION_NONE) {
+		if (this.txConfig.get() != null) {
 			for (JdbcConnection connection : this.currentConnections.get()) {
-				connection.forceClose();
+				connection.close();
 			}
 			this.currentConnections.remove();
 		}
@@ -697,6 +709,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 			List<Map<String, Object>> resultList = new ArrayList<>();
 			for (String catalog : catalogs) {
 				GeneratedCommand sqlCommand = this.dialect.queryCommand(queryInfo, Boolean.FALSE);
+				if (this.logger.isDebugEnabled()) {
+					this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
+				}
 				resultList.addAll(this.executeQuery(catalog, sqlCommand, queryInfo.isForUpdate()));
 			}
 
@@ -724,11 +739,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 				int pageNo = queryInfo.getPageNo() > 0 ? queryInfo.getPageNo() : BrainCommons.DEFAULT_PAGE_NO;
 				int pageLimit = (queryInfo.getPageLimit() > 0) ? queryInfo.getPageLimit() : BrainCommons.DEFAULT_PAGE_LIMIT;
 				return new PartialCollection(
-						resultList
-								.stream()
-								.skip(pageLimit * (pageNo - 1L))
-								.limit(pageLimit)
-								.collect(Collectors.toList()),
+						resultList.stream().skip(pageLimit * (pageNo - 1L)).limit(pageLimit).collect(Collectors.toList()),
 						totalCount);
 			}
 			return new PartialCollection(resultList, totalCount);
@@ -736,11 +747,10 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	}
 
 	@Override
-	public void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
-	                      @Nonnull final Map<String, InitOption> initOptionsMap) throws Exception {
+	public void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine) throws Exception {
 		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
 		for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
-			connectionPool.initTable(ddlType, tableDefine, strategyConfig, initOptionsMap);
+			connectionPool.initTable(ddlType, tableDefine, strategyConfig);
 		}
 	}
 
@@ -759,7 +769,8 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	                             final StrategyDefine tableStrategy) {
 		if (!this.strategyConfigs.containsKey(tableDefine.getTableName())) {
 			this.strategyConfigs.put(tableDefine.getTableName(),
-					new StrategyConfig(tableDefine, databaseStrategy, tableStrategy));
+					new StrategyConfig(tableDefine.getCatalog(), this.defaultCatalog,
+							this.dialect.nameCase(tableDefine.getTableName()), databaseStrategy, tableStrategy));
 		}
 	}
 
@@ -797,9 +808,6 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 				break;
 			case TABLE:
 				itemList.addAll(((TableSubQuery) queryData).getItemList());
-				break;
-			case NESTED_TABLE:
-				itemList.addAll(((NestedTableSubQuery) queryData).getItemList());
 				break;
 			case NORMAL:
 				itemList.addAll(((QueryInfo) queryData).getItemList());
@@ -900,7 +908,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 			ResultSet resultSet = statement.executeQuery();
 			List<Map<String, Object>> resultList = new ArrayList<>();
 			while (resultSet.next()) {
-				resultList.add(this.parseResultSet(sqlCommand.getJdbcTypeMap(), resultSet, this.dialect));
+				resultList.add(this.parseResultSet(sqlCommand, resultSet, this.dialect));
 			}
 			return resultList;
 		}
@@ -919,84 +927,86 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * @throws SQLException <span class="en-US">If an error occurs while parse the result set</span>
 	 *                      <span class="zh-CN">如果解析时出错</span>
 	 */
-	private Map<String, Object> parseResultSet(@Nonnull final Map<String, Integer> jdbcTypeMap,
+	private Map<String, Object> parseResultSet(@Nonnull final GeneratedCommand sqlCommand,
 	                                           final ResultSet resultSet, final JdbcDialect jdbcDialect)
 			throws SQLException {
 		ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 		Map<String, Object> resultMap = new HashMap<>();
 		int columnCount = resultSetMetaData.getColumnCount();
+		Map<String, Integer> jdbcTypeMap = sqlCommand.getJdbcTypeMap();
+		Map<String, String> keyMap = sqlCommand.getKeyMap();
 		for (int i = 1; i <= columnCount; i++) {
 			String columnLabel = jdbcDialect.nameCase(resultSetMetaData.getColumnLabel(i));
 			if (!jdbcTypeMap.containsKey(columnLabel)) {
 				continue;
 			}
+			String mapKey = keyMap.getOrDefault(columnLabel, columnLabel);
 			switch (jdbcTypeMap.get(columnLabel)) {
 				case Types.BLOB:
 				case Types.VARBINARY:
 				case Types.LONGVARBINARY:
-					resultMap.put(columnLabel, jdbcDialect.readBlob(resultSet, i));
+					resultMap.put(mapKey, jdbcDialect.readBlob(resultSet, i));
 					break;
 				case Types.NCLOB:
 				case Types.CLOB:
-					resultMap.put(columnLabel, new String(jdbcDialect.readClob(resultSet, i)));
+					resultMap.put(mapKey, new String(jdbcDialect.readClob(resultSet, i)));
 					break;
 				case Types.NCHAR:
 				case Types.NVARCHAR:
 				case Types.LONGNVARCHAR:
-					resultMap.put(columnLabel, resultSet.getNString(i));
+					resultMap.put(mapKey, resultSet.getNString(i));
 					break;
 				case Types.CHAR:
 				case Types.VARCHAR:
 				case Types.LONGVARCHAR:
-					resultMap.put(columnLabel, resultSet.getString(i));
+					resultMap.put(mapKey, resultSet.getString(i));
 					break;
 				case Types.DATE:
-					long dateLong = resultSet.getDate(i).getTime();
+					java.sql.Date date = resultSet.getDate(i);
 					if (this.logger.isDebugEnabled()) {
-						this.logger.debug("Read date long value: {}", dateLong);
+						this.logger.debug("Read_Long_Value_Debug", "date", date.getTime());
 					}
-					resultMap.put(columnLabel, new Date(dateLong));
+					resultMap.put(mapKey, date);
 					break;
 				case Types.TIME:
-					long timeLong = resultSet.getTime(i).getTime();
+					java.sql.Time time = resultSet.getTime(i);
 					if (this.logger.isDebugEnabled()) {
-						this.logger.debug("Read time long value: {}", timeLong);
+						this.logger.debug("Read_Long_Value_Debug", "time", time.getTime());
 					}
-					resultMap.put(columnLabel, new Date(timeLong));
+					resultMap.put(mapKey, time);
 					break;
 				case Types.TIMESTAMP:
-					long timestamp = resultSet.getTimestamp(i).getTime();
-					resultMap.put(columnLabel, new Date(timestamp));
+					resultMap.put(mapKey, resultSet.getTimestamp(i));
 					break;
 				case Types.BIT:
 				case Types.BOOLEAN:
-					resultMap.put(columnLabel, resultSet.getBoolean(i));
+					resultMap.put(mapKey, resultSet.getBoolean(i));
 					break;
 				case Types.TINYINT:
-					resultMap.put(columnLabel, resultSet.getByte(i));
+					resultMap.put(mapKey, resultSet.getByte(i));
 					break;
 				case Types.SMALLINT:
-					resultMap.put(columnLabel, resultSet.getShort(i));
+					resultMap.put(mapKey, resultSet.getShort(i));
 					break;
 				case Types.INTEGER:
-					resultMap.put(columnLabel, resultSet.getInt(i));
+					resultMap.put(mapKey, resultSet.getInt(i));
 					break;
 				case Types.BIGINT:
-					resultMap.put(columnLabel, resultSet.getLong(i));
+					resultMap.put(mapKey, resultSet.getLong(i));
 					break;
 				case Types.REAL:
-					resultMap.put(columnLabel, resultSet.getFloat(i));
+					resultMap.put(mapKey, resultSet.getFloat(i));
 					break;
 				case Types.FLOAT:
 				case Types.DOUBLE:
-					resultMap.put(columnLabel, resultSet.getDouble(i));
+					resultMap.put(mapKey, resultSet.getDouble(i));
 					break;
 				case Types.DECIMAL:
 				case Types.NUMERIC:
-					resultMap.put(columnLabel, resultSet.getBigDecimal(i));
+					resultMap.put(mapKey, resultSet.getBigDecimal(i));
 					break;
 				default:
-					resultMap.put(columnLabel, resultSet.getObject(i));
+					resultMap.put(mapKey, resultSet.getObject(i));
 					break;
 			}
 		}

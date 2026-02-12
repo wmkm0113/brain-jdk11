@@ -23,7 +23,6 @@ import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.server.ServerInfo;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
-import org.nervousync.brain.defines.InitOption;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.DialectFactory;
 import org.nervousync.brain.dialects.distribute.DistributeClient;
@@ -34,7 +33,7 @@ import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.schemas.BaseSchema;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.utils.core.StringUtils;
 
 import java.sql.Connection;
 import java.util.*;
@@ -185,10 +184,9 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 	}
 
 	@Override
-	public void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
-	                      @Nonnull final Map<String, InitOption> initOptionsMap) throws Exception {
+	public void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine) throws Exception {
 		//  Ignore strategy configure
-		this.distributeClient.initTable(ddlType, tableDefine, initOptionsMap);
+		this.distributeClient.initTable(ddlType, tableDefine);
 	}
 
 	@Override

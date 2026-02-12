@@ -23,6 +23,7 @@ package org.nervousync.brain.enumerations.query;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 6, 2020 19:02:27 $
  */
+@SuppressWarnings("unused")
 public enum ItemType {
 	/**
 	 * <span class="en-US">Column</span>

@@ -19,14 +19,13 @@ package org.nervousync.brain.configs.auth;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.xml.bind.annotation.*;
-import org.nervousync.annotations.beans.OutputConfig;
-import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.configs.auth.impl.TrustStoreAuthentication;
 import org.nervousync.brain.configs.auth.impl.UserAuthentication;
 import org.nervousync.brain.configs.auth.impl.X509Authentication;
 import org.nervousync.brain.enumerations.auth.AuthType;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.StringUtils;
+
+import java.io.Serializable;
 
 /**
  * <h2 class="en-US">Authentication information abstract class</h2>
@@ -38,8 +37,7 @@ import org.nervousync.utils.StringUtils;
 @XmlType(namespace = "https://nervousync.org/schemas/brain")
 @XmlSeeAlso({TrustStoreAuthentication.class, UserAuthentication.class, X509Authentication.class})
 @XmlAccessorType(XmlAccessType.NONE)
-@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
-public abstract class Authentication extends BeanObject {
+public abstract class Authentication implements Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>

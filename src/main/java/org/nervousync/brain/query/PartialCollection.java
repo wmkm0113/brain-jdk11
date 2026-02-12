@@ -19,8 +19,9 @@ package org.nervousync.brain.query;
 
 import jakarta.annotation.Nonnull;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.ConvertUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.enumerations.beans.StringType;
+import org.nervousync.utils.core.BeanUtils;
+import org.nervousync.utils.core.StringUtils;
 
 import java.io.Serializable;
 import java.util.*;
@@ -32,6 +33,7 @@ import java.util.*;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0 $ $Date: Jan 13, 2010 4:07:14 PM $
  */
+@SuppressWarnings("unused")
 public final class PartialCollection implements Serializable {
 
 	/**
@@ -124,26 +126,6 @@ public final class PartialCollection implements Serializable {
 	}
 
 	/**
-	 * <h3 class="en-US">Get the collection of entities (part of some another collection)</h3>
-	 * <h3 class="zh-CN">获取结果集列表</h3>
-	 *
-	 * @param clazz <span class="en-US">Target result class</span>
-	 *              <span class="zh-CN">目标结果类</span>
-	 * @param <T>   <span class="en-US">Target result class</span>
-	 *              <span class="zh-CN">目标结果类</span>
-	 * @return <span class="en-US">Collection of entities (part of some another collection)</span>
-	 * <span class="zh-CN">结果集列表</span>
-	 */
-	@Nonnull
-	public <T> List<T> asList(@Nonnull final Class<T> clazz) {
-		List<T> resultList = new ArrayList<>();
-		for (Map<String, Object> resultMap : this.resultList) {
-			resultList.add(ConvertUtils.toObject(clazz, resultMap));
-		}
-		return resultList;
-	}
-
-	/**
 	 * <h3 class="en-US">Parse the serializable string data</h3>
 	 * <h3 class="zh-CN">解析序列化字符串数据</h3>
 	 *
@@ -157,7 +139,7 @@ public final class PartialCollection implements Serializable {
 			return null;
 		}
 
-		Map<String, Object> convertMap = StringUtils.dataToMap(string, StringUtils.StringType.JSON);
+		Map<String, Object> convertMap = BeanUtils.stringToMap(string, StringType.JSON, Globals.DEFAULT_ENCODING);
 		if (convertMap.isEmpty()) {
 			return null;
 		}
@@ -167,7 +149,7 @@ public final class PartialCollection implements Serializable {
 			return new PartialCollection(Collections.emptyList(), Long.parseLong(totalCount, 16));
 		}
 		List<Map<String, Object>> resultList = new ArrayList<>();
-		for (Map<?, ?> dataMap : StringUtils.stringToList(resultData, Globals.DEFAULT_ENCODING, Map.class)) {
+		for (Map<?, ?> dataMap : BeanUtils.stringToList(resultData, StringType.JSON, Globals.DEFAULT_ENCODING, Map.class)) {
 			Map<String, Object> resultMap = new HashMap<>();
 			dataMap.forEach((key, value) -> {
 				if (key instanceof String) {
@@ -183,8 +165,7 @@ public final class PartialCollection implements Serializable {
 	public String toString() {
 		Map<String, Object> convertMap = new HashMap<>();
 		convertMap.put(TOTAL_COUNT_KEY, Long.toHexString(this.totalCount));
-		convertMap.put(RESULT_LIST_KEY, StringUtils.objectToString(this.resultList, StringUtils.StringType.JSON, Boolean.FALSE));
-
-		return StringUtils.objectToString(convertMap, StringUtils.StringType.JSON, Boolean.TRUE);
+		convertMap.put(RESULT_LIST_KEY, BeanUtils.objectToString(this.resultList, StringType.JSON));
+		return BeanUtils.objectToString(convertMap, StringType.JSON);
 	}
 }

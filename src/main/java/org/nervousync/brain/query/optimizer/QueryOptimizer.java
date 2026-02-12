@@ -29,6 +29,7 @@ import org.nervousync.brain.source.BrainDataSource;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0 $ $Date: Oct 28, 2020 17:02:19 $
  */
+@SuppressWarnings("RedundantThrows")
 public interface QueryOptimizer {
 
 	/**

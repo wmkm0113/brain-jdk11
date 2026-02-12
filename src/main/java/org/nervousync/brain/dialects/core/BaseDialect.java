@@ -21,6 +21,7 @@ import jakarta.annotation.Nonnull;
 import org.nervousync.brain.annotations.dialect.DataType;
 import org.nervousync.brain.annotations.dialect.SchemaDialect;
 import org.nervousync.brain.commons.BrainCommons;
+import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.dialects.Dialect;
 import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.dialects.DialectException;
@@ -29,9 +30,9 @@ import org.nervousync.brain.query.condition.impl.ColumnCondition;
 import org.nervousync.brain.query.item.ColumnItem;
 import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.ClassUtils;
-import org.nervousync.utils.LoggerUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.utils.core.ClassUtils;
+import org.nervousync.utils.core.StringUtils;
+import org.nervousync.utils.logger.LoggerUtils;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -138,21 +139,14 @@ public abstract class BaseDialect implements Dialect {
 	 * <h3 class="en-US">Convert default value to string</h3>
 	 * <h3 class="zh-CN">转换默认值为字符串</h3>
 	 *
-	 * @param jdbcType  <span class="en-US">JDBC type code</span>
-	 *                  <span class="zh-CN">JDBC类型代码</span>
-	 * @param length    <span class="en-US">Data column length</span>
-	 *                  <span class="zh-CN">数据列长度</span>
-	 * @param precision <span class="en-US">The precision for a decimal (exact numeric) column</span>
-	 *                  <span class="zh-CN">小数（精确数字）列的精度</span>
-	 * @param scale     <span class="en-US">The scale for a decimal (exact numeric) column</span>
-	 *                  <span class="zh-CN">小数（精确数字）列的比例</span>
-	 * @param object    <span class="en-US">Default value instance object</span>
-	 *                  <span class="zh-CN">默认值实例对象</span>
+	 * @param columnDefine <span class="en-US">Column define information</span>
+	 *                     <span class="zh-CN">数据列定义信息</span>
+	 * @param object       <span class="en-US">Default value instance object</span>
+	 *                     <span class="zh-CN">默认值实例对象</span>
 	 * @return <span class="en-US">Default value string</span>
 	 * <span class="zh-CN">默认值字符串</span>
 	 */
-	public String defaultValue(final int jdbcType, final int length, final int precision, final int scale,
-	                           final Object object) {
+	public String defaultValue(final ColumnDefine columnDefine, final Object object) {
 		return Globals.DEFAULT_VALUE_STRING;
 	}
 
@@ -271,29 +265,23 @@ public abstract class BaseDialect implements Dialect {
 	 * <h3 class="en-US">Get the type definition of the data column based on the JDBC type value</h3>
 	 * <h3 class="zh-CN">根据JDBC类型值获取数据列的类型定义</h3>
 	 *
-	 * @param jdbcType  <span class="en-US">JDBC type code</span>
-	 *                  <span class="zh-CN">JDBC类型代码</span>
-	 * @param length    <span class="en-US">Data column length</span>
-	 *                  <span class="zh-CN">数据列长度</span>
-	 * @param precision <span class="en-US">The precision for a decimal (exact numeric) column</span>
-	 *                  <span class="zh-CN">小数（精确数字）列的精度</span>
-	 * @param scale     <span class="en-US">The scale for a decimal (exact numeric) column</span>
-	 *                  <span class="zh-CN">小数（精确数字）列的比例</span>
+	 * @param columnDefine <span class="en-US">Column define information</span>
+	 *                     <span class="zh-CN">数据列定义信息</span>
 	 * @return <span class="en-US">
 	 * The type definition of the data column
 	 * If it is not defined, an empty string of zero lengths is returned.
 	 * </span>
 	 * <span class="zh-CN">数据列的类型定义，如果未定义则返回长度为零的空字符串</span>
 	 */
-	public final String columnType(final int jdbcType, final int length, final int precision, final int scale) {
-		String columnType = this.dataTypes.getOrDefault(jdbcType, Globals.DEFAULT_VALUE_STRING);
+	public final String columnType(final ColumnDefine columnDefine) {
+		String columnType = this.dataTypes.getOrDefault(columnDefine.getJdbcType(), Globals.DEFAULT_VALUE_STRING);
 		if (StringUtils.notBlank(columnType)) {
 			columnType = StringUtils.replace(columnType, "{length}",
-					Integer.toString(Integer.max(length, Globals.INITIALIZE_INT_VALUE)));
+					Integer.toString(Integer.max(columnDefine.getLength(), Globals.INITIALIZE_INT_VALUE)));
 			columnType = StringUtils.replace(columnType, "{precision}",
-					Integer.toString(Integer.max(precision, Globals.INITIALIZE_INT_VALUE)));
+					Integer.toString(Integer.max(columnDefine.getPrecision(), Globals.INITIALIZE_INT_VALUE)));
 			columnType = StringUtils.replace(columnType, "{scale}",
-					Integer.toString(Integer.max(scale, Globals.INITIALIZE_INT_VALUE)));
+					Integer.toString(Integer.max(columnDefine.getScale(), Globals.INITIALIZE_INT_VALUE)));
 		}
 		return columnType;
 	}

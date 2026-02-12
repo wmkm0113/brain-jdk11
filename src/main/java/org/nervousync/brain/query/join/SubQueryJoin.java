@@ -18,7 +18,7 @@
 package org.nervousync.brain.query.join;
 
 import jakarta.xml.bind.annotation.*;
-import org.nervousync.brain.query.subqueries.NestedTableSubQuery;
+import org.nervousync.brain.query.subqueries.TableSubQuery;
 
 /**
  * <h2 class="en-US">Sub-query join information defines</h2>
@@ -42,8 +42,8 @@ public final class SubQueryJoin extends QueryJoin {
 	 * <span class="en-US">Sub-query data information</span>
 	 * <span class="zh-CN">子查询信息</span>
 	 */
-	@XmlElement(name = "nested_table_sub_query", type = NestedTableSubQuery.class, namespace = "https://nervousync.org/schemas/brain")
-	private NestedTableSubQuery subQuery;
+	@XmlElement(name = "table_sub_query", type = TableSubQuery.class, namespace = "https://nervousync.org/schemas/brain")
+	private TableSubQuery subQuery;
 
 	/**
 	 * <h3 class="en-US">Constructor method for sub-query join information define</h3>
@@ -59,7 +59,7 @@ public final class SubQueryJoin extends QueryJoin {
 	 * @return <span class="en-US">Sub-query data information</span>
 	 * <span class="zh-CN">子查询信息</span>
 	 */
-	public NestedTableSubQuery getSubQuery() {
+	public TableSubQuery getSubQuery() {
 		return this.subQuery;
 	}
 
@@ -70,7 +70,7 @@ public final class SubQueryJoin extends QueryJoin {
 	 * @param subQuery <span class="en-US">Sub-query data information</span>
 	 *                 <span class="zh-CN">子查询信息</span>
 	 */
-	public void setSubQuery(final NestedTableSubQuery subQuery) {
+	public void setSubQuery(final TableSubQuery subQuery) {
 		this.subQuery = subQuery;
 	}
 }

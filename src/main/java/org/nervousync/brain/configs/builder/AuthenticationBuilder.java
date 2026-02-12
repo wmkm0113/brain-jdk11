@@ -24,9 +24,9 @@ import org.nervousync.brain.configs.auth.impl.UserAuthentication;
 import org.nervousync.brain.configs.auth.impl.X509Authentication;
 import org.nervousync.builder.AbstractBuilder;
 import org.nervousync.builder.ParentBuilder;
-import org.nervousync.utils.DateTimeUtils;
-import org.nervousync.utils.ObjectUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.utils.core.DateTimeUtils;
+import org.nervousync.utils.core.ObjectUtils;
+import org.nervousync.utils.core.StringUtils;
 
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -152,13 +152,13 @@ public abstract class AuthenticationBuilder<P extends ParentBuilder, T extends A
 	 * <h2 class="en-US">Builder implementation class of basic authentication information</h2>
 	 * <h2 class="zh-CN">基本身份认证信息的构建器</h2>
 	 *
-	 * @param <T> <span class="en-US">Generics Type of parent builder</span>
+	 * @param <P> <span class="en-US">Generics Type of parent builder</span>
 	 *            <span class="zh-CN">父构建器泛型类</span>
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
 	 */
-	public static final class UserAuthenticationBuilder<T extends ParentBuilder>
-			extends AuthenticationBuilder<T, UserAuthentication> {
+	public static final class UserAuthenticationBuilder<P extends ParentBuilder>
+			extends AuthenticationBuilder<P, UserAuthentication> {
 
 		/**
 		 * <h3 class="en-US">Constructor method for builder implementation class of basic authentication information</h3>
@@ -169,7 +169,7 @@ public abstract class AuthenticationBuilder<P extends ParentBuilder, T extends A
 		 * @param authentication <span class="en-US">Basic authentication information</span>
 		 *                       <span class="zh-CN">基本身份认证信息</span>
 		 */
-		UserAuthenticationBuilder(final T parentBuilder, @Nonnull final UserAuthentication authentication) {
+		UserAuthenticationBuilder(final P parentBuilder, @Nonnull final UserAuthentication authentication) {
 			super(parentBuilder, authentication);
 		}
 
@@ -184,7 +184,7 @@ public abstract class AuthenticationBuilder<P extends ParentBuilder, T extends A
 		 * @return <span class="en-US">The current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public UserAuthenticationBuilder<T> authenticate(final String userName, final String passWord) {
+		public UserAuthenticationBuilder<P> authenticate(final String userName, final String passWord) {
 			if (StringUtils.notBlank(userName)
 					&& !ObjectUtils.nullSafeEquals(userName, this.authentication.getUserName())) {
 				this.authentication.setUserName(userName);
@@ -203,13 +203,13 @@ public abstract class AuthenticationBuilder<P extends ParentBuilder, T extends A
 	 * <h2 class="en-US">Builder implementation class of X.509 certificate authentication information</h2>
 	 * <h2 class="zh-CN">X.509证书认证信息的构建器</h2>
 	 *
-	 * @param <T> <span class="en-US">Generics Type of parent builder</span>
+	 * @param <P> <span class="en-US">Generics Type of parent builder</span>
 	 *            <span class="zh-CN">父构建器泛型类</span>
 	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
 	 * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
 	 */
-	public static final class X509AuthenticationBuilder<T extends ParentBuilder>
-			extends AuthenticationBuilder<T, X509Authentication> {
+	public static final class X509AuthenticationBuilder<P extends ParentBuilder>
+			extends AuthenticationBuilder<P, X509Authentication> {
 
 		/**
 		 * <h3 class="en-US">Constructor method for X.509 certificate authentication information builder implementation class</h3>
@@ -220,7 +220,7 @@ public abstract class AuthenticationBuilder<P extends ParentBuilder, T extends A
 		 * @param authentication <span class="en-US">向09 certificate authentication information</span>
 		 *                       <span class="zh-CN">x509证书认证信息</span>
 		 */
-		X509AuthenticationBuilder(final T parentBuilder, final X509Authentication authentication) {
+		X509AuthenticationBuilder(final P parentBuilder, final X509Authentication authentication) {
 			super(parentBuilder, authentication);
 		}
 
@@ -235,7 +235,7 @@ public abstract class AuthenticationBuilder<P extends ParentBuilder, T extends A
 		 * @throws CertificateEncodingException <span class="en-US">Error while reading certificate</span>
 		 *                                      <span class="zh-CN">读取证书时出错</span>
 		 */
-		public X509AuthenticationBuilder<T> x509(@Nonnull final X509Certificate x509Certificate)
+		public X509AuthenticationBuilder<P> x509(@Nonnull final X509Certificate x509Certificate)
 				throws CertificateEncodingException {
 			String certData = StringUtils.base64Encode(x509Certificate.getEncoded());
 			if (!ObjectUtils.nullSafeEquals(this.authentication.getCertData(), certData)) {

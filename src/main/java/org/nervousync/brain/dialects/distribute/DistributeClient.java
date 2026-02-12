@@ -19,7 +19,6 @@ package org.nervousync.brain.dialects.distribute;
 
 import jakarta.annotation.Nonnull;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
-import org.nervousync.brain.defines.InitOption;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
@@ -37,6 +36,7 @@ import java.util.Map;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:38:52 $
  */
+@SuppressWarnings({"unused", "RedundantThrows"})
 public interface DistributeClient extends Closeable {
 
 	/**
@@ -161,8 +161,8 @@ public interface DistributeClient extends Closeable {
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	Map<String, Object> insert(@Nonnull final TableDefine tableDefine,
-	                           @Nonnull final Map<String, Object> dataMap) throws Exception;
+	Map<String, Object> insert(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> dataMap)
+			throws Exception;
 
 	/**
 	 * <h3 class="en-US">Execute retrieve record command</h3>
@@ -254,11 +254,8 @@ public interface DistributeClient extends Closeable {
 	 *                       <span class="zh-CN">操作类型枚举值</span>
 	 * @param tableDefine    <span class="en-US">Table defines information</span>
 	 *                       <span class="zh-CN">数据表定义信息</span>
-	 * @param initOptionsMap <span class="en-US">Data column initialize option</span>
-	 *                       <span class="zh-CN">数据列初始化选项</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
-	               @Nonnull final Map<String, InitOption> initOptionsMap) throws Exception;
+	void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine) throws Exception;
 }

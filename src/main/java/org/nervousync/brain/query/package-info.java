@@ -25,9 +25,9 @@
 @XmlSchema(namespace = "https://nervousync.org/schemas/brain", elementFormDefault = XmlNsForm.QUALIFIED,
 		location = "https://nervousync.org/schemas/brain_config_1_0.xsd",
 		xmlns = {
-				@XmlNs(prefix = "", namespaceURI = "https://nervousync.org/schemas/brain"),
 				@XmlNs(prefix = "xsd", namespaceURI = "http://www.w3.org/2001/XMLSchema"),
-				@XmlNs(prefix = "xsi", namespaceURI = "http://www.w3.org/2001/XMLSchema-instance")
+				@XmlNs(prefix = "xsi", namespaceURI = "http://www.w3.org/2001/XMLSchema-instance"),
+				@XmlNs(prefix = "brain", namespaceURI = "https://nervousync.org/schemas/brain")
 		})
 package org.nervousync.brain.query;
 

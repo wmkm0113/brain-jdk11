@@ -18,7 +18,8 @@
 package org.nervousync.brain.exceptions.sql;
 
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.MultilingualUtils;
+import org.nervousync.i18n.MessageAgent;
+import org.nervousync.utils.i18n.MultilingualUtils;
 
 import java.sql.SQLException;
 
@@ -29,6 +30,7 @@ import java.sql.SQLException;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Jul 24, 2018 13:08:12 $
  */
+@SuppressWarnings("unused")
 public final class MultilingualSQLException extends SQLException {
 
 	/**
@@ -41,7 +43,7 @@ public final class MultilingualSQLException extends SQLException {
 	 * <span class="en-US">Internationalization information agent</span>
 	 * <span class="zh-CN">国际化信息代理</span>
 	 */
-	private final MultilingualUtils.Agent multiAgent = MultilingualUtils.newAgent(this.getClass());
+	private final MessageAgent multiAgent = MultilingualUtils.newAgent(this.getClass());
 	/**
 	 * <span class="en-US">Details message of error</span>
 	 * <span class="zh-CN">错误详细信息</span>

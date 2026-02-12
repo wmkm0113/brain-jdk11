@@ -29,6 +29,7 @@ import org.nervousync.brain.exceptions.dialects.DialectException;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:38:52 $
  */
+@SuppressWarnings("RedundantThrows")
 public abstract class DistributeDialect extends BaseDialect {
 
 	/**

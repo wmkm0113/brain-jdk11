@@ -27,71 +27,91 @@ import java.util.Map;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:38:52 $
  */
+@SuppressWarnings("unused")
 public final class GeneratedCommand {
-    /**
-     * <span class="en-US">Generated SQL command</span>
-     * <span class="zh-CN">生成的SQL命令</span>
-     */
-    private final String command;
-    /**
-     * <span class="en-US">Parameter value list</span>
-     * <span class="zh-CN">参数值列表</span>
-     */
-    private final List<Object> parameters;
-    /**
-     * <span class="en-US">Data column label and types mapping table</span>
-     * <span class="zh-CN">数据列类型映射表</span>
-     */
-    private final Map<String, Integer> jdbcTypeMap;
+	/**
+	 * <span class="en-US">Generated SQL command</span>
+	 * <span class="zh-CN">生成的SQL命令</span>
+	 */
+	private final String command;
+	/**
+	 * <span class="en-US">Parameter value list</span>
+	 * <span class="zh-CN">参数值列表</span>
+	 */
+	private final List<Object> parameters;
+	/**
+	 * <span class="en-US">Data column label and types mapping table</span>
+	 * <span class="zh-CN">数据列类型映射表</span>
+	 */
+	private final Map<String, Integer> jdbcTypeMap;
+	/**
+	 * <span class="en-US">Data column label and data map key mapping table</span>
+	 * <span class="zh-CN">数据列别名与数据库列名映射表</span>
+	 */
+	private final Map<String, String> keyMap;
 
-    /**
-     * <h3 class="en-US">Private constructor method for SQL command information</h3>
-     * <h3 class="zh-CN">SQL命令信息的私有构造方法</h3>
-     *
-     * @param command     <span class="en-US">Generated SQL command</span>
-     *                    <span class="zh-CN">生成的SQL命令</span>
-     * @param parameters  <span class="en-US">Parameter value list</span>
-     *                    <span class="zh-CN">参数值列表</span>
-     * @param jdbcTypeMap <span class="en-US">Data column label and types mapping table</span>
-     *                    <span class="zh-CN">数据列类型映射表</span>
-     */
-    public GeneratedCommand(final String command, final List<Object> parameters,
-                            final Map<String, Integer> jdbcTypeMap) {
-        this.command = command;
-        this.parameters = parameters;
-        this.jdbcTypeMap = (jdbcTypeMap == null) ? Map.of() : jdbcTypeMap;
-    }
+	/**
+	 * <h3 class="en-US">Private constructor method for SQL command information</h3>
+	 * <h3 class="zh-CN">SQL命令信息的私有构造方法</h3>
+	 *
+	 * @param command     <span class="en-US">Generated SQL command</span>
+	 *                    <span class="zh-CN">生成的SQL命令</span>
+	 * @param parameters  <span class="en-US">Parameter value list</span>
+	 *                    <span class="zh-CN">参数值列表</span>
+	 * @param jdbcTypeMap <span class="en-US">Data column label and types mapping table</span>
+	 *                    <span class="zh-CN">数据列类型映射表</span>
+	 * @param keyMap      <span class="en-US">Data column label and data map key mapping table</span>
+	 *                    <span class="zh-CN">数据列别名与数据库列名映射表</span>
+	 */
+	public GeneratedCommand(final String command, final List<Object> parameters,
+	                        final Map<String, Integer> jdbcTypeMap, final Map<String, String> keyMap) {
+		this.command = command;
+		this.parameters = parameters;
+		this.jdbcTypeMap = (jdbcTypeMap == null) ? Map.of() : jdbcTypeMap;
+		this.keyMap = (keyMap == null) ? Map.of() : keyMap;
+	}
 
-    /**
-     * <h3 class="en-US">Getter method for generated SQL command</h3>
-     * <h3 class="zh-CN">生成的SQL命令的Getter方法</h3>
-     *
-     * @return <span class="en-US">Generated SQL command</span>
-     * <span class="zh-CN">生成的SQL命令</span>
-     */
-    public String getCommand() {
-        return this.command;
-    }
+	/**
+	 * <h3 class="en-US">Getter method for generated SQL command</h3>
+	 * <h3 class="zh-CN">生成的SQL命令的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Generated SQL command</span>
+	 * <span class="zh-CN">生成的SQL命令</span>
+	 */
+	public String getCommand() {
+		return this.command;
+	}
 
-    /**
-     * <h3 class="en-US">Getter method for parameter value list</h3>
-     * <h3 class="zh-CN">参数值列表的Getter方法</h3>
-     *
-     * @return <span class="en-US">Parameter value list</span>
-     * <span class="zh-CN">参数值列表</span>
-     */
-    public List<Object> getParameters() {
-        return this.parameters;
-    }
+	/**
+	 * <h3 class="en-US">Getter method for parameter value list</h3>
+	 * <h3 class="zh-CN">参数值列表的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Parameter value list</span>
+	 * <span class="zh-CN">参数值列表</span>
+	 */
+	public List<Object> getParameters() {
+		return this.parameters;
+	}
 
-    /**
-     * <h3 class="en-US">Getter method for the data column label and types mapping table</h3>
-     * <h3 class="zh-CN">数据列类型映射表的Getter方法</h3>
-     *
-     * @return <span class="en-US">Data column label and types mapping table</span>
-     * <span class="zh-CN">数据列类型映射表</span>
-     */
-    public Map<String, Integer> getJdbcTypeMap() {
-        return this.jdbcTypeMap;
-    }
+	/**
+	 * <h3 class="en-US">Getter method for the data column label and types mapping table</h3>
+	 * <h3 class="zh-CN">数据列类型映射表的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Data column label and types mapping table</span>
+	 * <span class="zh-CN">数据列类型映射表</span>
+	 */
+	public Map<String, Integer> getJdbcTypeMap() {
+		return this.jdbcTypeMap;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the data column label and data map key mapping table</h3>
+	 * <h3 class="zh-CN">数据列别名与数据库列名映射表的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Data column label and data map key mapping table</span>
+	 * <span class="zh-CN">数据列别名与数据库列名映射表</span>
+	 */
+	public Map<String, String> getKeyMap() {
+		return this.keyMap;
+	}
 }

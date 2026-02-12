@@ -33,6 +33,7 @@ import org.nervousync.brain.enumerations.ddl.DropOption;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 12, 2020 12:16:28 $
  */
+@SuppressWarnings("UnusedReturnValue")
 @WebServiceClient
 public interface RemoteClient {
 
@@ -290,7 +291,7 @@ public interface RemoteClient {
 	 * <span class="zh-CN">总记录条数</span>
 	 */
 	@GET
-	@Path("/search/{tableName}/count")
+	@Path("/search/count")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@WebMethod

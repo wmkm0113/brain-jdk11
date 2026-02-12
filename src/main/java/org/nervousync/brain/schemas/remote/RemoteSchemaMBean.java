@@ -24,6 +24,7 @@ package org.nervousync.brain.schemas.remote;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 12, 2020 11:47:07 $
  */
+@SuppressWarnings("unused")
 public interface RemoteSchemaMBean {
 
 	/**

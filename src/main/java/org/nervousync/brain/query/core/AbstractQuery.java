@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.annotations.beans.OutputConfig;
-import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.enumerations.query.QueryType;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
@@ -33,11 +32,10 @@ import org.nervousync.brain.query.join.QueryJoin;
 import org.nervousync.brain.query.join.SubQueryJoin;
 import org.nervousync.brain.query.join.TableQueryJoin;
 import org.nervousync.brain.query.sort.GroupBy;
-import org.nervousync.brain.query.subqueries.NestedTableSubQuery;
 import org.nervousync.brain.query.subqueries.ScalarSubQuery;
 import org.nervousync.brain.query.subqueries.TableSubQuery;
-import org.nervousync.utils.StringUtils;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -47,11 +45,11 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 18:19:42 $
  */
-@XmlSeeAlso({QueryInfo.class, NestedTableSubQuery.class, ScalarSubQuery.class, TableSubQuery.class})
+@OutputConfig
+@XmlSeeAlso({QueryInfo.class, ScalarSubQuery.class, TableSubQuery.class})
 @XmlTransient
 @XmlAccessorType(XmlAccessType.NONE)
-@OutputConfig(formatted = true, defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
-public abstract class AbstractQuery extends BeanObject {
+public abstract class AbstractQuery implements Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>

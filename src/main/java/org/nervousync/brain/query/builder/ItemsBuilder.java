@@ -42,6 +42,7 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 28, 2020 11:46:08 $
  */
+@SuppressWarnings("unused")
 public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder<P, ItemsBuilder.Items> {
 
 	/**
@@ -133,8 +134,7 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 	 * <span class="zh-CN">函数查询项构建器实例对象</span>
 	 */
 	public ItemsBuilder.FunctionItemBuilder<ItemsBuilder<P>> function(@Nonnull final String functionName,
-	                                                                  @MagicConstant(valuesFromClass = Types.class)
-	                                                                  final int jdbcType) {
+	                                                                  @MagicConstant(valuesFromClass = Types.class) final int jdbcType) {
 		return new FunctionItemBuilder<>(this, functionName, jdbcType);
 	}
 
@@ -180,8 +180,11 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		/**
 		 * <h3 class="en-US">Constructor method for the query items information</h3>
 		 * <h3 class="zh-CN">查询项目信息列表的构造方法</h3>
+		 *
+		 * @param itemList <span class="en-US">Query item instance list</span>
+		 *                 <span class="zh-CN">查询项目实例对象列表</span>
 		 */
-		private Items(@Nonnull final List<QueryItem> itemList) {
+		public Items(@Nonnull final List<QueryItem> itemList) {
 			this.itemList = itemList;
 		}
 
@@ -410,8 +413,8 @@ public final class ItemsBuilder<P extends ParentBuilder> extends AbstractBuilder
 		 * @param jdbcType      <span class="en-US">Jdbc type code</span>
 		 *                      <span class="zh-CN">JDBC类型代码</span>
 		 */
-		ConstantItemBuilder(final P parentBuilder, @Nonnull final Object constantValue, @Nonnull final String aliasName,
-		                    @MagicConstant(valuesFromClass = Types.class) final int jdbcType) {
+		public ConstantItemBuilder(final P parentBuilder, @Nonnull final Object constantValue, @Nonnull final String aliasName,
+		                           @MagicConstant(valuesFromClass = Types.class) final int jdbcType) {
 			super(parentBuilder, new ConstantItem());
 			this.item.setConstantValue(constantValue);
 			this.item.setAliasName(aliasName);

@@ -26,6 +26,7 @@ import java.lang.annotation.*;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Jun 25, 2018 08:42:51 $
  */
+@SuppressWarnings("unused")
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DataType {

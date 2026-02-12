@@ -28,9 +28,9 @@ import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.builder.AbstractBuilder;
 import org.nervousync.builder.ParentBuilder;
 import org.nervousync.exceptions.builder.BuilderException;
-import org.nervousync.utils.ClassUtils;
-import org.nervousync.utils.DateTimeUtils;
-import org.nervousync.utils.ObjectUtils;
+import org.nervousync.utils.core.ClassUtils;
+import org.nervousync.utils.core.DateTimeUtils;
+import org.nervousync.utils.core.ObjectUtils;
 
 import java.util.List;
 
@@ -38,11 +38,10 @@ import java.util.List;
  * <h2 class="en-US">Implementation class of configuring information builder</h2>
  * <h2 class="zh-CN">配置信息构建器的实现类</h2>
  *
- * @param <P> <span class="en-US">Generics Type instance</span>
- *            <span class="zh-CN">泛型类实例对象</span>
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:48:19 $
  */
+@SuppressWarnings("unused")
 public final class BrainConfigureBuilder<P extends ParentBuilder> extends AbstractBuilder<P, BrainConfigure> {
 
 	/**
@@ -60,10 +59,8 @@ public final class BrainConfigureBuilder<P extends ParentBuilder> extends Abstra
 	 * <h3 class="en-US">Private constructor method for configure information builder implementation class</h3>
 	 * <h3 class="zh-CN">配置信息构建器实现类的构造函数</h3>
 	 *
-	 * @param parentBuilder <span class="en-US">Generics Type instance</span>
-	 *                      <span class="zh-CN">泛型类实例对象</span>
-	 * @param configure     <span class="en-US">Data source configuration information instance object</span>
-	 *                      <span class="zh-CN">数据源配置信息实例对象</span>
+	 * @param configure <span class="en-US">Data source configuration information instance object</span>
+	 *                  <span class="zh-CN">数据源配置信息实例对象</span>
 	 */
 	private BrainConfigureBuilder(final P parentBuilder, final BrainConfigure configure) {
 		super(parentBuilder);
@@ -104,6 +101,19 @@ public final class BrainConfigureBuilder<P extends ParentBuilder> extends Abstra
 	}
 
 	/**
+	 * <h3 class="en-US">Setup data source lazy load</h3>
+	 * <h3 class="zh-CN">设置数据源懒加载</h3>
+	 *
+	 * @param lazyInit <span class="en-US">Lazy load flag</span>
+	 *                 <span class="zh-CN">懒加载标记</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainConfigureBuilder<P> lazyInit(final boolean lazyInit) {
+		return lazyInit ? this.enableLazyInit() : this.disableLazyInit();
+	}
+
+	/**
 	 * <h3 class="en-US">Enable data source lazy load</h3>
 	 * <h3 class="zh-CN">开启数据源懒加载</h3>
 	 *
@@ -131,6 +141,19 @@ public final class BrainConfigureBuilder<P extends ParentBuilder> extends Abstra
 			this.modified = Boolean.TRUE;
 		}
 		return this;
+	}
+
+	/**
+	 * <h3 class="en-US">Setup data source JMX monitor status</h3>
+	 * <h3 class="zh-CN">设置数据源JMX监控状态</h3>
+	 *
+	 * @param monitor <span class="en-US">Enable monitor flag</span>
+	 *                 <span class="zh-CN">监控启用标记</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainConfigureBuilder<P> jmxMonitor(final boolean monitor) {
+		return monitor ? this.enableJmxMonitor() : this.disableJmxMonitor();
 	}
 
 	/**
@@ -210,7 +233,11 @@ public final class BrainConfigureBuilder<P extends ParentBuilder> extends Abstra
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	public BrainConfigureBuilder<P> defaultSchema(final String schemaName) {
+	public BrainConfigureBuilder<P> defaultSchema(@Nonnull final String schemaName) {
+		if (this.configure.getSchemaConfigs().stream()
+				.noneMatch(schemaConfig -> schemaName.equalsIgnoreCase(schemaConfig.getSchemaName()))) {
+			return this;
+		}
 		this.configure.getSchemaConfigs().replaceAll(schemaConfig -> {
 			boolean defaultSchema = schemaConfig.getSchemaName().equalsIgnoreCase(schemaName);
 			if (!ObjectUtils.nullSafeEquals(defaultSchema, schemaConfig.isDefaultSchema())) {
@@ -233,9 +260,9 @@ public final class BrainConfigureBuilder<P extends ParentBuilder> extends Abstra
 	 * @throws BuilderException <span class="en-US">If the type of existing configuration information is inconsistent with the distribute database configure information</span>
 	 *                          <span class="zh-CN">如果现有配置信息的类型不是分布式数据源配置信息</span>
 	 */
-	public SchemaConfigBuilder.DistributeConfigBuilder distributeConfig(final String schemaName)
+	public SchemaConfigBuilder.DistributeConfigBuilder<BrainConfigureBuilder<P>> distributeConfig(final String schemaName)
 			throws BuilderException {
-		return new SchemaConfigBuilder.DistributeConfigBuilder(this,
+		return new SchemaConfigBuilder.DistributeConfigBuilder<>(this,
 				this.readConfig(schemaName, DistributeSchemaConfig.class));
 	}
 
@@ -250,8 +277,9 @@ public final class BrainConfigureBuilder<P extends ParentBuilder> extends Abstra
 	 * @throws BuilderException <span class="en-US">If the type of existing configuration information is inconsistent with the JDBC configure information</span>
 	 *                          <span class="zh-CN">如果现有配置信息的类型不是JDBC数据源配置信息</span>
 	 */
-	public SchemaConfigBuilder.JdbcConfigBuilder jdbcConfig(final String schemaName) throws BuilderException {
-		return new SchemaConfigBuilder.JdbcConfigBuilder(this,
+	public SchemaConfigBuilder.JdbcConfigBuilder<BrainConfigureBuilder<P>> jdbcConfig(final String schemaName)
+			throws BuilderException {
+		return new SchemaConfigBuilder.JdbcConfigBuilder<>(this,
 				this.readConfig(schemaName, JdbcSchemaConfig.class));
 	}
 
@@ -266,9 +294,9 @@ public final class BrainConfigureBuilder<P extends ParentBuilder> extends Abstra
 	 * @throws BuilderException <span class="en-US">If the type of existing configuration information is inconsistent with the remote configuring information</span>
 	 *                          <span class="zh-CN">如果现有配置信息的类型不是远程数据源配置信息</span>
 	 */
-	public SchemaConfigBuilder.RemoteConfigBuilder remoteConfig(final String schemaName)
+	public SchemaConfigBuilder.RemoteConfigBuilder<BrainConfigureBuilder<P>> remoteConfig(final String schemaName)
 			throws BuilderException {
-		return new SchemaConfigBuilder.RemoteConfigBuilder(this,
+		return new SchemaConfigBuilder.RemoteConfigBuilder<>(this,
 				this.readConfig(schemaName, RemoteSchemaConfig.class));
 	}
 

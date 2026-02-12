@@ -18,10 +18,11 @@ package org.nervousync.brain.query.join;
 
 import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.*;
-import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.enumerations.query.ConditionCode;
 import org.nervousync.brain.enumerations.query.ConnectionCode;
-import org.nervousync.utils.ObjectUtils;
+import org.nervousync.utils.core.ObjectUtils;
+
+import java.io.Serializable;
 
 /**
  * <h2 class="en-US">Join column define</h2>
@@ -33,7 +34,7 @@ import org.nervousync.utils.ObjectUtils;
 @XmlType(name = "join_info", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "join_info", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
-public final class JoinInfo extends BeanObject {
+public final class JoinInfo implements Serializable {
 	/**
 	 * <span class="en-US">Serial version UID</span>
 	 * <span class="zh-CN">序列化UID</span>

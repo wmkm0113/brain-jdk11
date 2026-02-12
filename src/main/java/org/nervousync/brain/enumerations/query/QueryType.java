@@ -42,10 +42,5 @@ public enum QueryType {
 	 * <span class="en-US">Table sub-query</span>
 	 * <span class="zh-CN">表子查询</span>
 	 */
-	TABLE,
-	/**
-	 * <span class="en-US">Nested table sub-query</span>
-	 * <span class="zh-CN">嵌套表子查询</span>
-	 */
-	NESTED_TABLE
+	TABLE
 }

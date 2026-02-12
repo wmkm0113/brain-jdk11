@@ -19,13 +19,12 @@ package org.nervousync.brain.configs.sharding;
 
 import jakarta.annotation.Nonnull;
 import org.nervousync.brain.defines.StrategyDefine;
-import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.query.condition.Condition;
 import org.nervousync.brain.sharding.Calculator;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.ClassUtils;
-import org.nervousync.utils.ObjectUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.utils.core.ClassUtils;
+import org.nervousync.utils.core.ObjectUtils;
+import org.nervousync.utils.core.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 12, 2020 17:02:27 $
  */
+@SuppressWarnings("unused")
 public final class StrategyConfig {
 
 	/**
@@ -64,17 +64,21 @@ public final class StrategyConfig {
 	 * <h3 class="en-US">Constructor method for sharding configure information</h3>
 	 * <h3 class="zh-CN">分片配置信息的构造方法</h3>
 	 *
-	 * @param tableDefine      <span class="en-US">Sharding strategy defines information</span>
-	 *                         <span class="zh-CN">数据表配置信息</span>
+	 * @param catalog          <span class="en-US">Database shard value</span>
+	 *                         <span class="zh-CN">所属数据库分片</span>
+	 * @param defaultCatalog   <span class="en-US">Default database sharding value</span>
+	 *                         <span class="zh-CN">默认数据库分片值</span>
+	 * @param tableName        <span class="en-US">Data table name</span>
+	 *                         <span class="zh-CN">数据表名</span>
 	 * @param databaseStrategy <span class="en-US">Database strategy defines information</span>
 	 *                         <span class="zh-CN">数据库分片规则定义信息</span>
 	 * @param tableStrategy    <span class="en-US">Data table strategy defines information</span>
 	 *                         <span class="zh-CN">数据表分片规则定义信息</span>
 	 */
-	public StrategyConfig(@Nonnull final TableDefine tableDefine,
+	public StrategyConfig(@Nonnull final String catalog, final String defaultCatalog, final String tableName,
 	                      final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy) {
-		this.tableName = tableDefine.getTableName();
-		this.defaultCatalog = tableDefine.getCatalog();
+		this.tableName = tableName;
+		this.defaultCatalog = StringUtils.isEmpty(catalog) ? defaultCatalog : catalog;
 		if (databaseStrategy == null) {
 			this.databaseStrategy = null;
 		} else {

@@ -17,15 +17,13 @@
 
 package org.nervousync.brain.query.condition;
 
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlSeeAlso;
-import jakarta.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.ConditionType;
 import org.nervousync.brain.enumerations.query.ConnectionCode;
 import org.nervousync.brain.query.condition.impl.ColumnCondition;
 import org.nervousync.brain.query.condition.impl.GroupCondition;
 import org.nervousync.brain.query.core.SortedItem;
-import org.nervousync.utils.ClassUtils;
+import org.nervousync.utils.core.ClassUtils;
 
 import java.sql.SQLException;
 import java.sql.Wrapper;
@@ -37,8 +35,9 @@ import java.sql.Wrapper;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 19:10:21 $
  */
-@XmlSeeAlso({ColumnCondition.class, GroupCondition.class})
 @XmlTransient
+@XmlSeeAlso({ColumnCondition.class, GroupCondition.class})
+@XmlAccessorType(XmlAccessType.NONE)
 public abstract class Condition extends SortedItem implements Wrapper {
 
 	/**

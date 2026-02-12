@@ -26,7 +26,7 @@ import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.dialects.DialectException;
 import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.ServiceUtils;
+import org.nervousync.utils.net.ServiceUtils;
 
 import java.net.MalformedURLException;
 import java.util.List;
@@ -78,7 +78,7 @@ public final class RemoteDialect extends BaseDialect {
 	 * @throws MalformedURLException <span class="en-US">if no protocol is specified, or an unknown protocol is found, or spec is null.</span>
 	 *                               <span class="zh-CN">如果没有指定协议，或者发现未知协议，或者spec为空。</span>
 	 */
-	public RemoteClient SOAPClient(final String targetAddress, final Map<String, String> configMap)
+	public RemoteClient soapClient(final String targetAddress, final Map<String, String> configMap)
 			throws MalformedURLException {
 		return ServiceUtils.SOAPClient(targetAddress, RemoteClient.class, configMap);
 	}

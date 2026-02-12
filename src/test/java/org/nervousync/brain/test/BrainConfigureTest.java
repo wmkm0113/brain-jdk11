@@ -17,14 +17,22 @@
 
 package org.nervousync.brain.test;
 
-import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.*;
 import org.nervousync.brain.configs.BrainConfigure;
 import org.nervousync.brain.configs.builder.BrainConfigureBuilder;
 import org.nervousync.brain.configs.builder.SchemaConfigBuilder;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.remote.RemoteType;
-import org.nervousync.utils.*;
+import org.nervousync.builder.ParentBuilder;
+import org.nervousync.commons.Globals;
+import org.nervousync.enumerations.beans.StringType;
+import org.nervousync.enumerations.logger.LogLevel;
+import org.nervousync.utils.cert.CertificateUtils;
+import org.nervousync.utils.core.BeanUtils;
+import org.nervousync.utils.core.DateTimeUtils;
+import org.nervousync.utils.id.IDUtils;
+import org.nervousync.utils.logger.LoggerUtils;
+import org.nervousync.utils.security.SecurityUtils;
 
 import java.net.Proxy;
 import java.security.KeyPair;
@@ -35,50 +43,43 @@ import java.util.Date;
 public final class BrainConfigureTest {
 
 	static {
-		LoggerUtils.initLoggerConfigure(Level.DEBUG);
+		LoggerUtils.initLoggerConfigure(LogLevel.DEBUG);
 	}
 
 	@Test
 	@Order(10)
 	public void distributeConfig() {
 		BrainConfigure configure =
-				this.distribute(this.newBuilder(null).distributeConfig("Distribute"))
-						.build();
-		System.out.println(configure.toString(StringUtils.StringType.XML));
+				this.distribute(this.newBuilder(null).distributeConfig("Distribute")).build();
+		System.out.println(BeanUtils.objectToString(configure, StringType.XML));
 		configure = this.newBuilder(configure)
 				.distributeConfig("Distribute")
 				.removeServer("localhost", 2271)
 				.serverBuilder("localhost", 2270)
 				.level(40)
 				.confirm()
-				.trustStoreAuth()
-				.confirm()
 				.confirm()
 				.build();
-		System.out.println(configure.toString(StringUtils.StringType.XML));
+		System.out.println(BeanUtils.objectToString(configure, StringType.JSON));
 	}
 
 	@Test
 	@Order(20)
-	public void jdbcConfig() throws Exception {
+	public void jdbcConfig() {
 		BrainConfigure configure =
 				this.jdbc(this.newBuilder(null).jdbcConfig("Jdbc")).build();
-		System.out.println(configure.toString(StringUtils.StringType.XML));
+		System.out.println(BeanUtils.objectToString(configure, StringType.XML));
 		configure = this.newBuilder(configure)
 				.jdbcConfig("Jdbc")
 				.removeServer("localhost", 2271)
 				.serverBuilder("localhost", 2270)
 				.level(40)
-				.userAuthenticationBuilder()
-				.authenticate("testUser", "testPwd")
-				.confirm()
-				.confirm()
-				.trustStoreAuth()
+				.basicAuth("testUser", "testPwd")
 				.confirm()
 				.testConnection(Boolean.TRUE, Boolean.TRUE)
 				.confirm()
 				.build();
-		System.out.println(configure.toString(StringUtils.StringType.XML));
+		System.out.println(BeanUtils.objectToString(configure, StringType.JSON));
 	}
 
 	@Test
@@ -86,7 +87,7 @@ public final class BrainConfigureTest {
 	public void remoteConfig() throws Exception {
 		BrainConfigure configure =
 				this.remote(this.newBuilder(null).remoteConfig("Remote")).build();
-		System.out.println(configure.toString(StringUtils.StringType.XML));
+		System.out.println(BeanUtils.objectToString(configure, StringType.XML));
 		configure = this.newBuilder(configure)
 				.disableLazyInit()
 				.disableJmxMonitor()
@@ -100,7 +101,7 @@ public final class BrainConfigureTest {
 				.type(RemoteType.SOAP)
 				.confirm()
 				.build();
-		System.out.println(configure.toString(StringUtils.StringType.XML));
+		System.out.println(BeanUtils.objectToString(configure, StringType.JSON));
 	}
 
 	@Test
@@ -111,19 +112,19 @@ public final class BrainConfigureTest {
 		brainConfigureBuilder = this.jdbc(brainConfigureBuilder.jdbcConfig("Jdbc"));
 		brainConfigureBuilder = this.remote(brainConfigureBuilder.remoteConfig("Remote"));
 		BrainConfigure configure = brainConfigureBuilder.defaultSchema("Jdbc").build();
-		String xml = configure.toString(StringUtils.StringType.XML);
-		configure = StringUtils.stringToObject(xml, BrainConfigure.class, "https://nervousync.org/schemas/brain");
-		System.out.println(configure.toString(StringUtils.StringType.JSON));
+		String xml = BeanUtils.objectToString(configure, StringType.XML);
+		configure = BeanUtils.stringToObject(xml, StringType.XML, Globals.DEFAULT_ENCODING, BrainConfigure.class, "https://nervousync.org/schemas/proxy", "https://nervousync.org/schemas/brain");
+		System.out.println(BeanUtils.objectToString(configure, StringType.JSON));
 		configure = this.newBuilder(configure)
 				.remoteConfig("Remote")
 				.type(RemoteType.SOAP)
 				.confirm()
 				.defaultSchema("Remote")
 				.build();
-		System.out.println(configure.toString(StringUtils.StringType.XML));
+		System.out.println(BeanUtils.objectToString(configure, StringType.YAML));
 	}
 
-	private BrainConfigureBuilder<?> distribute(final SchemaConfigBuilder.DistributeConfigBuilder configBuilder) {
+	private <P extends ParentBuilder> BrainConfigureBuilder<P> distribute(final SchemaConfigBuilder.DistributeConfigBuilder<BrainConfigureBuilder<P>> configBuilder) {
 		return configBuilder.dialect("DistributeDialect")
 				.serverBuilder("localhost", 2270)
 				.name("datacenter1")
@@ -148,14 +149,11 @@ public final class BrainConfigureTest {
 				.cacheSize(20)
 				.lowQuery(1000L)
 				.timeout(5, 5)
-				.basicAuth()
-				.authenticate("username", "password")
-				.confirm()
+				.basicAuth("username", "password")
 				.confirm();
 	}
 
-	private BrainConfigureBuilder<?> jdbc(final SchemaConfigBuilder.JdbcConfigBuilder configBuilder)
-			throws Exception {
+	private <P extends ParentBuilder> BrainConfigureBuilder<P> jdbc(final SchemaConfigBuilder.JdbcConfigBuilder<BrainConfigureBuilder<P>> configBuilder) {
 		KeyPair keyPair = SecurityUtils.RSAKeyPair();
 		return configBuilder.dialect("JdbcDialect")
 				.serverBuilder("localhost", 2270)
@@ -171,17 +169,15 @@ public final class BrainConfigureTest {
 				.jdbcUrl("jdbc:url://testUrl")
 				.lowQuery(1000L)
 				.timeout(5, 5)
-				.x509Auth()
-				.x509(CertificateUtils.x509(keyPair.getPublic(), IDUtils.snowflake(), new Date(),
+				.x509Auth(CertificateUtils.x509(keyPair.getPublic(), IDUtils.snowflake(), new Date(),
 						new Date(DateTimeUtils.expireMonth(2)), "TestCert",
 						keyPair.getPrivate(), "SHA256withRSA"))
-				.confirm()
 				.retry(3, 500L)
 				.cacheSize(20)
 				.confirm();
 	}
 
-	private BrainConfigureBuilder<?> remote(final SchemaConfigBuilder.RemoteConfigBuilder configBuilder) throws Exception {
+	private <P extends ParentBuilder> BrainConfigureBuilder<P> remote(final SchemaConfigBuilder.RemoteConfigBuilder<BrainConfigureBuilder<P>> configBuilder) throws Exception {
 		KeyPair keyPair = SecurityUtils.RSAKeyPair();
 		return configBuilder
 				.address("http://localhost")
@@ -202,8 +198,8 @@ public final class BrainConfigureTest {
 				.confirm();
 	}
 
-	private BrainConfigureBuilder<?> newBuilder(final BrainConfigure configure) {
-		return BrainConfigureBuilder.newBuilder(configure)
+	private <P extends ParentBuilder> BrainConfigureBuilder<P> newBuilder(final BrainConfigure configure) {
+		return BrainConfigureBuilder.newBuilder((P) null, configure)
 				.ddlMode(DDLType.SYNCHRONIZE)
 				.enableJmxMonitor()
 				.enableLazyInit();

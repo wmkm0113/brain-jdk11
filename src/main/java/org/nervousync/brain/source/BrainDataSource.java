@@ -28,7 +28,7 @@ import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
-import org.nervousync.brain.defines.InitOption;
+import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.StrategyDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.enumerations.ddl.DDLType;
@@ -47,9 +47,12 @@ import org.nervousync.brain.schemas.distribute.DistributeSchema;
 import org.nervousync.brain.schemas.jdbc.JdbcSchema;
 import org.nervousync.brain.schemas.remote.RemoteSchema;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.LoggerUtils;
-import org.nervousync.utils.ObjectUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.enumerations.beans.StringType;
+import org.nervousync.utils.core.BeanUtils;
+import org.nervousync.utils.core.ObjectUtils;
+import org.nervousync.utils.core.StringUtils;
+import org.nervousync.utils.jmx.JMXUtils;
+import org.nervousync.utils.logger.LoggerUtils;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -64,6 +67,7 @@ import java.util.concurrent.TimeUnit;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 12, 2020 12:20:49 $
  */
+@SuppressWarnings("unused")
 @Monitor(domain = "org.nervousync", type = "DataSource", name = "Brain")
 public final class BrainDataSource implements BrainDataSourceMBean {
 
@@ -184,6 +188,17 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	}
 
 	/**
+	 * <h3 class="en-US">Registered implementation class of query optimizer</h3>
+	 * <h3 class="zh-CN">注册的查询优化器实现类</h3>
+	 *
+	 * @return <span class="en-US">Registered implementation class of query optimizer</span>
+	 * <span class="zh-CN">注册的查询优化器实现类</span>
+	 */
+	public static Map<String, Class<?>> registeredOptimizers() {
+		return REGISTERED_OPTIMIZERS;
+	}
+
+	/**
 	 * <h3 class="en-US">Initialize data source</h3>
 	 * <h3 class="zh-CN">初始化数据源</h3>
 	 *
@@ -202,7 +217,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 			try {
 				this.register(schemaConfig);
 			} catch (Exception e) {
-				LOGGER.error("Register_Schema_Config_Error", schemaConfig.toString(StringUtils.StringType.JSON));
+				LOGGER.error("Register_Schema_Config_Error", BeanUtils.objectToString(schemaConfig, StringType.JSON));
 				if (LOGGER.isDebugEnabled()) {
 					LOGGER.debug("Stack_Message_Error", e);
 				}
@@ -271,26 +286,19 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 * <h3 class="en-US">Convert default value to string</h3>
 	 * <h3 class="zh-CN">转换默认值为字符串</h3>
 	 *
-	 * @param schemaName <span class="en-US">Data schema name</span>
-	 *                   <span class="zh-CN">数据源名称</span>
-	 * @param jdbcType   <span class="en-US">JDBC type code</span>
-	 *                   <span class="zh-CN">JDBC类型代码</span>
-	 * @param length     <span class="en-US">Data column length</span>
-	 *                   <span class="zh-CN">数据列长度</span>
-	 * @param precision  <span class="en-US">The precision for a decimal (exact numeric) column</span>
-	 *                   <span class="zh-CN">小数（精确数字）列的精度</span>
-	 * @param scale      <span class="en-US">The scale for a decimal (exact numeric) column</span>
-	 *                   <span class="zh-CN">小数（精确数字）列的比例</span>
-	 * @param object     <span class="en-US">Default value instance object</span>
-	 *                   <span class="zh-CN">默认值实例对象</span>
+	 * @param schemaName   <span class="en-US">Data schema name</span>
+	 *                     <span class="zh-CN">数据源名称</span>
+	 * @param columnDefine <span class="en-US">Column define information</span>
+	 *                     <span class="zh-CN">数据列定义信息</span>
+	 * @param object       <span class="en-US">Default value instance object</span>
+	 *                     <span class="zh-CN">默认值实例对象</span>
 	 * @return <span class="en-US">Default value string</span>
 	 * <span class="zh-CN">默认值字符串</span>
 	 */
-	public String defaultValue(final String schemaName, final int jdbcType, final int length, final int precision,
-	                           final int scale, final Object object) {
+	public String defaultValue(final String schemaName, final ColumnDefine columnDefine, final Object object) {
 		try {
 			return Optional.of(this.retrieveSchema(schemaName))
-					.map(schema -> schema.defaultValue(jdbcType, length, precision, scale, object))
+					.map(schema -> schema.defaultValue(columnDefine, object))
 					.orElse(Globals.DEFAULT_VALUE_STRING);
 		} catch (SQLException e) {
 			return Globals.DEFAULT_VALUE_STRING;
@@ -307,19 +315,16 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                         <span class="zh-CN">数据库分片规则定义信息</span>
 	 * @param tableStrategy    <span class="en-US">Data table strategy defines information</span>
 	 *                         <span class="zh-CN">数据表分片规则定义信息</span>
-	 * @param initOptionsMap   <span class="en-US">Data column initialize option</span>
-	 *                         <span class="zh-CN">数据列初始化选项</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public void initTable(@Nonnull final TableDefine tableDefine,
-	                      final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy,
-	                      @Nonnull final Map<String, InitOption> initOptionsMap) throws Exception {
+	                      final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy) throws Exception {
 		BaseSchema<?> schema = this.retrieveSchema(tableDefine.getSchemaName());
 		if (schema instanceof JdbcSchema) {
 			schema.unwrap(JdbcSchema.class).registerStrategy(tableDefine, databaseStrategy, tableStrategy);
 		}
-		schema.initTable(this.ddlType, tableDefine, initOptionsMap);
+		schema.initTable(this.ddlType, tableDefine);
 		this.tableManager.register(tableDefine);
 	}
 
@@ -650,13 +655,13 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 
 		this.registeredSchemas.forEach((name, schema) -> {
 			if (this.jmxEnabled) {
-				ObjectUtils.unregisterMBean(JMX_OBJECT_NAME_PREFIX + name);
+				JMXUtils.unregister(JMX_OBJECT_NAME_PREFIX + name);
 			}
 			schema.close();
 		});
 		this.registeredSchemas.clear();
 		if (this.jmxEnabled) {
-			ObjectUtils.unregisterMBean(this);
+			JMXUtils.unregister(this);
 		}
 		this.initialized = Boolean.FALSE;
 		this.defaultName = Globals.DEFAULT_VALUE_STRING;
@@ -809,7 +814,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 		} else if (schemaConfig instanceof RemoteSchemaConfig) {
 			schema = new RemoteSchema((RemoteSchemaConfig) schemaConfig);
 		} else {
-			throw new MultilingualSQLException(0x00DB00000031L, schemaConfig.toString(StringUtils.StringType.JSON));
+			throw new MultilingualSQLException(0x00DB00000031L, BeanUtils.objectToString(schemaConfig, StringType.JSON));
 		}
 		this.registeredSchemas.put(schemaConfig.getSchemaName(), schema);
 		if (schemaConfig.isDefaultSchema()) {
@@ -819,7 +824,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 			this.defaultName = schemaConfig.getSchemaName();
 		}
 		if (this.jmxEnabled) {
-			ObjectUtils.registerMBean(JMX_OBJECT_NAME_PREFIX + schemaConfig.getSchemaName(), schema);
+			JMXUtils.register(JMX_OBJECT_NAME_PREFIX + schemaConfig.getSchemaName(), schema);
 		}
 	}
 
@@ -859,13 +864,13 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	@Override
 	public void jmxEnabled(final boolean enabled) {
 		if (this.jmxEnabled && !enabled) {
-			ObjectUtils.unregisterMBean(this);
+			JMXUtils.unregister(this);
 			this.registeredSchemas.keySet()
-					.forEach(name -> ObjectUtils.unregisterMBean(JMX_OBJECT_NAME_PREFIX + name));
+					.forEach(name -> JMXUtils.unregister(JMX_OBJECT_NAME_PREFIX + name));
 		} else if (!this.jmxEnabled && enabled) {
-			ObjectUtils.registerMBean(this);
+			JMXUtils.register(this);
 			this.registeredSchemas.forEach((name, schema) ->
-					ObjectUtils.registerMBean(JMX_OBJECT_NAME_PREFIX + name, schema));
+					JMXUtils.register(JMX_OBJECT_NAME_PREFIX + name, schema));
 		}
 		this.jmxEnabled = enabled;
 	}

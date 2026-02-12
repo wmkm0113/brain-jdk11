@@ -18,7 +18,8 @@
 package org.nervousync.brain.query.data;
 
 import jakarta.xml.bind.annotation.*;
-import org.nervousync.beans.core.BeanObject;
+
+import java.io.Serializable;
 
 /**
  * <h2 class="en-US">Match condition ranges define</h2>
@@ -30,7 +31,7 @@ import org.nervousync.beans.core.BeanObject;
 @XmlType(name = "ranges_data", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "ranges_data", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
-public final class RangesData extends BeanObject {
+public final class RangesData implements Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>

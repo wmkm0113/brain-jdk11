@@ -20,7 +20,7 @@ package org.nervousync.brain.query.core;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.ItemType;
 import org.nervousync.brain.query.item.*;
-import org.nervousync.utils.ClassUtils;
+import org.nervousync.utils.core.ClassUtils;
 
 import java.sql.SQLException;
 import java.sql.Types;

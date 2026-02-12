@@ -42,6 +42,7 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 28, 2020 11:46:08 $
  */
+@SuppressWarnings("unused")
 public final class ConditionsBuilder<P extends ParentBuilder> extends AbstractBuilder<P, ConditionsBuilder.Conditions> {
 
 	/**
@@ -690,7 +691,7 @@ public final class ConditionsBuilder<P extends ParentBuilder> extends AbstractBu
 		 * @param having     <span class="en-US">Having condition flag</span>
 		 *                   <span class="zh-CN">Having字句条件标记</span>
 		 */
-		private Conditions(@Nonnull final List<Condition> conditions, final boolean having) {
+		public Conditions(@Nonnull final List<Condition> conditions, final boolean having) {
 			this.conditions = conditions;
 			this.having = having;
 		}

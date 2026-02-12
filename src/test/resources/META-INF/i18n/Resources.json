@@ -1,0 +1,16 @@
+{
+  "groupId": "org.nervousync",
+  "bundle": "database",
+  "messages": {
+    "en-US": {
+      "Generated_Result": {
+        "pattern": "Generated query info: {0}"
+      }
+    },
+    "zh-CN": {
+      "Generated_Result": {
+        "pattern": "生成的查询信息：{0}"
+      }
+    }
+  }
+}

@@ -1,0 +1,493 @@
+{
+  "groupId": "org.nervousync",
+  "bundle": "database",
+  "errors": {
+    "0x00DB00000001": "Dialect_Not_Registered",
+    "0x00DB00000003": "Table_Not_Found",
+    "0x00DB00000004": "Table_Struct_Modified",
+    "0x00DB00000005": "Dialect_Annotation_Not_Found",
+    "0x00DB00000007": "Insert_Columns_Not_Found",
+    "0x00DB00000008": "Update_Columns_Not_Found",
+    "0x00DB00000009": "Query_Condition_Empty",
+    "0x00DB00000010": "Not_Support_Join_Query",
+    "0x00DB00000011": "Query_Columns_Not_Found",
+    "0x00DB00000012": "Add_Not_Null_Column_No_Default",
+    "0x00DB00000013": "Unknown_Join_Type",
+    "0x00DB00000014": "Unknown_Condition_Type",
+    "0x00DB00000015": "Sub_Query_No_Alias",
+    "0x00DB00000016": "Unknown_Item_Type",
+    "0x00DB00000017": "Condition_Array_Is_Empty",
+    "0x00DB00000018": "Condition_Array_Is_Equal",
+    "0x00DB00000019": "Condition_Range_Not_Found",
+    "0x00DB00000021": "Database_Server_List_Empty",
+    "0x00DB00000022": "Unknown_Statement_Type",
+    "0x00DB00000023": "Create_Connection_Error",
+    "0x00DB00000024": "Obtain_Connection_Error",
+    "0x00DB00000025": "Sharding_Template_Error",
+    "0x00DB00000026": "Database_Server_Error",
+    "0x00DB00000027": "Connection_Pool_Not_Found",
+    "0x00DB00000028": "Duplicate_Record_Found",
+    "0x00DB00000029": "Create_Table_Cmd_Error",
+    "0x00DB00000030": "Unknown_Remote_Type",
+    "0x00DB00000031": "Unknown_Schema_Config",
+    "0x00DB00000032": "No_Schema_Found",
+    "0x00DB00000034": "No_Table_Found",
+    "0x00DB00000035": "Generate_Remote_Client_Error",
+    "0x00DB00000036": "Read_Configure_Error",
+    "0x00DB00000037": "Configure_Type_Mismatch",
+    "0x00DB00000038": "Record_Insert_Failed",
+    "0x00DB00000039": "Record_Insert_Error",
+    "0x00DB00000040": "Record_Update_Error",
+    "0x00DB00000041": "Record_Delete_Error",
+    "0x00DB00000042": "Fill_Query_Item_Error",
+    "0x00DB00000043": "Data_Migration_Error",
+    "0x00DB00000044": "SSL_Context_Error",
+    "0x00DB00000045": "Dialect_Type_Not_Matched",
+    "0x00DB00000047": "Query_From_Empty",
+    "0x00DB00000048": "Query_Alias_Exists"
+  },
+  "messages": {
+    "en-US": {
+      "Register_Schema_Config_Error": {
+        "pattern": "Register schema configure error! Configure information: {0}"
+      },
+      "Dialect_Not_Registered": {
+        "pattern": "Database dialect not registered! Dialect name: {0}"
+      },
+      "Table_Not_Found": {
+        "pattern": "Can't found columns define in source name: {0}, table name: {1}"
+      },
+      "Table_Struct_Modified": {
+        "pattern": "The data table structure has been modified. New columns: {0}, modified columns: {1}, removed columns: {2}"
+      },
+      "Override_Registered_Dialect": {
+        "pattern": "Override exists database dialect, dialect name: {0}, implementation class name: {1}"
+      },
+      "Dialect_Annotation_Not_Found": {
+        "pattern": "Cannot found the org.nervousync.magi.annotations.dialect.DatabaseDialect information. Class name: {0}"
+      },
+      "Dialect_Type_None": {
+        "pattern": "Cannot found data type define! Dialect name: {0}"
+      },
+      "Dialect_Type_Override": {
+        "pattern": "Override data type define! Dialect name: {0}, type code: {1}"
+      },
+      "Read_Lob_Error": {
+        "pattern": "Read {0} data error! "
+      },
+      "Insert_Columns_Not_Found": {
+        "pattern": "Insert columns not found! "
+      },
+      "Update_Columns_Not_Found": {
+        "pattern": "Update columns not found! "
+      },
+      "Query_Condition_Empty": {
+        "pattern": "Query condition list is empty."
+      },
+      "Not_Support_Join_Query": {
+        "pattern": "Database not support join query! "
+      },
+      "Query_Columns_Not_Found": {
+        "pattern": "Query columns not found! "
+      },
+      "Add_Not_Null_Column_No_Default": {
+        "pattern": "Add not null column must set default value! Column name: {0}"
+      },
+      "Unknown_Join_Type": {
+        "pattern": "Unknown query join type! Join type: {0}"
+      },
+      "Unknown_Condition_Type": {
+        "pattern": "Unknown condition type! Condition type: {0}"
+      },
+      "Sub_Query_No_Alias": {
+        "pattern": "Sub-query must specify an alias! "
+      },
+      "Unknown_Item_Type": {
+        "pattern": "Unknown item type! Item type: {0}"
+      },
+      "Condition_Array_Is_Empty": {
+        "pattern": "Condition array parameter is empty! "
+      },
+      "Condition_Array_Is_Equal": {
+        "pattern": "Condition array parameter length is 1, use EQUAL instead! "
+      },
+      "Condition_Range_Not_Found": {
+        "pattern": "Condition range parameter not found! "
+      },
+      "Database_Server_List_Empty": {
+        "pattern": "Database server list is empty! "
+      },
+      "Unknown_Statement_Type": {
+        "pattern": "Unknown statement type code! Type code: {0}"
+      },
+      "Cache_Statement_Map": {
+        "pattern": "Cache statement map: {0}"
+      },
+      "Create_Connection_Error": {
+        "pattern": "Process create connection error! "
+      },
+      "Thread_Sleep_Error": {
+        "pattern": "Sleep thread for waiting retry error! "
+      },
+      "Close_Connection_Error": {
+        "pattern": "Process close connection error! "
+      },
+      "Check_Connection_Error": {
+        "pattern": "Process check connection error! "
+      },
+      "Connection_Wait_Count": {
+        "pattern": "Obtain database connection wait count: {0}"
+      },
+      "Obtain_Connection_Error": {
+        "pattern": "Obtain database connection error! "
+      },
+      "Connection_From_Create": {
+        "pattern": "New create database connection. "
+      },
+      "Connection_From_Pool": {
+        "pattern": "Obtain connection from pool."
+      },
+      "Connection_Used_Time": {
+        "pattern": "Obtain connection used time: {0} ms"
+      },
+      "Pool_Connection_Debug": {
+        "pattern": "Current data source activated connections: {0}, connections in pool: {1}"
+      },
+      "Invalid_Destroy_Connection": {
+        "pattern": "Destroy database connection because current connection was invalid! "
+      },
+      "Pool_Full_Destroy_Connection": {
+        "pattern": "Destroy database connection because current connection pool is full! "
+      },
+      "Create_Connection_Full": {
+        "pattern": "Connection pool is full, ignore creating operate! "
+      },
+      "Transactional_Level_Debug": {
+        "pattern": "Transactional level code of the current connection is: {0}"
+      },
+      "Create_Connection_Begin_Debug": {
+        "pattern": "Beginning create connection thread"
+      },
+      "Create_Connection_End_Debug": {
+        "pattern": "Finished create connection thread"
+      },
+      "Sharding_Template_Error": {
+        "pattern": "Sharding template string not found parameter: {catalog}! JDBC url: {0}"
+      },
+      "Database_Server_Error": {
+        "pattern": "Database server information invalid! "
+      },
+      "Connection_Pool_Not_Found": {
+        "pattern": "Connection pool not found! Server info: {0}, sharding key: {1}"
+      },
+      "Duplicate_Record_Found": {
+        "pattern": "Duplicate records found at retrieve mode! Table name: {0}, filter map: {1}"
+      },
+      "Create_Table_Cmd_Error": {
+        "pattern": "Generate create table command error! "
+      },
+      "Execute_Query_Log": {
+        "pattern": "Execute command: {0}, parameters: {1}"
+      },
+      "Low_Query_Log": {
+        "pattern": "Execute command: {0}, parameters: {1}, used time: {2}, out of timeout: {3}"
+      },
+      "Unknown_Remote_Type": {
+        "pattern": "Unknown remote type code! Type code: {0}"
+      },
+      "Registered_Data_Source": {
+        "pattern": "Exists data source, source name: {0}"
+      },
+      "Unknown_Schema_Config": {
+        "pattern": "Unknown schema configure information! Configure information: {0}"
+      },
+      "Override_Default_Schema": {
+        "pattern": "Override default schema configure! Old default: {0}, new default: {1}"
+      },
+      "No_Schema_Found": {
+        "pattern": "No database schema found! Schema name: {0}"
+      },
+      "No_Table_Found": {
+        "pattern": "Can't found table define, table name: {0}"
+      },
+      "Drop_Table_Error": {
+        "pattern": "Drop table failed! "
+      },
+      "Truncate_Table_Error": {
+        "pattern": "Truncate table failed! "
+      },
+      "Close_DataSource_Error": {
+        "pattern": "Close data source error! "
+      },
+      "Read_Configure_Error": {
+        "pattern": "Read configure information error! Configure file path: {0}, configure name: {1}"
+      },
+      "Configure_Type_Mismatch": {
+        "pattern": "Schema configure type mismatch! Schema name: {0}, target type: {1}, current type: {2}"
+      },
+      "Record_Insert_Failed": {
+        "pattern": "Insert record to database failed! Table name: {0}, data map: {1}"
+      },
+      "Record_Insert_Error": {
+        "pattern": "Exception occurred while inserting data! Table name: {0}, data map: {1}"
+      },
+      "Record_Update_Error": {
+        "pattern": "Exception occurred while updating data! Table name: {0}, data map: {1}, filter map: {2}"
+      },
+      "Record_Delete_Error": {
+        "pattern": "Exception occurred while deleting data! Table name: {0}, filter map: {1}"
+      },
+      "Fill_Query_Item_Error": {
+        "pattern": "Fill query item information error! "
+      },
+      "Data_Migration_Error": {
+        "pattern": "This operation will result in data migration! Table name: {0}, data map: {1}, filter map: {2}, origin catalog: {3}, new catalog: {4}"
+      },
+      "SSL_Context_Error": {
+        "pattern": "Initialize ssl context error! "
+      },
+      "Remote_Dialect_Title": {
+        "pattern": "Simple remote dialect "
+      },
+      "Remote_Dialect_Description": {
+        "pattern": "Simple remote dialect, only support username/password authenticator and pass clear text password information"
+      },
+      "Dialect_Type_Not_Matched": {
+        "pattern": "Database dialect type not matched! Dialect type: {0}, configure dialect type: {1}"
+      },
+      "Query_From_Empty": {
+        "pattern": "Query from command is null"
+      },
+      "Query_Alias_Exists": {
+        "pattern": "Query alias name was existed"
+      },
+      "Query_Cache_Debug": {
+        "pattern": "Query cache information: {0}"
+      },
+      "Read_Long_Value_Debug": {
+        "pattern": "Read {0} long value: {1}"
+      }
+    },
+    "zh-CN": {
+      "Register_Schema_Config_Error": {
+        "pattern": "注册数据源出错！数据源配置信息：{0}"
+      },
+      "Dialect_Not_Registered": {
+        "pattern": "数据库方言未注册！方言名称：{0}"
+      },
+      "Table_Not_Found": {
+        "pattern": "未找到数据列定义信息，数据源：{0}，数据表名：{1}"
+      },
+      "Table_Struct_Modified": {
+        "pattern": "数据表结构已修改。新增列：{0}，修改列：{1}，删除列：{2}"
+      },
+      "Override_Registered_Dialect": {
+        "pattern": "覆盖已存在的数据库方言，方言名称：{0}，实现类名：{1}"
+      },
+      "Dialect_Annotation_Not_Found": {
+        "pattern": "未找到org.nervousync.magi.annotations.dialect.DatabaseDialect标注信息。类名：{0}"
+      },
+      "Dialect_Type_None": {
+        "pattern": "未找到数据类型定义！方言名称：{0}"
+      },
+      "Dialect_Type_Override": {
+        "pattern": "覆盖已存在的数据类型定义！方言名称：{0}，类型代码：{1}"
+      },
+      "Read_Lob_Error": {
+        "pattern": "读取{0}数据出错！"
+      },
+      "Insert_Columns_Not_Found": {
+        "pattern": "要插入的数据列未找到！"
+      },
+      "Update_Columns_Not_Found": {
+        "pattern": "要更新的数据列未找到！"
+      },
+      "Query_Condition_Empty": {
+        "pattern": "数据查询的条件列表为空"
+      },
+      "Not_Support_Join_Query": {
+        "pattern": "数据库不支持关联查询！"
+      },
+      "Query_Columns_Not_Found": {
+        "pattern": "要查询的数据列未找到！"
+      },
+      "Add_Not_Null_Column_No_Default": {
+        "pattern": "添加非空数据列必须设置默认值！数据列名：{0}"
+      },
+      "Unknown_Join_Type": {
+        "pattern": "未知的关联类型！类型代码：{0}"
+      },
+      "Unknown_Condition_Type": {
+        "pattern": "未知的条件类型！类型代码：{0}"
+      },
+      "Sub_Query_No_Alias": {
+        "pattern": "子查询必须设置一个别名！"
+      },
+      "Unknown_Item_Type": {
+        "pattern": "未知的查询项类型！类型代码：{0}"
+      },
+      "Condition_Array_Is_Empty": {
+        "pattern": "匹配条件数组为空！"
+      },
+      "Condition_Array_Is_Equal": {
+        "pattern": "匹配条件数组长度为1，使用EQUAL替代！"
+      },
+      "Condition_Range_Not_Found": {
+        "pattern": "匹配条件范围值未找到！"
+      },
+      "Database_Server_List_Empty": {
+        "pattern": "数据库服务器列表为空！"
+      },
+      "Unknown_Statement_Type": {
+        "pattern": "未知的查询类型代码！类型代码：{0}"
+      },
+      "Cache_Statement_Map": {
+        "pattern": "缓存的查询执行器信息映射表：{0}"
+      },
+      "Create_Connection_Error": {
+        "pattern": "创建数据库连接实例对象时出错！"
+      },
+      "Thread_Sleep_Error": {
+        "pattern": "创建数据库连接过程中执行线程等待出错！"
+      },
+      "Close_Connection_Error": {
+        "pattern": "关闭数据库连接实例对象时出错！"
+      },
+      "Check_Connection_Error": {
+        "pattern": "验证数据库连接是否有效时出错！"
+      },
+      "Connection_Wait_Count": {
+        "pattern": "等待获取数据库连接的计数：{0}"
+      },
+      "Obtain_Connection_Error": {
+        "pattern": "获取数据库连接时出错！"
+      },
+      "Connection_From_Create": {
+        "pattern": "新创建的数据库连接。"
+      },
+      "Connection_From_Pool": {
+        "pattern": "从连接池中获取的连接。"
+      },
+      "Connection_Used_Time": {
+        "pattern": "获取连接使用的时间：{0} 毫秒"
+      },
+      "Pool_Connection_Debug": {
+        "pattern": "当前数据源中正在使用的连接：{0} 个，连接池中的连接：{1} 个"
+      },
+      "Invalid_Destroy_Connection": {
+        "pattern": "由于连接已失效，销毁当前数据库连接！"
+      },
+      "Pool_Full_Destroy_Connection": {
+        "pattern": "由于数据库连接池已满，销毁当前数据库连接！"
+      },
+      "Create_Connection_Full": {
+        "pattern": "数据库连接池已满，忽略创建操作！"
+      },
+      "Transactional_Level_Debug": {
+        "pattern": "当前连接的事务等级为：{0}"
+      },
+      "Create_Connection_Begin_Debug": {
+        "pattern": "开始执行创建数据库连接线程任务"
+      },
+      "Create_Connection_End_Debug": {
+        "pattern": "完成执行创建数据库连接线程任务"
+      },
+      "Sharding_Template_Error": {
+        "pattern": "分片模板字符串未找到参数：{shardingKey}！JDBC连接字符串：{0}"
+      },
+      "Database_Server_Error": {
+        "pattern": "数据库服务器信息错误！"
+      },
+      "Connection_Pool_Not_Found": {
+        "pattern": "数据库连接池未找到！服务器：{0}，分片值：{1}"
+      },
+      "Duplicate_Record_Found": {
+        "pattern": "在唯一检索模式找到多条记录！数据表名：{0}，过滤条件映射表：{1}"
+      },
+      "Create_Table_Cmd_Error": {
+        "pattern": "生成创建数据表命令出错！"
+      },
+      "Execute_Query_Log": {
+        "pattern": "执行命令：{0}，参数：{1}"
+      },
+      "Low_Query_Log": {
+        "pattern": "执行命令：{0}，参数：{1}，执行时间：{2}，超过临界值：{3}"
+      },
+      "Unknown_Remote_Type": {
+        "pattern": "未知的远程类型！类型代码：{0}"
+      },
+      "Registered_Data_Source": {
+        "pattern": "当前数据源已存在，数据源名称：{0}"
+      },
+      "Unknown_Schema_Config": {
+        "pattern": "未知的数据源配置信息！配置信息详情：{0}"
+      },
+      "Override_Default_Schema": {
+        "pattern": "覆盖默认数据源配置信息！旧默认值：{0}，新默认值：{1}"
+      },
+      "No_Schema_Found": {
+        "pattern": "未找到数据源！数据源名称：{0}"
+      },
+      "No_Table_Found": {
+        "pattern": "未找到数据表定义，数据表名：{0}"
+      },
+      "Drop_Table_Error": {
+        "pattern": "删除数据表出错！"
+      },
+      "Truncate_Table_Error": {
+        "pattern": "清空数据表出错！"
+      },
+      "Close_DataSource_Error": {
+        "pattern": "关闭数据源时出错！"
+      },
+      "Read_Configure_Error": {
+        "pattern": "读取配置信息出错！配置信息文件地址：{0}，配置文件名：{1}"
+      },
+      "Configure_Type_Mismatch": {
+        "pattern": "数据源配置信息类型出错！数据源名称：{0}，目标类型：{1}，当前类型：{2}"
+      },
+      "Record_Insert_Failed": {
+        "pattern": "写入记录到数据库失败！数据表名：{0}，数据映射表：{1}"
+      },
+      "Record_Insert_Error": {
+        "pattern": "插入记录到数据库出错！数据表名：{0}，数据映射表：{1}"
+      },
+      "Record_Update_Error": {
+        "pattern": "更新记录到数据库出错！数据表名：{0}，数据映射表：{1}，过滤条件映射表：{2}"
+      },
+      "Record_Delete_Error": {
+        "pattern": "从数据库删除记录出错！数据表名：{0}，过滤条件映射表：{1}"
+      },
+      "Fill_Query_Item_Error": {
+        "pattern": "填充查询数据列信息出错！"
+      },
+      "Data_Migration_Error": {
+        "pattern": "此操作将导致数据迁移！数据表名：{0}，数据映射表：{1}，过滤条件映射表：{2}，原始分片：{3}，新分片：{4}"
+      },
+      "SSL_Context_Error": {
+        "pattern": "初始化SSL环境出错！"
+      },
+      "Remote_Dialect_Title": {
+        "pattern": "简单远程调用方言"
+      },
+      "Remote_Dialect_Description": {
+        "pattern": "简单远程调用方言，仅支持用户名/密码的身份认证方式，且使用明文传递"
+      },
+      "Dialect_Type_Not_Matched": {
+        "pattern": "数据库方言类型不匹配！方言类型：{0}，配置方言类型：{1}"
+      },
+      "Query_From_Empty": {
+        "pattern": "查询From字句为空"
+      },
+      "Query_Alias_Exists": {
+        "pattern": "查询别名已存在"
+      },
+      "Query_Cache_Debug": {
+        "pattern": "查询信息缓存: {0}"
+      },
+      "Read_Long_Value_Debug": {
+        "pattern": "读取 {0} 类型的Long数据：{1}"
+      }
+    }
+  }
+}

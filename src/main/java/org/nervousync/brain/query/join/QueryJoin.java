@@ -18,11 +18,9 @@
 package org.nervousync.brain.query.join;
 
 import jakarta.xml.bind.annotation.*;
-import org.nervousync.annotations.beans.OutputConfig;
-import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.enumerations.query.JoinType;
-import org.nervousync.utils.StringUtils;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,9 +33,7 @@ import java.util.List;
  */
 @XmlTransient
 @XmlAccessorType(XmlAccessType.NONE)
-@OutputConfig(formatted = true, defaultType = StringUtils.StringType.XML,
-		types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
-public abstract class QueryJoin extends BeanObject {
+public abstract class QueryJoin implements Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>

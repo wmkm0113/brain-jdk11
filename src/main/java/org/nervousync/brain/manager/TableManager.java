@@ -23,14 +23,13 @@ import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.utils.core.StringUtils;
 
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * <h2 class="en-US">Data table manager</h2>
@@ -41,6 +40,7 @@ import java.util.Optional;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:15:08 $
  */
+@SuppressWarnings("unused")
 public final class TableManager {
 
 	/**
@@ -167,7 +167,7 @@ public final class TableManager {
 	 */
 	public String columnName(@Nonnull final String tableIdentify, @Nonnull final String columnIdentify)
 			throws SQLException {
-		return Optional.ofNullable(this.define(tableIdentify).column(columnIdentify))
+		return this.define(tableIdentify).column(columnIdentify)
 				.map(ColumnDefine::getColumnName)
 				.orElseThrow(() -> new MultilingualSQLException(0x00DB00000011L));
 	}
@@ -187,7 +187,7 @@ public final class TableManager {
 	 */
 	@MagicConstant(valuesFromClass = Types.class)
 	public int jdbcType(@Nonnull final String tableIdentify, @Nonnull final String columnIdentify) throws SQLException {
-		return Optional.ofNullable(this.define(tableIdentify).column(columnIdentify))
+		return this.define(tableIdentify).column(columnIdentify)
 				.map(ColumnDefine::getJdbcType)
 				.orElseThrow(() -> new MultilingualSQLException(0x00DB00000011L));
 	}

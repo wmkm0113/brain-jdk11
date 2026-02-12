@@ -23,7 +23,7 @@ import org.nervousync.brain.configs.auth.Authentication;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.secure.TrustStore;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
-import org.nervousync.brain.defines.InitOption;
+import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.core.BaseDialect;
 import org.nervousync.brain.enumerations.ddl.DDLType;
@@ -33,8 +33,8 @@ import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.ClassUtils;
-import org.nervousync.utils.LoggerUtils;
+import org.nervousync.utils.core.ClassUtils;
+import org.nervousync.utils.logger.LoggerUtils;
 
 import java.sql.SQLException;
 import java.sql.Wrapper;
@@ -108,6 +108,11 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <span class="zh-CN">线程使用的事务配置信息</span>
 	 */
 	protected final ThreadLocal<TransactionalConfig> txConfig = new ThreadLocal<>();
+	/**
+	 * <span class="en-US">The transactional configure flag of current thread</span>
+	 * <span class="zh-CN">线程事务配置标记</span>
+	 */
+	private final ThreadLocal<Boolean> txInit = new ThreadLocal<>();
 
 	/**
 	 * <h3 class="en-US">Constructor method for data source abstract implementation classes</h3>
@@ -241,32 +246,26 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 *                   <span class="zh-CN">如果执行过程出错</span>
 	 */
 	public final void initTransactional(final TransactionalConfig transactionalConfig) throws Exception {
-		if (this.txConfig.get() == null) {
+		if (this.txInit.get() == null || !this.txInit.get()) {
+			this.txInit.set(Boolean.TRUE);
 			this.txConfig.set(transactionalConfig);
+			this.beginTransactional();
 		}
-		this.beginTransactional();
 	}
 
 	/**
 	 * <h3 class="en-US">Convert default value to string</h3>
 	 * <h3 class="zh-CN">转换默认值为字符串</h3>
 	 *
-	 * @param jdbcType  <span class="en-US">JDBC type code</span>
-	 *                  <span class="zh-CN">JDBC类型代码</span>
-	 * @param length    <span class="en-US">Data column length</span>
-	 *                  <span class="zh-CN">数据列长度</span>
-	 * @param precision <span class="en-US">The precision for a decimal (exact numeric) column</span>
-	 *                  <span class="zh-CN">小数（精确数字）列的精度</span>
-	 * @param scale     <span class="en-US">The scale for a decimal (exact numeric) column</span>
-	 *                  <span class="zh-CN">小数（精确数字）列的比例</span>
+	 * @param columnDefine <span class="en-US">Column define information</span>
+	 *                     <span class="zh-CN">数据列定义信息</span>
 	 * @param object    <span class="en-US">Default value instance object</span>
 	 *                  <span class="zh-CN">默认值实例对象</span>
 	 * @return <span class="en-US">Default value string</span>
 	 * <span class="zh-CN">默认值字符串</span>
 	 */
-	public final String defaultValue(final int jdbcType, final int length, final int precision, final int scale,
-	                                 final Object object) {
-		return Optional.ofNullable(this.dialect.defaultValue(jdbcType, length, precision, scale, object))
+	public final String defaultValue(final ColumnDefine columnDefine, final Object object) {
+		return Optional.ofNullable(this.dialect.defaultValue(columnDefine, object))
 				.orElse(Globals.DEFAULT_VALUE_STRING);
 	}
 
@@ -452,9 +451,8 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 */
 	public final void endTransactional() throws Exception {
 		this.clearTransactional();
-		if (this.txConfig.get() != null) {
-			this.txConfig.remove();
-		}
+		this.txInit.set(Boolean.FALSE);
+		this.txConfig.remove();
 	}
 
 	/**
@@ -485,13 +483,11 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 *                       <span class="zh-CN">操作类型枚举值</span>
 	 * @param tableDefine    <span class="en-US">Table defines information</span>
 	 *                       <span class="zh-CN">数据表定义信息</span>
-	 * @param initOptionsMap <span class="en-US">Data column initialize option</span>
-	 *                       <span class="zh-CN">数据列初始化选项</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
-	public abstract void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
-	                               @Nonnull final Map<String, InitOption> initOptionsMap) throws Exception;
+	public abstract void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine)
+			throws Exception;
 
 	/**
 	 * <h3 class="en-US">Clear current transactional</h3>

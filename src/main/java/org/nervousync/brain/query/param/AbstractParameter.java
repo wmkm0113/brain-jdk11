@@ -31,8 +31,8 @@ import org.nervousync.brain.query.param.impl.*;
 import org.nervousync.brain.query.subqueries.ScalarSubQuery;
 import org.nervousync.brain.query.subqueries.TableSubQuery;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.ClassUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.utils.core.ClassUtils;
+import org.nervousync.utils.core.StringUtils;
 
 import java.sql.SQLException;
 import java.sql.Wrapper;

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Licensed to the Nervousync Studio (NSYC) under one or more
+  ~ contributor license agreements. See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License.  You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <entry key="Register_Schema_Config_Error">Register schema configure error! Configure information: {0}</entry>
+    <entry key="Dialect_Not_Registered">Database dialect not registered! Dialect name: {0}</entry>
+    <entry key="Table_Not_Found">Can't found columns define in source name: {0}, table name: {1}</entry>
+    <entry key="Table_Struct_Modified">The data table structure has been modified. New columns: {0}, modified columns:
+        {1}, removed columns: {2}
+    </entry>
+    <entry key="Override_Registered_Dialect">Override exists database dialect, dialect name: {0}, implementation class
+        name: {1}
+    </entry>
+    <entry key="Dialect_Annotation_Not_Found">Cannot found the org.nervousync.magi.annotations.dialect.DatabaseDialect
+        information. Class name: {0}
+    </entry>
+    <entry key="Dialect_Type_None">Cannot found data type define! Dialect name: {0}</entry>
+    <entry key="Dialect_Type_Override">Override data type define! Dialect name: {0}, type code: {1}</entry>
+    <entry key="Read_Lob_Error">Read {0} data error!</entry>
+    <entry key="Insert_Columns_Not_Found">Insert columns not found!</entry>
+    <entry key="Update_Columns_Not_Found">Update columns not found!</entry>
+    <entry key="Query_Condition_Empty">Query condition list is empty.</entry>
+    <entry key="Not_Support_Join_Query">Database not support join query!</entry>
+    <entry key="Query_Columns_Not_Found">Query columns not found!</entry>
+    <entry key="Add_Not_Null_Column_No_Default">Add not null column must set default value! Column name: {0}</entry>
+    <entry key="Unknown_Join_Type">Unknown query join type! Join type: {0}</entry>
+    <entry key="Unknown_Condition_Type">Unknown condition type! Condition type: {0}</entry>
+    <entry key="Sub_Query_No_Alias">Sub-query must specify an alias!</entry>
+    <entry key="Unknown_Item_Type">Unknown item type! Item type: {0}</entry>
+    <entry key="Condition_Array_Is_Empty">Condition array parameter is empty!</entry>
+    <entry key="Condition_Array_Is_Equal">Condition array parameter length is 1, use EQUAL instead!</entry>
+    <entry key="Condition_Range_Not_Found">Condition range parameter not found!</entry>
+    <entry key="Database_Server_List_Empty">Database server list is empty!</entry>
+    <entry key="Unknown_Statement_Type">Unknown statement type code! Type code: {0}</entry>
+    <entry key="Cache_Statement_Map">Cache statement map: {0}</entry>
+    <entry key="Create_Connection_Error">Process create connection error!</entry>
+    <entry key="Thread_Sleep_Error">Sleep thread for waiting retry error!</entry>
+    <entry key="Close_Connection_Error">Process close connection error!</entry>
+    <entry key="Check_Connection_Error">Process check connection error!</entry>
+    <entry key="Connection_Wait_Count">Obtain database connection wait count: {0}</entry>
+    <entry key="Obtain_Connection_Error">Obtain database connection error!</entry>
+    <entry key="Connection_From_Create">New create database connection.</entry>
+    <entry key="Connection_From_Pool">Obtain connection from pool.</entry>
+    <entry key="Connection_Used_Time">Obtain connection used time: {0} ms</entry>
+    <entry key="Pool_Connection_Debug">Current data source activated connections: {0}, connections in pool: {1}</entry>
+    <entry key="Invalid_Destroy_Connection">Destroy database connection because current connection was invalid!</entry>
+    <entry key="Pool_Full_Destroy_Connection">Destroy database connection because current connection pool is full!
+    </entry>
+    <entry key="Create_Connection_Full">Connection pool is full, ignore creating operate!</entry>
+    <entry key="Transactional_Level_Debug">Transactional level code of the current connection is: {0}</entry>
+    <entry key="Create_Connection_Begin_Debug">Beginning create connection thread</entry>
+    <entry key="Create_Connection_End_Debug">Finished create connection thread</entry>
+    <entry key="Sharding_Template_Error">Sharding template string not found parameter: {catalog}! JDBC url: {0}</entry>
+    <entry key="Database_Server_Error">Database server information invalid!</entry>
+    <entry key="Connection_Pool_Not_Found">Connection pool not found! Server info: {0}, sharding key: {1}</entry>
+    <entry key="Duplicate_Record_Found">Duplicate records found at retrieve mode! Table name: {0}, filter map: {1}
+    </entry>
+    <entry key="Create_Table_Cmd_Error">Generate create table command error!</entry>
+    <entry key="Execute_Query_Log">Execute command: {0}, parameters: {1}</entry>
+    <entry key="Low_Query_Log">Execute command: {0}, parameters: {1}, used time: {2}, out of timeout: {3}</entry>
+    <entry key="Unknown_Remote_Type">Unknown remote type code! Type code: {0}</entry>
+    <entry key="Registered_Data_Source">Exists data source, source name: {0}</entry>
+    <entry key="Unknown_Schema_Config">Unknown schema configure information! Configure information: {0}</entry>
+    <entry key="Override_Default_Schema">Override default schema configure! Old default: {0}, new default: {1}</entry>
+    <entry key="No_Schema_Found">No database schema found! Schema name: {0}</entry>
+    <entry key="No_Table_Found">Can't found table define, table name: {0}</entry>
+    <entry key="Drop_Table_Error">Drop table failed!</entry>
+    <entry key="Truncate_Table_Error">Truncate table failed!</entry>
+    <entry key="Close_DataSource_Error">Close data source error!</entry>
+    <entry key="Read_Configure_Error">Read configure information error! Configure file path: {0}, configure name: {1}</entry>
+    <entry key="Configure_Type_Mismatch">Schema configure type mismatch! Schema name: {0}, target type: {1}, current type: {2}</entry>
+    <entry key="Record_Insert_Failed">Insert record to database failed! Table name: {0}, data map: {1}</entry>
+    <entry key="Record_Insert_Error">Exception occurred while inserting data! Table name: {0}, data map: {1}</entry>
+    <entry key="Record_Update_Error">Exception occurred while updating data! Table name: {0}, data map: {1}, filter map: {2}</entry>
+    <entry key="Record_Delete_Error">Exception occurred while deleting data! Table name: {0}, filter map: {1}</entry>
+    <entry key="Fill_Query_Item_Error">Fill query item information error!</entry>
+    <entry key="Data_Migration_Error">This operation will result in data migration! Table name: {0}, data map: {1}, filter map: {2}, origin catalog: {3}, new catalog: {4}</entry>
+    <entry key="SSL_Context_Error">Initialize ssl context error!</entry>
+    <entry key="Remote_Dialect_Title">Simple remote dialect</entry>
+    <entry key="Remote_Dialect_Description">Simple remote dialect, only support username/password authenticator and pass clear text password information</entry>
+    <entry key="Dialect_Type_Not_Matched">Database dialect type not matched! Dialect type: {0}, configure dialect type: {1}</entry>
+    <entry key="Query_From_Empty">Query from command is null</entry>
+    <entry key="Query_Alias_Exists">Query alias name was existed</entry>
+    <entry key="Query_Cache_Debug">Query cache information: {0}</entry>
+    <entry key="Read_Long_Value_Debug">Read {0} long value: {1}</entry>
+</properties>

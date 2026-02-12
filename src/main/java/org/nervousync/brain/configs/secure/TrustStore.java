@@ -18,11 +18,10 @@
 package org.nervousync.brain.configs.secure;
 
 import jakarta.xml.bind.annotation.*;
-import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.annotations.configs.Password;
-import org.nervousync.beans.core.BeanObject;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.StringUtils;
+
+import java.io.Serializable;
 
 /**
  * <h2 class="en-US">Trust certificate store configuration information</h2>
@@ -34,8 +33,7 @@ import org.nervousync.utils.StringUtils;
 @XmlType(name = "trust_store", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "trust_store", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
-@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
-public final class TrustStore extends BeanObject {
+public final class TrustStore implements Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>

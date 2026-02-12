@@ -23,16 +23,15 @@ import org.nervousync.brain.configs.server.ServerInfo;
 import org.nervousync.brain.configs.sharding.StrategyConfig;
 import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.IndexDefine;
-import org.nervousync.brain.defines.InitOption;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.jdbc.JdbcDialect;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.DateTimeUtils;
-import org.nervousync.utils.LoggerUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.utils.core.DateTimeUtils;
+import org.nervousync.utils.core.StringUtils;
+import org.nervousync.utils.logger.LoggerUtils;
 
 import java.sql.*;
 import java.util.*;
@@ -109,11 +108,6 @@ public final class JdbcConnectionPool {
 	 */
 	private final List<String> databaseNames;
 	/**
-	 * <span class="en-US">Mapping of database name and list of existed table names in the current database</span>
-	 * <span class="zh-CN">已存在的数据库名列表</span>
-	 */
-	private final Map<String, List<String>> tableNames;
-	/**
 	 * <span class="en-US">Using connection pool</span>
 	 * <span class="zh-CN">使用连接池</span>
 	 */
@@ -157,7 +151,6 @@ public final class JdbcConnectionPool {
 		this.activeConnections = new ArrayList<>();
 		this.waitCount = new AtomicInteger(Globals.INITIALIZE_INT_VALUE);
 		this.databaseNames = new ArrayList<>();
-		this.tableNames = new HashMap<>();
 		this.createConnections();
 		this.scanExists();
 	}
@@ -350,7 +343,7 @@ public final class JdbcConnectionPool {
 		for (String catalog : this.databaseNames) {
 			try (Connection connection = this.obtainConnection(catalog);
 			     Statement statement = connection.createStatement()) {
-				for (String tableName : this.tableNames.getOrDefault(catalog, Collections.emptyList())) {
+				for (String tableName : this.tableNames(connection, null)) {
 					statement.addBatch(this.dialect.truncateTable(tableName));
 				}
 				statement.executeBatch();
@@ -372,9 +365,10 @@ public final class JdbcConnectionPool {
 			if (strategyConfig.dbMatch(catalog)) {
 				try (Connection connection = this.obtainConnection(catalog);
 				     Statement statement = connection.createStatement()) {
-					for (String tableName : this.tableNames.getOrDefault(catalog, Collections.emptyList())) {
-						if (strategyConfig.tableMatch(tableName)) {
-							statement.addBatch(this.dialect.truncateTable(tableName));
+					for (String tableName : this.tableNames(connection, strategyConfig)) {
+						String sqlCmd = this.dialect.truncateTable(tableName);
+						if (StringUtils.notBlank(sqlCmd)) {
+							statement.addBatch(sqlCmd);
 						}
 					}
 					statement.executeBatch();
@@ -396,7 +390,7 @@ public final class JdbcConnectionPool {
 		for (String catalog : this.databaseNames) {
 			try (Connection connection = this.obtainConnection(catalog);
 			     Statement statement = connection.createStatement()) {
-				for (String tableName : this.tableNames.getOrDefault(catalog, Collections.emptyList())) {
+				for (String tableName : this.tableNames(connection, null)) {
 					statement.addBatch(this.dialect.dropTableCommand(tableName, dropOption));
 				}
 				statement.executeBatch();
@@ -423,7 +417,7 @@ public final class JdbcConnectionPool {
 			if (strategyConfig.dbMatch(catalog)) {
 				try (Connection connection = this.obtainConnection(catalog);
 				     Statement statement = connection.createStatement()) {
-					for (String tableName : this.tableNames.getOrDefault(catalog, Collections.emptyList())) {
+					for (String tableName : this.tableNames(connection, strategyConfig)) {
 						if (strategyConfig.tableMatch(tableName)) {
 							for (IndexDefine indexDefine : tableDefine.getIndexDefines()) {
 								statement.addBatch(this.dialect.dropIndexCommand(indexDefine.getIndexName(), tableName));
@@ -441,6 +435,35 @@ public final class JdbcConnectionPool {
 	}
 
 	/**
+	 * <h3 class="en-US">Obtain data table names list</h3>
+	 * <h3 class="zh-CN">获取数据表名称列表</h3>
+	 *
+	 * @param connection     <span class="en-US">Used database connection instance object</span>
+	 *                       <span class="zh-CN">使用的数据库连接实例对象</span>
+	 * @param strategyConfig <span class="en-US">Data table strategy configure information</span>
+	 *                       <span class="zh-CN">数据表分片配置信息</span>
+	 * @return <span class="en-US">Table names list</span>
+	 * <span class="zh-CN">数据表名列表</span>
+	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
+	 *                      <span class="zh-CN">执行过程中出错</span>
+	 */
+	private List<String> tableNames(@Nonnull final Connection connection, StrategyConfig strategyConfig)
+			throws SQLException {
+		Set<String> tableNames = new HashSet<>();
+		try (ResultSet resultSet =
+				     connection.getMetaData().getTables(connection.getCatalog(), connection.getSchema(),
+						     "%", new String[]{"TABLE"})) {
+			while (resultSet.next()) {
+				String tableName = resultSet.getString("TABLE_NAME");
+				if (strategyConfig == null || strategyConfig.tableMatch(tableName)) {
+					tableNames.add(tableName);
+				}
+			}
+		}
+		return new ArrayList<>(tableNames);
+	}
+
+	/**
 	 * <h3 class="en-US">Initialize data table</h3>
 	 * <h3 class="zh-CN">初始化数据表</h3>
 	 *
@@ -452,26 +475,27 @@ public final class JdbcConnectionPool {
 	 *                       <span class="zh-CN">操作类型枚举值</span>
 	 * @param tableDefine    <span class="en-US">Table defines information</span>
 	 *                       <span class="zh-CN">数据表定义信息</span>
+	 * @param strategyConfig <span class="en-US">Data table strategy configure information</span>
+	 *                       <span class="zh-CN">数据表分片配置信息</span>
 	 * @param tableName      <span class="en-US">Table name</span>
 	 *                       <span class="zh-CN">数据表名</span>
-	 * @param shardingTable  <span class="en-US">Table sharding flag</span>
-	 *                       <span class="zh-CN">数据表分片标记</span>
-	 * @param initOptionsMap <span class="en-US">Data column initialize option</span>
-	 *                       <span class="zh-CN">数据列初始化选项</span>
 	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
 	private void initTable(final Connection connection, final Statement statement, @Nonnull final DDLType ddlType,
-	                       @Nonnull final TableDefine tableDefine, @Nonnull final String tableName,
-	                       final boolean shardingTable, @Nonnull final Map<String, InitOption> initOptionsMap) throws SQLException {
-		ResultSet resultSet = null;
-		try {
-			if (this.tableNames.getOrDefault(connection.getCatalog(), Collections.emptyList()).contains(tableName)) {
-				DatabaseMetaData databaseMetaData = connection.getMetaData();
-				resultSet = databaseMetaData.getTables(connection.getCatalog(), null, tableName, new String[]{"TABLE"});
-				if (resultSet.next()) {
-					ResultSet primaryKeyResultSet =
-							databaseMetaData.getPrimaryKeys(connection.getCatalog(), null, tableName);
+	                       @Nonnull final TableDefine tableDefine, final StrategyConfig strategyConfig,
+	                       @Nonnull final String tableName) throws SQLException {
+		String catalog = connection.getCatalog();
+		if (StringUtils.isEmpty(catalog)) {
+			catalog = Globals.DEFAULT_VALUE_STRING;
+		}
+		String schema = connection.getSchema();
+		String tableNamePattern = this.dialect.nameCase(tableName);
+		DatabaseMetaData databaseMetaData = connection.getMetaData();
+		try (ResultSet resultSet = databaseMetaData.getTables(catalog, schema, tableNamePattern, new String[]{"TABLE"})) {
+			if (resultSet.next()) {
+				if (DDLType.SYNCHRONIZE.equals(ddlType) || DDLType.VALIDATE.equals(ddlType)) {
+					ResultSet primaryKeyResultSet = databaseMetaData.getPrimaryKeys(catalog, schema, tableNamePattern);
 					List<String> primaryKeys = new ArrayList<>();
 					while (primaryKeyResultSet.next()) {
 						primaryKeys.add(primaryKeyResultSet.getString("COLUMN_NAME"));
@@ -479,53 +503,57 @@ public final class JdbcConnectionPool {
 
 					List<String> uniqueKeys = new ArrayList<>();
 					ResultSet indexResultSet =
-							databaseMetaData.getIndexInfo(connection.getCatalog(), null, tableName,
-									Boolean.TRUE, Boolean.TRUE);
+							databaseMetaData.getIndexInfo(catalog, schema, tableNamePattern, Boolean.TRUE, Boolean.TRUE);
 					while (indexResultSet.next()) {
 						uniqueKeys.add(indexResultSet.getString("COLUMN_NAME"));
 					}
 
 					ResultSet columnResultSet =
-							databaseMetaData.getColumns(connection.getCatalog(), connection.getSchema(),
-									tableName, null);
+							databaseMetaData.getColumns(catalog, schema, tableNamePattern, "%");
 					List<ColumnDefine> existColumns = new ArrayList<>();
 					while (columnResultSet.next()) {
 						existColumns.add(ColumnDefine.newInstance(columnResultSet, this.dialect, primaryKeys, uniqueKeys));
 					}
 
-					if (DDLType.VALIDATE.equals(ddlType)) {
-						tableDefine.validate(existColumns);
-					} else if (DDLType.SYNCHRONIZE.equals(ddlType)) {
-						for (String sqlCmd : this.dialect.alterTableCommand(tableDefine, tableName, existColumns, initOptionsMap)) {
-							statement.addBatch(sqlCmd);
-						}
+					switch (ddlType) {
+						case VALIDATE:
+							tableDefine.validate(existColumns);
+							break;
+						case SYNCHRONIZE:
+							for (String sqlCmd : this.dialect.alterTableCommand(tableDefine, tableName, existColumns)) {
+								if (LOGGER.isDebugEnabled()) {
+									LOGGER.debug("Execute_Query_Log", sqlCmd);
+								}
+								statement.addBatch(sqlCmd);
+							}
+							break;
 					}
 				}
 			} else {
 				if (DDLType.CREATE.equals(ddlType) || DDLType.CREATE_DROP.equals(ddlType)
 						|| DDLType.CREATE_TRUNCATE.equals(ddlType) || DDLType.SYNCHRONIZE.equals(ddlType)) {
-					String sqlCmd = this.dialect.createTableCommand(tableDefine, tableName, initOptionsMap);
+					String sqlCmd = this.dialect.createTableCommand(tableDefine, tableName);
 					if (StringUtils.isEmpty(sqlCmd)) {
 						throw new MultilingualSQLException(0x00DB00000029L);
+					}
+					if (LOGGER.isDebugEnabled()) {
+						LOGGER.debug("Execute_Query_Log", sqlCmd);
 					}
 					statement.addBatch(sqlCmd);
 					for (String indexCmd : this.dialect.createIndexCommand(tableDefine, tableName)) {
 						if (StringUtils.notBlank(indexCmd)) {
+							if (LOGGER.isDebugEnabled()) {
+								LOGGER.debug("Execute_Query_Log", indexCmd);
+							}
 							statement.addBatch(indexCmd);
 						}
 					}
 				}
 			}
-		} finally {
-			if (resultSet != null) {
-				resultSet.close();
-			}
 		}
-		List<String> tableNames = this.tableNames.getOrDefault(connection.getCatalog(), Collections.emptyList());
-		tableNames.add(tableName);
-		this.tableNames.put(connection.getCatalog(), tableNames);
-		if (shardingTable) {
-			statement.addBatch(this.dialect.createShardingView(tableDefine.getTableName(), tableNames));
+		if (strategyConfig.shardingTable()) {
+			statement.addBatch(this.dialect.createShardingView(tableDefine.getTableName(),
+					this.tableNames(connection, strategyConfig)));
 		}
 	}
 
@@ -535,33 +563,34 @@ public final class JdbcConnectionPool {
 	 *
 	 * @param tableDefine    <span class="en-US">Table defines information</span>
 	 *                       <span class="zh-CN">数据表定义信息</span>
+	 * @param strategyConfig <span class="en-US">Data table strategy configure information</span>
+	 *                       <span class="zh-CN">数据表分片配置信息</span>
 	 * @param catalog        <span class="en-US">Catalog name</span>
 	 *                       <span class="zh-CN">数据库名</span>
 	 * @param tableName      <span class="en-US">Table name</span>
 	 *                       <span class="zh-CN">数据表名</span>
-	 * @param shardingTable  <span class="en-US">Table sharding flag</span>
-	 *                       <span class="zh-CN">数据表分片标记</span>
-	 * @param initOptionsMap <span class="en-US">Data column initialize option</span>
-	 *                       <span class="zh-CN">数据列初始化选项</span>
 	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
-	void initTable(@Nonnull final TableDefine tableDefine, @Nonnull final String catalog,
-	               @Nonnull final String tableName, final boolean shardingTable,
-	               @Nonnull final Map<String, InitOption> initOptionsMap) throws SQLException {
-		if (!this.databaseNames.contains(catalog)) {
-			//  Create the database
-			try (Connection connection = this.obtainConnection(this.defaultCatalog);
-			     Statement statement = connection.createStatement()) {
-				statement.execute(this.dialect.createDatabase(catalog, this.databaseParameters));
-			}
-			this.databaseNames.add(catalog);
+	void initTable(@Nonnull final TableDefine tableDefine, final StrategyConfig strategyConfig,
+	               @Nonnull final String catalog, @Nonnull final String tableName) throws SQLException {
+		String currentCatalog = StringUtils.isEmpty(catalog) ? this.defaultCatalog : catalog;
+		Connection connection = this.obtainConnection(currentCatalog);
+		if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug("Transactional_Level_Debug", connection.getTransactionIsolation());
 		}
-		try (Connection connection = this.obtainConnection(catalog);
-		     Statement statement = connection.createStatement()) {
-			this.initTable(connection, statement, DDLType.SYNCHRONIZE, tableDefine, tableName, shardingTable, initOptionsMap);
+		if (StringUtils.notBlank(currentCatalog) && !this.databaseNames.contains(currentCatalog)) {
+			//  Create the database
+			try (Statement statement = connection.createStatement()) {
+				statement.execute(this.dialect.createDatabase(currentCatalog, this.databaseParameters));
+			}
+			this.databaseNames.add(currentCatalog);
+		}
+		try (Statement statement = connection.createStatement()) {
+			this.initTable(connection, statement, DDLType.CREATE, tableDefine, strategyConfig, tableName);
 			statement.executeBatch();
 		}
+		connection.close();
 	}
 
 	/**
@@ -572,27 +601,26 @@ public final class JdbcConnectionPool {
 	 *                       <span class="zh-CN">操作类型枚举值</span>
 	 * @param tableDefine    <span class="en-US">Table defines information</span>
 	 *                       <span class="zh-CN">数据表定义信息</span>
-	 * @param initOptionsMap <span class="en-US">Data column initialize option</span>
-	 *                       <span class="zh-CN">数据列初始化选项</span>
+	 * @param strategyConfig <span class="en-US">Data table strategy configure information</span>
+	 *                       <span class="zh-CN">数据表分片配置信息</span>
 	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
 	void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
-	               @Nonnull final StrategyConfig strategyConfig, @Nonnull final Map<String, InitOption> initOptionsMap)
-			throws SQLException {
+	               @Nonnull final StrategyConfig strategyConfig) throws SQLException {
 		for (String catalog : this.databaseNames) {
 			if (strategyConfig.dbMatch(catalog)) {
 				try (Connection connection = this.obtainConnection(catalog);
 				     Statement statement = connection.createStatement()) {
-					List<String> tableNames = this.tableNames.getOrDefault(catalog, Collections.emptyList());
-					if (tableNames.isEmpty()) {
-						this.initTable(connection, statement, ddlType, tableDefine, strategyConfig.tableKey(Map.of()),
-								strategyConfig.shardingTable(), initOptionsMap);
-					} else {
+					List<String> tableNames = this.tableNames(connection, strategyConfig);
+					String currentName = strategyConfig.tableKey(Map.of());
+					if (!tableNames.contains(currentName)) {
+						this.initTable(connection, statement, ddlType, tableDefine, strategyConfig, currentName);
+					}
+					if (this.dialect.isDatabaseSharding()) {
 						for (String tableName : tableNames) {
 							if (strategyConfig.tableMatch(tableName)) {
-								this.initTable(connection, statement, ddlType, tableDefine, tableName,
-										strategyConfig.shardingTable(), initOptionsMap);
+								this.initTable(connection, statement, ddlType, tableDefine, strategyConfig, tableName);
 							}
 						}
 					}
@@ -669,7 +697,7 @@ public final class JdbcConnectionPool {
 			synchronized (this.createdConnections) {
 				while (connection == null) {
 					connection = this.retrieveConnection(catalog);
-					if (connection == null) {
+					if (connection == null && !this.limitConnections()) {
 						try {
 							connection = this.createConnection(catalog);
 						} catch (SQLException e) {
@@ -764,12 +792,8 @@ public final class JdbcConnectionPool {
 
 		this.activeConnections.remove(connection);
 
-		if (!this.pooled || connection.getTransactionIsolation() != Connection.TRANSACTION_NONE) {
+		if (!this.pooled || connection.isClosed() || this.schema.maxConnections <= this.poolCount()) {
 			this.destroyConnection(connection);
-			return;
-		}
-
-		if (connection.isClosed()) {
 			return;
 		}
 
@@ -781,6 +805,7 @@ public final class JdbcConnectionPool {
 			return;
 		}
 
+		connection.reset();
 		this.addConnection(connection);
 	}
 
@@ -865,7 +890,7 @@ public final class JdbcConnectionPool {
 		synchronized (this.createdConnections) {
 			while (this.needConnections()) {
 				try {
-					this.addConnection(this.createConnection(this.defaultCatalog));
+					this.addConnection(this.createConnection(Globals.DEFAULT_VALUE_STRING));
 				} catch (SQLException e) {
 					LOGGER.error("Create_Connection_Error");
 					if (LOGGER.isDebugEnabled()) {
@@ -883,27 +908,15 @@ public final class JdbcConnectionPool {
 	}
 
 	void scanExists() throws SQLException {
-		try (Connection connection = this.obtainConnection(this.defaultCatalog)) {
-			ResultSet resultSet = connection.getMetaData().getCatalogs();
+		try (Connection connection = this.obtainConnection(Globals.DEFAULT_VALUE_STRING);
+		     ResultSet resultSet = connection.getMetaData().getCatalogs()) {
 			while (resultSet.next()) {
 				String databaseName = resultSet.getString("TABLE_CAT");
 				this.databaseNames.add(databaseName);
 			}
 		}
-		for (String catalog : this.databaseNames) {
-			try (Connection connection = this.obtainConnection(catalog)) {
-				DatabaseMetaData databaseMetaData = connection.getMetaData();
-				ResultSet resultSet = databaseMetaData.getTables(connection.getCatalog(),
-						"*", "*", new String[]{"TABLE"});
-				List<String> existTables = new ArrayList<>();
-				while (resultSet.next()) {
-					String tableName = resultSet.getString("TABLE_NAME");
-					if (StringUtils.notBlank(tableName)) {
-						existTables.add(tableName);
-					}
-				}
-				this.tableNames.put(catalog, existTables);
-			}
+		if (this.databaseNames.isEmpty()) {
+			this.databaseNames.add(Globals.DEFAULT_VALUE_STRING);
 		}
 	}
 }

@@ -29,6 +29,7 @@ import org.nervousync.brain.enumerations.auth.AuthType;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Apr 10, 2024 15:48:19 $
  */
+@SuppressWarnings("unused")
 @XmlType(name = "token_authentication", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "token_authentication", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)

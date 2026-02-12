@@ -24,6 +24,7 @@ package org.nervousync.brain.enumerations.dialect;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Sep 12, 2023 15:16:08 $
  */
+@SuppressWarnings("unused")
 public enum DialectType {
 	/**
 	 * <span class="en-US">Relational database</span>

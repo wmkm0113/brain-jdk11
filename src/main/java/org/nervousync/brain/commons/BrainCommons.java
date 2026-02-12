@@ -18,9 +18,9 @@
 package org.nervousync.brain.commons;
 
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.ConvertUtils;
-import org.nervousync.utils.SecurityUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.utils.core.ConvertUtils;
+import org.nervousync.utils.core.StringUtils;
+import org.nervousync.utils.security.SecurityUtils;
 
 /**
  * <h2 class="en-US">Constant value define</h2>
@@ -91,7 +91,7 @@ public final class BrainCommons {
 	 * <span class="en-US">Brackets end string</span>
 	 * <span class="zh-CN">括号终止字符串</span>
 	 */
-	public static final String BRACKETS_END = ")";
+	public static final String BRACKETS_END = ") ";
 	/**
 	 * <span class="en-US">SQL placeholder</span>
 	 * <span class="zh-CN">SQL占位符</span>
@@ -147,12 +147,12 @@ public final class BrainCommons {
 	 * <span class="en-US">Like operator</span>
 	 * <span class="zh-CN">模糊匹配操作符</span>
 	 */
-	public static final String OPERATOR_LIKE = " LIKE ? ";
+	public static final String OPERATOR_LIKE = " LIKE ";
 	/**
 	 * <span class="en-US">Not like operator</span>
 	 * <span class="zh-CN">非模糊匹配操作符</span>
 	 */
-	public static final String OPERATOR_NOT_LIKE = " NOT LIKE ? ";
+	public static final String OPERATOR_NOT_LIKE = " NOT LIKE ";
 	/**
 	 * <span class="en-US">Is null operator</span>
 	 * <span class="zh-CN">空值操作符</span>
@@ -195,12 +195,6 @@ public final class BrainCommons {
 	 * <span class="zh-CN">永远为假的匹配条件</span>
 	 */
 	public static final String CONSTANT_CLAUSE_FALSE = " 1 <> 1 ";
-
-	/**
-	 * <span class="en-US">Default where clause</span>
-	 * <span class="zh-CN">默认的匹配条件</span>
-	 */
-	public static final String DEFAULT_WHERE_CLAUSE = " 1 = 1 ";
 
 	/**
 	 * <span class="en-US">JNDI name configure</span>

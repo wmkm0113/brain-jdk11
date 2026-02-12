@@ -22,13 +22,14 @@ import jakarta.persistence.LockModeType;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.xml.ws.BindingProvider;
 import org.glassfish.jersey.client.ClientProperties;
+import org.nervousync.beans.cert.TrustCert;
+import org.nervousync.beans.security.GeneX509TrustManager;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.auth.impl.TrustStoreAuthentication;
 import org.nervousync.brain.configs.auth.impl.UserAuthentication;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
 import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.IndexDefine;
-import org.nervousync.brain.defines.InitOption;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.DialectFactory;
 import org.nervousync.brain.dialects.remote.RemoteClient;
@@ -41,10 +42,12 @@ import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.commons.Globals;
-import org.nervousync.http.cert.TrustCert;
-import org.nervousync.http.security.GeneX509TrustManager;
+import org.nervousync.enumerations.beans.StringType;
 import org.nervousync.proxy.ProxyConfig;
-import org.nervousync.utils.*;
+import org.nervousync.utils.cert.CertificateUtils;
+import org.nervousync.utils.core.BeanUtils;
+import org.nervousync.utils.core.FileUtils;
+import org.nervousync.utils.core.StringUtils;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -102,7 +105,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	private final AtomicInteger activeConnections;
 
 	/**
-	 * <h3 class="en-US">Constructor method for remote data source implementation class</h3>
+	 * <h3 class="en-US">Constructor method for the remote data source implementation class</h3>
 	 * <h3 class="zh-CN">远程数据源实现类的构造方法</h3>
 	 *
 	 * @param schemaConfig <span class="en-US">Remote data source configure information</span>
@@ -161,11 +164,11 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 			Optional.ofNullable(schemaConfig.getProxyConfig())
 					.filter(proxyConfig -> StringUtils.notBlank(proxyConfig.getProxyAddress()))
 					.ifPresent(proxyConfig -> {
-						String proxyURI = proxyConfig.getProxyAddress();
+						String proxyUri = proxyConfig.getProxyAddress();
 						if (proxyConfig.getProxyPort() != Globals.DEFAULT_VALUE_INT) {
-							proxyURI += ":" + proxyConfig.getProxyPort();
+							proxyUri += ":" + proxyConfig.getProxyPort();
 						}
-						this.clientBuilder.property(ClientProperties.PROXY_URI, proxyURI);
+						this.clientBuilder.property(ClientProperties.PROXY_URI, proxyUri);
 						String authentication = Globals.DEFAULT_VALUE_STRING;
 						if (StringUtils.notBlank(proxyConfig.getUserName())) {
 							authentication += proxyConfig.getUserName() + ":";
@@ -301,7 +304,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 				RemoteClient remoteClient;
 				switch (this.remoteType) {
 					case SOAP:
-						remoteClient = this.dialect.SOAPClient(this.remoteAddress, this.configMap);
+						remoteClient = this.dialect.soapClient(this.remoteAddress, this.configMap);
 						break;
 					case Restful:
 						remoteClient = this.dialect.restfulClient(this.remoteAddress, this.clientBuilder, this.configMap);
@@ -370,7 +373,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	public boolean lockRecord(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap,
 	                          final LockModeType lockOption) {
 		return this.operatorThreadLocal.get().lockRecord(tableDefine.getTableName(),
-				StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE));
+				BeanUtils.objectToString(filterMap, StringType.JSON));
 	}
 
 	@Override
@@ -379,9 +382,9 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 		return Optional.ofNullable(this.operatorThreadLocal.get())
 				.map(remoteClient ->
 						remoteClient.insert(tableDefine.getTableName(),
-								StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.FALSE)))
+								BeanUtils.objectToString(dataMap, StringType.JSON)))
 				.filter(StringUtils::notBlank)
-				.map(responseData -> StringUtils.dataToMap(responseData, StringUtils.StringType.JSON))
+				.map(responseData -> BeanUtils.stringToMap(responseData, StringType.JSON, Globals.DEFAULT_ENCODING))
 				.orElse(Map.of());
 	}
 
@@ -393,10 +396,9 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 				.map(remoteClient ->
 						remoteClient.retrieve(tableDefine.getTableName(),
 								StringUtils.isEmpty(columns) ? SELECT_ALL_COLUMNS : columns,
-								StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE),
-								forUpdate, lockOption))
+								BeanUtils.objectToString(filterMap, StringType.JSON), forUpdate, lockOption))
 				.filter(StringUtils::notBlank)
-				.map(responseData -> StringUtils.dataToMap(responseData, StringUtils.StringType.JSON))
+				.map(responseData -> BeanUtils.stringToMap(responseData, StringType.JSON, Globals.DEFAULT_ENCODING))
 				.orElse(Map.of());
 	}
 
@@ -404,29 +406,27 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	public int update(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> dataMap,
 	                  @Nonnull final Map<String, Object> filterMap) {
 		return this.operatorThreadLocal.get().update(tableDefine.getTableName(),
-				StringUtils.objectToString(dataMap, StringUtils.StringType.JSON, Boolean.FALSE),
-				StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE));
+				BeanUtils.objectToString(dataMap, StringType.JSON), BeanUtils.objectToString(filterMap, StringType.JSON));
 	}
 
 	@Override
 	public int delete(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap) {
 		return this.operatorThreadLocal.get().delete(tableDefine.getTableName(),
-				StringUtils.objectToString(filterMap, StringUtils.StringType.JSON, Boolean.FALSE));
+				BeanUtils.objectToString(filterMap, StringType.JSON));
 	}
 
 	@Override
 	public PartialCollection query(@Nonnull final QueryInfo queryInfo) {
-		return PartialCollection.parse(this.operatorThreadLocal.get().query(queryInfo.toString(StringUtils.StringType.JSON)));
+		return PartialCollection.parse(this.operatorThreadLocal.get().query(BeanUtils.objectToString(queryInfo, StringType.JSON)));
 	}
 
 	@Override
 	public Long queryTotal(final QueryInfo queryInfo) {
-		return this.operatorThreadLocal.get().queryTotal(queryInfo.toString(StringUtils.StringType.JSON));
+		return this.operatorThreadLocal.get().queryTotal(BeanUtils.objectToString(queryInfo, StringType.JSON));
 	}
 
 	@Override
-	public void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine,
-	                      @Nonnull final Map<String, InitOption> initOptionsMap) {
+	public void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine) {
 		//  Not support the table initialize operating
 	}
 

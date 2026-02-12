@@ -18,9 +18,10 @@
 package org.nervousync.brain.query.core;
 
 import jakarta.annotation.Nonnull;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlTransient;
-import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.enumerations.query.OrderType;
 import org.nervousync.commons.Globals;
 
@@ -34,8 +35,10 @@ import java.util.Comparator;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 9, 2020 11:30:54 $
  */
+@SuppressWarnings("unused")
 @XmlTransient
-public abstract class SortedItem extends BeanObject {
+@XmlAccessorType(XmlAccessType.NONE)
+public abstract class SortedItem implements Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>
@@ -122,13 +125,13 @@ public abstract class SortedItem extends BeanObject {
 		private final OrderType orderType;
 
 		/**
-		 * <h3 class="en-US">Private constructor method for sort item comparator</h3>
-		 * <h3 class="zh-CN">排序项比较器的私有构造方法</h3>
+		 * <h3 class="en-US">Constructor method for sort item comparator</h3>
+		 * <h3 class="zh-CN">排序项比较器的构造方法</h3>
 		 *
 		 * @param orderType <span class="en-US">Order type</span>
 		 *                  <span class="zh-CN">排序类型</span>
 		 */
-		private SortedItemComparator(@Nonnull final OrderType orderType) {
+		public SortedItemComparator(@Nonnull final OrderType orderType) {
 			this.orderType = orderType;
 		}
 

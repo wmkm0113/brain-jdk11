@@ -18,8 +18,8 @@ package org.nervousync.brain.configs.transactional;
 
 import jakarta.annotation.Nonnull;
 import org.intellij.lang.annotations.MagicConstant;
-import org.nervousync.utils.ClassUtils;
-import org.nervousync.utils.IDUtils;
+import org.nervousync.utils.core.ClassUtils;
+import org.nervousync.utils.id.IDUtils;
 
 import java.sql.Connection;
 import java.util.Arrays;
@@ -32,6 +32,7 @@ import java.util.stream.Stream;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Mar 30, 2016 16:07:44 $
  */
+@SuppressWarnings("unused")
 public final class TransactionalConfig {
 	/**
 	 * <span class="en-US">Transactional identify code</span>

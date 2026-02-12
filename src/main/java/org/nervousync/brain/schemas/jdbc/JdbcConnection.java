@@ -19,7 +19,14 @@ package org.nervousync.brain.schemas.jdbc;
 
 import org.intellij.lang.annotations.MagicConstant;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
-import org.nervousync.utils.*;
+import org.nervousync.enumerations.beans.StringType;
+import org.nervousync.enumerations.security.EncodeType;
+import org.nervousync.utils.core.BeanUtils;
+import org.nervousync.utils.core.ClassUtils;
+import org.nervousync.utils.core.ObjectUtils;
+import org.nervousync.utils.core.StringUtils;
+import org.nervousync.utils.logger.LoggerUtils;
+import org.nervousync.utils.security.SecurityUtils;
 
 import java.sql.*;
 import java.util.*;
@@ -32,7 +39,7 @@ import java.util.concurrent.Executor;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 12, 2020 18:51:19 $
  */
-public class JdbcConnection implements Connection {
+public final class JdbcConnection implements Connection {
 
 	/**
 	 * <span class="en-US">Logger instance</span>
@@ -45,6 +52,12 @@ public class JdbcConnection implements Connection {
 	 * <span class="zh-CN">数据库连接池</span>
 	 */
 	private final JdbcConnectionPool connectionPool;
+	/**
+	 * <span class="en-US">Default transactional level</span>
+	 * <span class="zh-CN">默认的事务等级</span>
+	 */
+	@MagicConstant(valuesFromClass = Connection.class)
+	private final int transactionalLevel;
 	/**
 	 * <span class="en-US">Maximum size of prepared statement</span>
 	 * <span class="zh-CN">查询分析器的最大缓存结果</span>
@@ -70,6 +83,11 @@ public class JdbcConnection implements Connection {
 	 * <span class="zh-CN">当前数据库分片值</span>
 	 */
 	private String currentCatalog;
+	/**
+	 * <span class="en-US">Commited flag for transactional</span>
+	 * <span class="zh-CN">事务提交标记</span>
+	 */
+	private boolean commited = Boolean.FALSE;
 
 	/**
 	 * <h3 class="en-US">Constructor method for the data source creates a wrapper class for the connection</h3>
@@ -88,6 +106,7 @@ public class JdbcConnection implements Connection {
 	               final long lowQueryTimeout, final int cachedLimitSize) throws SQLException {
 		this.connectionPool = connectionPool;
 		this.connection = connection;
+		this.transactionalLevel = connection.getTransactionIsolation();
 		this.lowQueryTimeout = lowQueryTimeout;
 		this.cachedLimitSize = cachedLimitSize;
 		this.cachedStatements = new ArrayList<>();
@@ -95,7 +114,13 @@ public class JdbcConnection implements Connection {
 	}
 
 	boolean match(final int identifyCode, final String catalog) {
-		return (this.connectionPool.getIdentifyCode() == identifyCode) && StringUtils.notBlank(catalog) && ObjectUtils.nullSafeEquals(this.currentCatalog, catalog);
+		if (this.connectionPool.getIdentifyCode() != identifyCode) {
+			return Boolean.FALSE;
+		}
+		if (this.currentCatalog == null) {
+			return StringUtils.isEmpty(catalog);
+		}
+		return ObjectUtils.nullSafeEquals(this.currentCatalog, catalog);
 	}
 
 	/**
@@ -109,22 +134,26 @@ public class JdbcConnection implements Connection {
 		this.cachedLimitSize = cachedLimitSize;
 	}
 
+	/**
+	 * <h3 class="en-US">Reset the transactional configure of current connection</h3>
+	 * <h3 class="zh-CN">重置当前连接的事务配置</h3>
+	 *
+	 * @throws SQLException <span class="en-US">Error occurs when reset transactional configure information</span>
+	 *                      <span class="zh-CN">重置事务配置信息时出错</span>
+	 */
+	void reset() throws SQLException {
+		if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug("Transactional_Level_Debug", this.connection.getTransactionIsolation());
+		}
+		this.connection.setAutoCommit(Boolean.TRUE);
+		this.connection.setTransactionIsolation(this.transactionalLevel);
+		this.commited = Boolean.FALSE;
+	}
 	@Override
 	public void close() throws SQLException {
-		if (this.connection.getTransactionIsolation() == Connection.TRANSACTION_NONE) {
-			this.forceClose();
+		if (this.connection.getAutoCommit() || this.commited) {
+			this.connectionPool.closeConnection(this);
 		}
-	}
-
-	/**
-	 * <h3 class="en-US">Close current connection</h3>
-	 * <h3 class="zh-CN">关闭当前连接</h3>
-	 *
-	 * @throws SQLException <span class="en-US">Error closing connection</span>
-	 *                      <span class="zh-CN">关闭连接时出错</span>
-	 */
-	public void forceClose() throws SQLException {
-		this.connectionPool.closeConnection(this);
 	}
 
 	/**
@@ -262,11 +291,13 @@ public class JdbcConnection implements Connection {
 	@Override
 	public void commit() throws SQLException {
 		this.connection.commit();
+		this.commited = Boolean.TRUE;
 	}
 
 	@Override
 	public void rollback() throws SQLException {
 		this.connection.rollback();
+		this.commited = Boolean.TRUE;
 	}
 
 	@Override
@@ -305,6 +336,9 @@ public class JdbcConnection implements Connection {
 
 	@Override
 	public void setTransactionIsolation(final int level) throws SQLException {
+		if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug("Transactional_Level_Debug", level);
+		}
 		this.connection.setTransactionIsolation(level);
 	}
 
@@ -601,11 +635,11 @@ public class JdbcConnection implements Connection {
 				cacheMap.put("ColumnNames", columnNames);
 				break;
 		}
-		String jsonData = StringUtils.objectToString(cacheMap, StringUtils.StringType.JSON, Boolean.FALSE);
+		String jsonData = BeanUtils.objectToString(cacheMap, StringType.JSON);
 		if (LOGGER.isDebugEnabled()) {
 			LOGGER.debug("Cache_Statement_Map", jsonData);
 		}
-		return ConvertUtils.bytesToHex(SecurityUtils.SHA256(jsonData));
+		return SecurityUtils.SHA256(jsonData, EncodeType.HEX);
 	}
 
 	/**

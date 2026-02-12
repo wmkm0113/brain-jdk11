@@ -23,8 +23,9 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import org.nervousync.brain.enumerations.query.FromType;
-import org.nervousync.utils.ClassUtils;
+import org.nervousync.utils.core.ClassUtils;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.sql.Wrapper;
 
@@ -37,7 +38,7 @@ import java.sql.Wrapper;
  */
 @XmlTransient
 @XmlAccessorType(XmlAccessType.NONE)
-public abstract class QueryFrom extends SortedItem implements Wrapper {
+public abstract class QueryFrom implements Wrapper, Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>

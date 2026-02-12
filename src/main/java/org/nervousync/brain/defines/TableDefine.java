@@ -18,21 +18,17 @@
 package org.nervousync.brain.defines;
 
 import jakarta.annotation.Nonnull;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlElementWrapper;
-import jakarta.xml.bind.annotation.XmlRootElement;
-import jakarta.xml.bind.annotation.XmlType;
-import org.nervousync.annotations.beans.OutputConfig;
-import org.nervousync.beans.core.BeanObject;
+import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.StringUtils;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * <h2 class="en-US">Data table define</h2>
@@ -41,10 +37,11 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:15:08 $
  */
+@SuppressWarnings("unused")
 @XmlType(name = "table_define", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "table_define", namespace = "https://nervousync.org/schemas/brain")
-@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
-public final class TableDefine extends BeanObject {
+@XmlAccessorType(XmlAccessType.NONE)
+public final class TableDefine implements Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>
@@ -227,6 +224,18 @@ public final class TableDefine extends BeanObject {
 		this.indexDefines = indexDefines;
 	}
 
+	private boolean notExistsColumn(final String columnName) {
+		return this.columnDefines.stream().noneMatch(columnDefine -> columnDefine.getColumnName().equalsIgnoreCase(columnName));
+	}
+
+	private boolean modifiedColumn(final ColumnDefine existColumn, final String columnName) {
+		return this.columnDefines.stream()
+				.filter(columnDefine -> columnDefine.getColumnName().equalsIgnoreCase(columnName))
+				.findFirst()
+				.map(existColumn::modified)
+				.orElse(Boolean.FALSE);
+	}
+
 	/**
 	 * <h3 class="en-US">Find data column definition information based on the given data column name</h3>
 	 * <h3 class="zh-CN">根据给定的数据列名查找数据列定义信息</h3>
@@ -236,12 +245,11 @@ public final class TableDefine extends BeanObject {
 	 * @return <span class="en-US">Data column define</span>
 	 * <span class="zh-CN">数据列定义</span>
 	 */
-	public ColumnDefine column(final String columnName) {
+	public Optional<ColumnDefine> column(final String columnName) {
 		return this.columnDefines
 				.stream()
 				.filter(columnDefine -> columnDefine.getColumnName().equalsIgnoreCase(columnName))
-				.findFirst()
-				.orElse(null);
+				.findFirst();
 	}
 
 	/**
@@ -263,13 +271,12 @@ public final class TableDefine extends BeanObject {
 		StringBuilder newColumns = new StringBuilder();
 		for (ColumnDefine existColumn : existColumns) {
 			String columnName = existColumn.getColumnName();
-			ColumnDefine columnDefine = this.column(columnName);
-			if (columnDefine == null) {
-				notFoundColumns.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnName);
-			} else if (existColumn.modified(columnDefine)) {
+			if (this.modifiedColumn(existColumn, columnName)) {
 				modifiedColumns.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnName);
+			} else if (this.notExistsColumn(columnName)) {
+				notFoundColumns.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnName);
 			}
-			checkedColumns.add(columnDefine);
+			checkedColumns.add(existColumn);
 		}
 
 		this.columnDefines.stream()

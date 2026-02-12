@@ -21,8 +21,11 @@ import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.BrainConfigure;
 import org.nervousync.brain.exceptions.data.DataParseException;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.StringUtils;
-import org.nervousync.utils.SystemUtils;
+import org.nervousync.enumerations.beans.StringType;
+import org.nervousync.utils.core.BeanUtils;
+import org.nervousync.utils.core.FileUtils;
+import org.nervousync.utils.core.StringUtils;
+import org.nervousync.utils.core.SystemUtils;
 
 import javax.naming.*;
 import javax.naming.spi.ObjectFactory;
@@ -77,7 +80,22 @@ public final class DataSourceFactory implements ObjectFactory {
 			BrainConfigure configure = null;
 
 			if (StringUtils.notBlank(filePath)) {
-				configure = StringUtils.fileToObject(filePath, BrainConfigure.class);
+				StringType stringType;
+				switch (StringUtils.getFilenameExtension(filePath).toLowerCase()) {
+					case "json":
+						stringType = StringType.JSON;
+						break;
+					case "yml":
+					case "yaml":
+						stringType = StringType.YAML;
+						break;
+					case "xml":
+						stringType = StringType.XML;
+						break;
+					default:
+						throw new DataParseException(0x00DB00000036L);
+				}
+				configure = BeanUtils.stringToObject(FileUtils.readFile(filePath), stringType, BrainConfigure.class);
 			}
 			if (configure == null) {
 				throw new DataParseException(0x00DB00000036L);

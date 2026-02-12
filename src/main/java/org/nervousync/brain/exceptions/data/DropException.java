@@ -26,6 +26,7 @@ import org.nervousync.exceptions.AbstractException;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Jul 5, 2018 13:57:46 $
  */
+@SuppressWarnings("unused")
 public final class DropException extends AbstractException {
 	/**
 	 * <span class="en-US">Serial version UID</span>

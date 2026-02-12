@@ -18,19 +18,19 @@
 package org.nervousync.brain.defines;
 
 import jakarta.annotation.Nonnull;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlRootElement;
-import jakarta.xml.bind.annotation.XmlType;
-import org.nervousync.annotations.beans.OutputConfig;
-import org.nervousync.beans.core.BeanObject;
+import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.dialects.core.BaseDialect;
+import org.nervousync.brain.enumerations.ddl.GenerationType;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.ObjectUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.utils.core.ObjectUtils;
+import org.nervousync.utils.core.StringUtils;
 
+import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -40,10 +40,11 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Jun 27, 2018 23:02:27 $
  */
+@SuppressWarnings("unused")
 @XmlType(name = "column_define", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "column_define", namespace = "https://nervousync.org/schemas/brain")
-@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
-public final class ColumnDefine extends BeanObject {
+@XmlAccessorType(XmlAccessType.NONE)
+public final class ColumnDefine implements Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>
@@ -105,6 +106,36 @@ public final class ColumnDefine extends BeanObject {
 	 */
 	@XmlElement
 	private boolean unique;
+	/**
+	 * <span class="en-US">Data column is updatable</span>
+	 * <span class="zh-CN">数据列可更新</span>
+	 */
+	@XmlElement
+	private boolean updatable;
+	/**
+	 * <span class="en-US">Define class name in Java</span>
+	 * <span class="zh-CN">定义的Java类名</span>
+	 */
+	private String defineType;
+	/**
+	 * <span class="en-US">Generation type</span>
+	 * <span class="zh-CN">生成器类型</span>
+	 */
+	@XmlElement(name = "generation_type")
+	private GenerationType generationType = GenerationType.NONE;
+	/**
+	 * <span class="en-US">Generator name</span>
+	 * <span class="zh-CN">生成器名称</span>
+	 */
+	@XmlElement(name = "generator_name")
+	private String generatorName = Globals.DEFAULT_VALUE_STRING;
+	/**
+	 * <span class="en-US">Column histories names list</span>
+	 * <span class="zh-CN">历史列名列表</span>
+	 */
+	@XmlElement(name = "column_name")
+	@XmlElementWrapper(name = "histories_names")
+	private List<String> historiesNames = new ArrayList<>();
 
 	/**
 	 * <h3 class="en-US">Constructor method for data column define</h3>
@@ -151,8 +182,6 @@ public final class ColumnDefine extends BeanObject {
 				break;
 		}
 
-		String defaultValue = baseDialect.parseDefault(jdbcType, length, precision, scale, string);
-
 		ColumnDefine columnDefine = new ColumnDefine();
 		columnDefine.setColumnName(columnName);
 		columnDefine.setJdbcType(jdbcType);
@@ -160,7 +189,11 @@ public final class ColumnDefine extends BeanObject {
 		columnDefine.setLength(length);
 		columnDefine.setPrecision(precision);
 		columnDefine.setScale(scale);
-		columnDefine.setDefaultValue(defaultValue);
+		if (StringUtils.notBlank(string)) {
+			columnDefine.setDefaultValue(baseDialect.parseDefault(jdbcType, length, precision, scale, string));
+		} else {
+			columnDefine.setDefaultValue(Globals.DEFAULT_VALUE_STRING);
+		}
 		columnDefine.setPrimaryKey(primaryKeys.contains(columnName));
 		columnDefine.setUnique(uniqueKeys.contains(columnName));
 		return columnDefine;
@@ -362,6 +395,117 @@ public final class ColumnDefine extends BeanObject {
 	 */
 	public void setUnique(final boolean unique) {
 		this.unique = unique;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the data column is updatable</h3>
+	 * <h3 class="zh-CN">数据列可更新的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Data column is updatable</span>
+	 * <span class="zh-CN">数据列可更新</span>
+	 */
+	public boolean isUpdatable() {
+		return this.updatable;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the data column is updatable</h3>
+	 * <h3 class="zh-CN">数据列可更新的Setter方法</h3>
+	 *
+	 * @param updatable <span class="en-US">Data column is updatable</span>
+	 *                  <span class="zh-CN">数据列可更新</span>
+	 */
+	public void setUpdatable(final boolean updatable) {
+		this.updatable = updatable;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the define class name in Java</h3>
+	 * <h3 class="zh-CN">定义的Java类名的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Define class name in Java</span>
+	 * <span class="zh-CN">定义的Java类名</span>
+	 */
+	public String getDefineType() {
+		return this.defineType;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the define class name in Java</h3>
+	 * <h3 class="zh-CN">定义的Java类名的Setter方法</h3>
+	 *
+	 * @param defineType <span class="en-US">Define class name in Java</span>
+	 *                   <span class="zh-CN">定义的Java类名</span>
+	 */
+	public void setDefineType(final String defineType) {
+		this.defineType = defineType;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for generation type</h3>
+	 * <h3 class="zh-CN">生成器类型的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Generation type</span>
+	 * <span class="zh-CN">生成器类型</span>
+	 */
+	public GenerationType getGenerationType() {
+		return generationType;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for generation type</h3>
+	 * <h3 class="zh-CN">生成器类型的Setter方法</h3>
+	 *
+	 * @param generationType <span class="en-US">Generation type</span>
+	 *                       <span class="zh-CN">生成器类型</span>
+	 */
+	public void setGenerationType(final GenerationType generationType) {
+		this.generationType = generationType;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for generator name</h3>
+	 * <h3 class="zh-CN">生成器名称的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Generator name</span>
+	 * <span class="zh-CN">生成器名称</span>
+	 */
+	public String getGeneratorName() {
+		return generatorName;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for generator name</h3>
+	 * <h3 class="zh-CN">生成器名称的Setter方法</h3>
+	 *
+	 * @param generatorName <span class="en-US">Generator name</span>
+	 *                      <span class="zh-CN">生成器名称</span>
+	 */
+	public void setGeneratorName(final String generatorName) {
+		this.generatorName = generatorName;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the column histories names list</h3>
+	 * <h3 class="zh-CN">历史列名列表的Getter方法</h3>
+	 *
+	 * @return <span class="en-US">Column histories names list</span>
+	 * <span class="zh-CN">历史列名列表</span>
+	 */
+	@Nonnull
+	public List<String> getHistoriesNames() {
+		return (this.historiesNames == null) ? Collections.emptyList() : this.historiesNames;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the column histories names list</h3>
+	 * <h3 class="zh-CN">历史列名列表的Setter方法</h3>
+	 *
+	 * @param historiesNames <span class="en-US">Column histories names list</span>
+	 *                       <span class="zh-CN">历史列名列表</span>
+	 */
+	public void setHistoriesNames(@Nonnull final List<String> historiesNames) {
+		this.historiesNames = historiesNames;
 	}
 
 	/**

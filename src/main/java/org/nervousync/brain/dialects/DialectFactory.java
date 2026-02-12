@@ -23,10 +23,10 @@ import org.nervousync.brain.annotations.dialect.SchemaDialect;
 import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.LoggerUtils;
-import org.nervousync.utils.MultilingualUtils;
-import org.nervousync.utils.ObjectUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.utils.core.ObjectUtils;
+import org.nervousync.utils.core.StringUtils;
+import org.nervousync.utils.i18n.MultilingualUtils;
+import org.nervousync.utils.logger.LoggerUtils;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -38,6 +38,7 @@ import java.util.*;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 12, 2020 13:08:12 $
  */
+@SuppressWarnings("unused")
 public final class DialectFactory {
 
 	/**

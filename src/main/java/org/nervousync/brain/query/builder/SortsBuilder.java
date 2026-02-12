@@ -366,7 +366,7 @@ public abstract class SortsBuilder<P extends ParentBuilder, T> extends AbstractB
 		 * @param itemList <span class="en-US">Data information list</span>
 		 *                 <span class="zh-CN">数据信息列表</span>
 		 */
-		private GroupByItems(final List<GroupBy> itemList) {
+		public GroupByItems(final List<GroupBy> itemList) {
 			super(itemList);
 		}
 	}
@@ -387,7 +387,7 @@ public abstract class SortsBuilder<P extends ParentBuilder, T> extends AbstractB
 		 * @param itemList <span class="en-US">Data information list</span>
 		 *                 <span class="zh-CN">数据信息列表</span>
 		 */
-		private OrderByItems(final List<OrderBy> itemList) {
+		public OrderByItems(final List<OrderBy> itemList) {
 			super(itemList);
 		}
 	}

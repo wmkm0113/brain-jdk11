@@ -19,7 +19,7 @@ package org.nervousync.brain.query.sort;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.OrderType;
 import org.nervousync.brain.query.core.SortedItem;
-import org.nervousync.utils.ObjectUtils;
+import org.nervousync.utils.core.ObjectUtils;
 
 /**
  * <h2 class="en-US">Query order by column define</h2>

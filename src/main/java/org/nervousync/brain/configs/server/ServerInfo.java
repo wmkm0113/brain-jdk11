@@ -18,8 +18,6 @@
 package org.nervousync.brain.configs.server;
 
 import jakarta.xml.bind.annotation.*;
-import org.nervousync.annotations.beans.OutputConfig;
-import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.configs.auth.Authentication;
 import org.nervousync.brain.configs.auth.impl.TokenAuthentication;
 import org.nervousync.brain.configs.auth.impl.TrustStoreAuthentication;
@@ -27,9 +25,10 @@ import org.nervousync.brain.configs.auth.impl.UserAuthentication;
 import org.nervousync.brain.configs.auth.impl.X509Authentication;
 import org.nervousync.brain.configs.secure.TrustStore;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.IPUtils;
-import org.nervousync.utils.ObjectUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.utils.core.ObjectUtils;
+import org.nervousync.utils.core.StringUtils;
+
+import java.io.Serializable;
 
 /**
  * <h2 class="en-US">Server configuration information</h2>
@@ -41,8 +40,7 @@ import org.nervousync.utils.StringUtils;
 @XmlType(name = "server_info", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "server_info", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
-@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
-public final class ServerInfo extends BeanObject {
+public final class ServerInfo implements Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>
@@ -268,7 +266,7 @@ public final class ServerInfo extends BeanObject {
 	 */
 	public String info() {
 		StringBuilder stringBuilder = new StringBuilder();
-		if (IPUtils.isIPv6Address(this.serverAddress)) {
+		if (StringUtils.isIPv6Address(this.serverAddress)) {
 			stringBuilder.append("[").append(this.getServerAddress()).append("]");
 		} else {
 			stringBuilder.append(this.getServerAddress());

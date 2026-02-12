@@ -19,8 +19,6 @@ package org.nervousync.brain.configs.schema;
 
 import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.*;
-import org.nervousync.annotations.beans.OutputConfig;
-import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.auth.Authentication;
 import org.nervousync.brain.configs.auth.impl.TokenAuthentication;
@@ -34,8 +32,8 @@ import org.nervousync.brain.configs.secure.TrustStore;
 import org.nervousync.brain.configs.server.ServerInfo;
 import org.nervousync.brain.enumerations.dialect.DialectType;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.StringUtils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,8 +47,7 @@ import java.util.List;
 @XmlType(namespace = "https://nervousync.org/schemas/brain")
 @XmlSeeAlso({DistributeSchemaConfig.class, JdbcSchemaConfig.class, RemoteSchemaConfig.class})
 @XmlAccessorType(XmlAccessType.NONE)
-@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML})
-public abstract class SchemaConfig extends BeanObject {
+public abstract class SchemaConfig implements Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>

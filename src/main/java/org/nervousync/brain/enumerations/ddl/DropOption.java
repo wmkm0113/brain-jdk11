@@ -25,6 +25,7 @@ import jakarta.xml.bind.annotation.XmlEnum;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Jun 26, 2015 12:46:42 $
  */
+@SuppressWarnings("unused")
 @XmlEnum
 public enum DropOption {
 	/**

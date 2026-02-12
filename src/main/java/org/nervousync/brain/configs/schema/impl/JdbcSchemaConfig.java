@@ -84,11 +84,11 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	@XmlElement
 	private boolean sharding = Boolean.FALSE;
 	/**
-	 * <span class="en-US">Default database sharding value</span>
+	 * <span class="en-US">Default database catalog value</span>
 	 * <span class="zh-CN">默认数据库分片值</span>
 	 */
-	@XmlElement(name = "sharding_default")
-	private String shardingDefault = Globals.DEFAULT_VALUE_STRING;
+	@XmlElement(name = "catalog")
+	private String catalog = Globals.DEFAULT_VALUE_STRING;
 	/**
 	 * <span class="en-US">Parameter value of create databases</span>
 	 * <span class="zh-CN">创建数据库时使用的参数信息</span>
@@ -265,19 +265,19 @@ public final class JdbcSchemaConfig extends SchemaConfig {
 	 * @return <span class="en-US">Default database sharding value</span>
 	 * <span class="zh-CN">默认数据库分片值</span>
 	 */
-	public String getShardingDefault() {
-		return this.shardingDefault;
+	public String getCatalog() {
+		return this.catalog;
 	}
 
 	/**
 	 * <h3 class="en-US">Setter method for default database sharding value</h3>
 	 * <h3 class="zh-CN">默认数据库分片值的Setter方法</h3>
 	 *
-	 * @param shardingDefault <span class="en-US">Default database sharding value</span>
+	 * @param catalog <span class="en-US">Default database sharding value</span>
 	 *                        <span class="zh-CN">默认数据库分片值</span>
 	 */
-	public void setShardingDefault(final String shardingDefault) {
-		this.shardingDefault = shardingDefault;
+	public void setCatalog(final String catalog) {
+		this.catalog = catalog;
 	}
 
 	/**

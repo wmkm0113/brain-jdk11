@@ -18,10 +18,11 @@
 package org.nervousync.brain.schemas.jdbc;
 
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.ClassUtils;
-import org.nervousync.utils.DateTimeUtils;
-import org.nervousync.utils.LoggerUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.enumerations.beans.StringType;
+import org.nervousync.utils.core.BeanUtils;
+import org.nervousync.utils.core.ClassUtils;
+import org.nervousync.utils.core.DateTimeUtils;
+import org.nervousync.utils.logger.LoggerUtils;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -224,9 +225,9 @@ public class StatementWrapper<S extends PreparedStatement> implements PreparedSt
 			if (this.lowQueryTimeout < usedTime) {
 				String parameters;
 				if (this.batchParameters.isEmpty()) {
-					parameters = StringUtils.objectToString(this.parameterMap, StringUtils.StringType.JSON, Boolean.TRUE);
+					parameters = BeanUtils.objectToString(this.parameterMap, StringType.JSON);
 				} else {
-					parameters = StringUtils.objectToString(this.batchParameters, StringUtils.StringType.JSON, Boolean.TRUE);
+					parameters = BeanUtils.objectToString(this.batchParameters, StringType.JSON);
 				}
 				LOGGER.warn("Low_Query_Log", sql, parameters, usedTime, this.lowQueryTimeout);
 			}

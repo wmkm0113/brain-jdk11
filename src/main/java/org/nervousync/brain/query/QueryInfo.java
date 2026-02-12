@@ -39,6 +39,7 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Oct 28, 2020 11:46:08 $
  */
+@SuppressWarnings("unused")
 @XmlType(name = "query_info", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "query_info", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)

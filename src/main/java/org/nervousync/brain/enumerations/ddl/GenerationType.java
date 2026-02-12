@@ -26,7 +26,13 @@ package org.nervousync.brain.enumerations.ddl;
  * Defines the types of primary key generation strategies.
  * @since 1.0
  */
+@SuppressWarnings("unused")
 public enum GenerationType {
+	/**
+	 * <span class="en-US">Default value</span>
+	 * <span class="zh-CN">默认值</span>
+	 */
+	NONE,
 	/**
 	 * <span class="en-US">Generate automatically</span>
 	 * <span class="zh-CN">自动生成</span>

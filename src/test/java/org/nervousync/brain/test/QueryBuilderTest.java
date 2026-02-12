@@ -17,7 +17,6 @@
 
 package org.nervousync.brain.test;
 
-import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.*;
 import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.TableDefine;
@@ -27,8 +26,11 @@ import org.nervousync.brain.enumerations.query.JoinType;
 import org.nervousync.brain.manager.TableManager;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.builder.BrainQueryBuilder;
-import org.nervousync.utils.LoggerUtils;
-import org.nervousync.utils.StringUtils;
+import org.nervousync.commons.Globals;
+import org.nervousync.enumerations.beans.StringType;
+import org.nervousync.enumerations.logger.LogLevel;
+import org.nervousync.utils.core.BeanUtils;
+import org.nervousync.utils.logger.LoggerUtils;
 
 import java.sql.Types;
 import java.util.ArrayList;
@@ -41,7 +43,7 @@ public final class QueryBuilderTest {
 	private transient final LoggerUtils.Logger logger = LoggerUtils.getLogger(this.getClass());
 
 	static {
-		LoggerUtils.initLoggerConfigure(Level.DEBUG);
+		LoggerUtils.initLoggerConfigure(LogLevel.DEBUG);
 		registerTable();
 		registerJoin();
 		registerSubQuery();
@@ -89,7 +91,7 @@ public final class QueryBuilderTest {
 	public void simpleAndQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						//	Configure query items
 						.items()
 						.constant(1, "CONV", Types.INTEGER).sortCode(1).confirm()
@@ -164,7 +166,7 @@ public final class QueryBuilderTest {
 						.useCache()
 						.pager(1, 20)
 						.build();
-		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
+		this.logger.info("Generated_Result", BeanUtils.objectToString(queryInfo, StringType.XML));
 	}
 
 	@Test
@@ -172,7 +174,7 @@ public final class QueryBuilderTest {
 	public void simpleOrQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						.items()
 						.column("tableName", "columnName1")
 						.confirm()
@@ -238,7 +240,7 @@ public final class QueryBuilderTest {
 						.useCache()
 						.pager(1, 20)
 						.build();
-		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
+		this.logger.info("Generated_Result", BeanUtils.objectToString(queryInfo, StringType.JSON));
 	}
 
 	@Test
@@ -246,7 +248,7 @@ public final class QueryBuilderTest {
 	public void simpleGroupQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						.items()
 						.column("tableName", "columnName1").confirm()
 						.column("tableName", "columnName2").aliasName("aliasName2").confirm()
@@ -271,7 +273,7 @@ public final class QueryBuilderTest {
 						.notNull("tableName", "columnName2")
 						.exists("tableName", "columnName")
 						.matchQuery()
-						.fromTable("subQueryTable").confirm()
+						.fromTable("subQueryTable")
 						.column("subQueryTable", "subColumn").confirm()
 						.where()
 						.equalTo("subQueryTable", "subColumn").matchValue(2).confirm()
@@ -281,14 +283,12 @@ public final class QueryBuilderTest {
 						.notExists("tableName", "columnName")
 						.matchQuery()
 						.fromSubQuery("sub1")
-						.builder()
-						.fromTable("subQueryTable").confirm()
+						.fromTable("subQueryTable")
 						.items()
 						.column("subQueryTable", "subColumn").confirm()
 						.confirm()
 						.where()
 						.equalTo("subQueryTable", "subColumn").matchValue(2).confirm()
-						.confirm()
 						.confirm()
 						.confirm()
 						.confirm()
@@ -306,7 +306,7 @@ public final class QueryBuilderTest {
 						.useCache()
 						.pager(1, 20)
 						.build();
-		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
+		this.logger.info("Generated_Result", BeanUtils.objectToString(queryInfo, StringType.XML));
 	}
 
 	@Test
@@ -314,7 +314,7 @@ public final class QueryBuilderTest {
 	public void joinAndQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						.joins()
 						.joinTable(JoinType.LEFT, "tableName", "joinTable")
 						.on("currentColumn", "joinColumn")
@@ -367,7 +367,7 @@ public final class QueryBuilderTest {
 						.confirm()
 						.confirm()
 						.build();
-		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
+		this.logger.info("Generated_Result", BeanUtils.objectToString(queryInfo, StringType.JSON));
 	}
 
 	@Test
@@ -375,7 +375,7 @@ public final class QueryBuilderTest {
 	public void joinOrQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						.joins()
 						.joinTable(JoinType.LEFT, "tableName", "joinTable")
 						.aliasName("aliasName")
@@ -413,7 +413,7 @@ public final class QueryBuilderTest {
 						.confirm()
 						.confirm()
 						.build();
-		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
+		this.logger.info("Generated_Result", BeanUtils.objectToString(queryInfo, StringType.XML));
 	}
 
 	@Test
@@ -421,11 +421,11 @@ public final class QueryBuilderTest {
 	public void joinSubQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						.joins()
 						.joinQuery(JoinType.LEFT, "tableName")
 						.subQueryBuilder()
-						.fromTable("joinTable").confirm()
+						.fromTable("joinTable")
 						.items()
 						.column("joinTable", "joinColumn")
 						.confirm()
@@ -471,7 +471,7 @@ public final class QueryBuilderTest {
 						.confirm()
 						.confirm()
 						.build();
-		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
+		this.logger.info("Generated_Result", BeanUtils.objectToString(queryInfo, StringType.JSON));
 	}
 
 	@Test
@@ -479,7 +479,7 @@ public final class QueryBuilderTest {
 	public void functionAndQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						.joins()
 						.joinTable(JoinType.LEFT, "tableName", "joinTable")
 						.on("currentColumn", "joinColumn")
@@ -522,7 +522,7 @@ public final class QueryBuilderTest {
 						.confirm()
 						.confirm()
 						.build();
-		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
+		this.logger.info("Generated_Result", BeanUtils.objectToString(queryInfo, StringType.XML));
 	}
 
 	@Test
@@ -530,7 +530,7 @@ public final class QueryBuilderTest {
 	public void functionOrQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						.joins()
 						.joinTable(JoinType.LEFT, "tableName", "joinTable")
 						.on("currentColumn", "joinColumn")
@@ -573,7 +573,7 @@ public final class QueryBuilderTest {
 						.confirm()
 						.confirm()
 						.build();
-		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
+		this.logger.info("Generated_Result", BeanUtils.objectToString(queryInfo, StringType.JSON));
 	}
 
 	@Test
@@ -581,7 +581,7 @@ public final class QueryBuilderTest {
 	public void subQueryAndQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						.joins()
 						.joinTable(JoinType.LEFT, "tableName", "joinTable")
 						.on("currentColumn", "joinColumn")
@@ -600,7 +600,7 @@ public final class QueryBuilderTest {
 						.where()
 						.greater("tableName", "columnName1")
 						.matchQuery()
-						.fromTable("subQueryTable").confirm()
+						.fromTable("subQueryTable")
 						.column("subQueryTable", "subColumn").confirm()
 						.where()
 						.equalTo("subQueryTable", "subColumn")
@@ -611,7 +611,7 @@ public final class QueryBuilderTest {
 						.confirm()
 						.confirm()
 						.build();
-		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
+		this.logger.info("Generated_Result", BeanUtils.objectToString(queryInfo, StringType.XML));
 	}
 
 	@Test
@@ -619,7 +619,7 @@ public final class QueryBuilderTest {
 	public void subQueryOrQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						.joins()
 						.joinTable(JoinType.LEFT, "tableName", "joinTable")
 						.on("currentColumn", "joinColumn")
@@ -638,7 +638,7 @@ public final class QueryBuilderTest {
 						.where()
 						.greaterEqual(ConnectionCode.OR, "tableName", "columnName1")
 						.matchQuery()
-						.fromTable("subQueryTable").confirm()
+						.fromTable("subQueryTable")
 						.column("subQueryTable", "subColumn").confirm()
 						.where()
 						.equalTo("subQueryTable", "subColumn")
@@ -649,7 +649,7 @@ public final class QueryBuilderTest {
 						.confirm()
 						.confirm()
 						.build();
-		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
+		this.logger.info("Generated_Result", BeanUtils.objectToString(queryInfo, StringType.JSON));
 	}
 
 	@Test
@@ -657,7 +657,7 @@ public final class QueryBuilderTest {
 	public void existQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						.joins()
 						.joinTable(JoinType.LEFT, "tableName", "joinTable")
 						.on("currentColumn", "joinColumn")
@@ -676,7 +676,7 @@ public final class QueryBuilderTest {
 						.where()
 						.exists("tableName", "columnName")
 						.matchQuery()
-						.fromTable("subQueryTable").confirm()
+						.fromTable("subQueryTable")
 						.column("subQueryTable", "subColumn").confirm()
 						.where()
 						.equalTo("subQueryTable", "subColumn")
@@ -687,7 +687,7 @@ public final class QueryBuilderTest {
 						.confirm()
 						.confirm()
 						.build();
-		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
+		this.logger.info("Generated_Result", BeanUtils.objectToString(queryInfo, StringType.XML));
 	}
 
 	@Test
@@ -695,7 +695,7 @@ public final class QueryBuilderTest {
 	public void notExistQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						.joins()
 						.joinTable(JoinType.LEFT, "tableName", "joinTable")
 						.on("currentColumn", "joinColumn")
@@ -714,7 +714,7 @@ public final class QueryBuilderTest {
 						.where()
 						.notExists("tableName", "columnName")
 						.matchQuery()
-						.fromTable("subQueryTable").confirm()
+						.fromTable("subQueryTable")
 						.column("subQueryTable", "subColumn").confirm()
 						.where()
 						.equalTo("subQueryTable", "subColumn").matchValue(2).confirm()
@@ -729,7 +729,7 @@ public final class QueryBuilderTest {
 						.confirm()
 						.confirm()
 						.build();
-		this.logger.info("Generated_Result", queryInfo.toString(StringUtils.StringType.XML));
+		this.logger.info("Generated_Result", BeanUtils.objectToString(queryInfo, StringType.JSON));
 	}
 
 	@Test
@@ -737,7 +737,7 @@ public final class QueryBuilderTest {
 	public void havingQuery() throws Exception {
 		QueryInfo queryInfo =
 				new BrainQueryBuilder()
-						.fromTable("tableName").confirm()
+						.fromTable("tableName")
 						.items()
 						.column("tableName", "columnName1").confirm()
 						.column("tableName", "columnName2").aliasName("aliasName2").confirm()
@@ -770,9 +770,9 @@ public final class QueryBuilderTest {
 						.useCache()
 						.pager(1, 20)
 						.build();
-		String xmlData = queryInfo.toString(StringUtils.StringType.XML);
+		String xmlData = BeanUtils.objectToString(queryInfo, StringType.XML);
 		this.logger.info("Generated_Result", xmlData);
-		QueryInfo parsedQuery = StringUtils.stringToObject(xmlData, QueryInfo.class, "https://nervousync.org/schemas/brain");
-		this.logger.info("Generated_Result", parsedQuery.toString(StringUtils.StringType.JSON));
+		QueryInfo parsedQuery = BeanUtils.stringToObject(xmlData, StringType.XML, Globals.DEFAULT_ENCODING, QueryInfo.class, "https://nervousync.org/schemas/brain");
+		this.logger.info("Generated_Result", BeanUtils.objectToString(parsedQuery, StringType.YAML));
 	}
 }

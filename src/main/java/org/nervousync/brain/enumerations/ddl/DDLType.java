@@ -17,6 +17,8 @@
 
 package org.nervousync.brain.enumerations.ddl;
 
+import jakarta.xml.bind.annotation.XmlEnum;
+
 /**
  * <h2 class="en-US">Type code of entity class and database table</h2>
  * <h2 class="zh-CN">实体类与数据表的类型代码</h2>
@@ -24,6 +26,7 @@ package org.nervousync.brain.enumerations.ddl;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Sep 12, 2023 15:16:08 $
  */
+@XmlEnum
 public enum DDLType {
     /**
      * <span class="en-US">None operate</span>

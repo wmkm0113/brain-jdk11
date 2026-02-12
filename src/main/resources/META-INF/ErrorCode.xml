@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <entry key="0x00DB00000001">Dialect_Not_Registered</entry>
+    <entry key="0x00DB00000003">Table_Not_Found</entry>
+    <entry key="0x00DB00000004">Table_Struct_Modified</entry>
+    <entry key="0x00DB00000005">Dialect_Annotation_Not_Found</entry>
+    <entry key="0x00DB00000007">Insert_Columns_Not_Found</entry>
+    <entry key="0x00DB00000008">Update_Columns_Not_Found</entry>
+    <entry key="0x00DB00000009">Query_Condition_Empty</entry>
+    <entry key="0x00DB00000010">Not_Support_Join_Query</entry>
+    <entry key="0x00DB00000011">Query_Columns_Not_Found</entry>
+    <entry key="0x00DB00000012">Add_Not_Null_Column_No_Default</entry>
+    <entry key="0x00DB00000013">Unknown_Join_Type</entry>
+    <entry key="0x00DB00000014">Unknown_Condition_Type</entry>
+    <entry key="0x00DB00000015">Sub_Query_No_Alias</entry>
+    <entry key="0x00DB00000016">Unknown_Item_Type</entry>
+    <entry key="0x00DB00000017">Condition_Array_Is_Empty</entry>
+    <entry key="0x00DB00000018">Condition_Array_Is_Equal</entry>
+    <entry key="0x00DB00000019">Condition_Range_Not_Found</entry>
+    <entry key="0x00DB00000021">Database_Server_List_Empty</entry>
+    <entry key="0x00DB00000022">Unknown_Statement_Type</entry>
+    <entry key="0x00DB00000023">Create_Connection_Error</entry>
+    <entry key="0x00DB00000024">Obtain_Connection_Error</entry>
+    <entry key="0x00DB00000025">Sharding_Template_Error</entry>
+    <entry key="0x00DB00000026">Database_Server_Error</entry>
+    <entry key="0x00DB00000027">Connection_Pool_Not_Found</entry>
+    <entry key="0x00DB00000028">Duplicate_Record_Found</entry>
+    <entry key="0x00DB00000029">Create_Table_Cmd_Error</entry>
+    <entry key="0x00DB00000030">Unknown_Remote_Type</entry>
+    <entry key="0x00DB00000031">Unknown_Schema_Config</entry>
+    <entry key="0x00DB00000032">No_Schema_Found</entry>
+    <entry key="0x00DB00000034">No_Table_Found</entry>
+    <entry key="0x00DB00000035">Generate_Remote_Client_Error</entry>
+    <entry key="0x00DB00000036">Read_Configure_Error</entry>
+    <entry key="0x00DB00000037">Configure_Type_Mismatch</entry>
+    <entry key="0x00DB00000038">Record_Insert_Failed</entry>
+    <entry key="0x00DB00000039">Record_Insert_Error</entry>
+    <entry key="0x00DB00000040">Record_Update_Error</entry>
+    <entry key="0x00DB00000041">Record_Delete_Error</entry>
+    <entry key="0x00DB00000042">Fill_Query_Item_Error</entry>
+    <entry key="0x00DB00000043">Data_Migration_Error</entry>
+    <entry key="0x00DB00000044">SSL_Context_Error</entry>
+    <entry key="0x00DB00000045">Dialect_Type_Not_Matched</entry>
+    <entry key="0x00DB00000047">Query_From_Empty</entry>
+    <entry key="0x00DB00000048">Query_Alias_Exists</entry>
+</properties>

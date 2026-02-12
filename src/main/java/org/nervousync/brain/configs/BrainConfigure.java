@@ -18,8 +18,6 @@
 package org.nervousync.brain.configs;
 
 import jakarta.xml.bind.annotation.*;
-import org.nervousync.annotations.beans.OutputConfig;
-import org.nervousync.beans.core.BeanObject;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
@@ -27,8 +25,8 @@ import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.commons.Globals;
-import org.nervousync.utils.StringUtils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,8 +40,7 @@ import java.util.List;
 @XmlType(name = "brain_config", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "brain_config", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)
-@OutputConfig(defaultType = StringUtils.StringType.XML, types = {StringUtils.StringType.JSON, StringUtils.StringType.YAML}, formatted = true)
-public final class BrainConfigure extends BeanObject {
+public final class BrainConfigure implements Serializable {
 
 	/**
 	 * <span class="en-US">Serial version UID</span>

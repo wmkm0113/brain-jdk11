@@ -26,6 +26,7 @@ import java.io.Serializable;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Nov 4, 2020 16:33:28 $
  */
+@SuppressWarnings("unused")
 public final class StrategyField implements Serializable {
 
 	/**
