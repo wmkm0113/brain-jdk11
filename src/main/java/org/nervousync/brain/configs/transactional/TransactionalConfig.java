@@ -18,12 +18,14 @@ package org.nervousync.brain.configs.transactional;
 
 import jakarta.annotation.Nonnull;
 import org.intellij.lang.annotations.MagicConstant;
+import org.nervousync.brain.annotations.transactional.Transactional;
+import org.nervousync.brain.enumerations.transactional.Propagation;
+import org.nervousync.commons.Globals;
 import org.nervousync.utils.core.ClassUtils;
 import org.nervousync.utils.id.IDUtils;
 
 import java.sql.Connection;
-import java.util.Arrays;
-import java.util.stream.Stream;
+import java.util.List;
 
 /**
  * <h2 class="en-US">Transactional configure information</h2>
@@ -34,11 +36,22 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings("unused")
 public final class TransactionalConfig {
+
 	/**
 	 * <span class="en-US">Transactional identify code</span>
 	 * <span class="zh-CN">事务识别代码</span>
 	 */
 	private final long transactionalCode;
+	/**
+	 * <span class="en-US">The enumeration value of transactional types</span>
+	 * <span class="zh-CN">事务类型的枚举值</span>
+	 */
+	private final Propagation propagation;
+	/**
+	 * <span class="en-US">Transactional read-only flag</span>
+	 * <span class="zh-CN">事务只读标记</span>
+	 */
+	private final boolean readOnly;
 	/**
 	 * <span class="en-US">The timeout value of transactional</span>
 	 * <span class="zh-CN">事务的超时时间</span>
@@ -54,12 +67,16 @@ public final class TransactionalConfig {
 	 * <span class="en-US">The rollback exception class of transactional</span>
 	 * <span class="zh-CN">事务的回滚异常</span>
 	 */
-	private final Stream<Class<?>> rollBackForClasses;
+	private final List<Class<?>> rollBackForClasses;
 
 	/**
 	 * <h3 class="en-US">Private constructor method for transactional configure information</h3>
 	 * <h3 class="zh-CN">事务配置信息的私有构造方法</h3>
 	 *
+	 * @param propagation        <span class="en-US">The enumeration value of transactional types</span>
+	 *                           <span class="zh-CN">事务类型的枚举值</span>
+	 * @param readOnly           <span class="en-US">Transactional read-only flag</span>
+	 *                           <span class="zh-CN">事务只读标记</span>
 	 * @param timeout            <span class="en-US">The timeout value of transactional</span>
 	 *                           <span class="zh-CN">事务的超时时间</span>
 	 * @param isolation          <span class="en-US">The isolation value of transactional</span>
@@ -67,13 +84,29 @@ public final class TransactionalConfig {
 	 * @param rollBackForClasses <span class="en-US">The rollback exception class of transactional</span>
 	 *                           <span class="zh-CN">事务的回滚异常</span>
 	 */
-	private TransactionalConfig(final int timeout,
+	private TransactionalConfig(final Propagation propagation, final boolean readOnly, final int timeout,
 	                            @MagicConstant(valuesFromClass = Connection.class) final int isolation,
 	                            final Class<?>[] rollBackForClasses) {
+		this.propagation = propagation;
 		this.transactionalCode = IDUtils.snowflake();
+		this.readOnly = readOnly;
 		this.timeout = timeout;
 		this.isolation = isolation;
-		this.rollBackForClasses = Arrays.stream(rollBackForClasses);
+		this.rollBackForClasses = List.of(rollBackForClasses);
+	}
+
+	/**
+	 * <h3 class="en-US">Generate transactional configure information instance by given annotation instance</h3>
+	 * <h3 class="zh-CN">根据给定的注解实例对象生成数事务配置信息实例对象</h3>
+	 *
+	 * @param transactional <span class="en-US">Transactional annotation instance object</span>
+	 *                      <span class="zh-CN">事务注解实例对象</span>
+	 * @return <span class="en-US">Generated transactional configure information instance</span>
+	 * <span class="zh-CN">生成的事务配置信息实例对象</span>
+	 */
+	public static TransactionalConfig newInstance(@Nonnull final Transactional transactional) {
+		return newInstance(transactional.propagation(), transactional.timeout(),
+				transactional.isolation().value(), transactional.rollbackFor());
 	}
 
 	/**
@@ -89,13 +122,12 @@ public final class TransactionalConfig {
 	 * @return <span class="en-US">Generated transactional configure information instance</span>
 	 * <span class="zh-CN">生成的事务配置信息实例对象</span>
 	 */
-	public static TransactionalConfig newInstance(final int timeout,
+	@Nonnull
+	public static TransactionalConfig newInstance(final Propagation propagation, final int timeout,
 	                                              @MagicConstant(valuesFromClass = Connection.class) final int isolation,
 	                                              final Class<?>[] rollBackForClasses) {
-		if (timeout < 0 || rollBackForClasses.length == 0) {
-			return null;
-		}
-		return new TransactionalConfig(timeout, isolation, rollBackForClasses);
+		return new TransactionalConfig(propagation, Boolean.FALSE,
+				(timeout < 0) ? Globals.DEFAULT_VALUE_INT : timeout, isolation, rollBackForClasses);
 	}
 
 	/**
@@ -107,6 +139,28 @@ public final class TransactionalConfig {
 	 */
 	public long getTransactionalCode() {
 		return transactionalCode;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the enumeration value of transactional types</h3>
+	 * <h3 class="zh-CN">事务类型的枚举值的 Getter 方法</h3>
+	 *
+	 * @return <span class="en-US">The enumeration value of transactional types</span>
+	 * <span class="zh-CN">事务类型的枚举值</span>
+	 */
+	public Propagation getPropagation() {
+		return this.propagation;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the transactional read-only flag</h3>
+	 * <h3 class="zh-CN">事务只读标记的 Getter 方法</h3>
+	 *
+	 * @return <span class="en-US">Transactional read-only flag</span>
+	 * <span class="zh-CN">事务只读标记</span>
+	 */
+	public boolean isReadOnly() {
+		return this.readOnly;
 	}
 
 	/**
@@ -142,6 +196,7 @@ public final class TransactionalConfig {
 	 * <span class="zh-CN">事务的回滚异常</span>
 	 */
 	public boolean rollback(@Nonnull final Exception e) {
-		return this.rollBackForClasses.anyMatch(rollbackClass -> ClassUtils.isAssignable(e.getClass(), rollbackClass));
+		return this.rollBackForClasses.stream()
+				.anyMatch(rollbackClass -> ClassUtils.isAssignable(e.getClass(), rollbackClass));
 	}
 }

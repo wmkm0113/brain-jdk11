@@ -30,17 +30,24 @@ import org.nervousync.brain.exceptions.dialects.DialectException;
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:38:52 $
  */
 @SuppressWarnings("RedundantThrows")
-public abstract class DistributeDialect extends BaseDialect {
+public abstract class DistributeDialect<T> extends BaseDialect {
+
+	private final Class<T> targetClass;
 
 	/**
-	 * <h3 class="en-US">Constructor method for distribute database dialect abstract class</h3>
+	 * <h3 class="en-US">Constructor method for the distribute database dialect abstract class</h3>
 	 * <h3 class="zh-CN">分布式数据库方言抽象类的构造方法</h3>
 	 *
 	 * @throws DialectException <span class="en-US">If the implementation class does not find the SchemaDialect annotation</span>
 	 *                          <span class="zh-CN">如果实现类未找到 SchemaDialect 注解</span>
 	 */
-	protected DistributeDialect() throws DialectException {
+	protected DistributeDialect(final Class<T> targetClass) throws DialectException {
 		super(DialectType.Distribute);
+		this.targetClass = targetClass;
+	}
+
+	public final Class<T> getTargetClass() {
+		return this.targetClass;
 	}
 
 	/**
@@ -54,5 +61,5 @@ public abstract class DistributeDialect extends BaseDialect {
 	 * @throws Exception <span class="en-US">An error occurred during initialization</span>
 	 *                   <span class="zh-CN">初始化过程中出错</span>
 	 */
-	public abstract DistributeClient newClient(final DistributeSchemaConfig schemaConfig) throws Exception;
+	public abstract DistributeClient<T> newClient(final DistributeSchemaConfig schemaConfig) throws Exception;
 }

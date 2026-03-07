@@ -357,19 +357,17 @@ public abstract class SchemaConfigBuilder<P extends ParentBuilder, T extends Sch
 	 * <h3 class="en-US">Update the authentication configure information</h3>
 	 * <h3 class="zh-CN">更新身份认证信息设置</h3>
 	 *
-	 * @param existAuth       <span class="en-US">Exists authentication information</span>
-	 *                        <span class="zh-CN">已存在的认证信息</span>
-	 * @param storePath       <span class="en-US">Trust certificate store path</span>
-	 *                        <span class="zh-CN">信任证书库地址</span>
-	 * @param storePassword   <span class="en-US">Trust certificate store password</span>
-	 *                        <span class="zh-CN">信任证书库密码</span>
-	 * @param certificateName <span class="en-US">Certificate name</span>
-	 *                        <span class="zh-CN">证书名称</span>
+	 * @param existAuth <span class="en-US">Exists authentication information</span>
+	 *                  <span class="zh-CN">已存在的认证信息</span>
+	 * @param userName  <span class="en-US">Authentication username</span>
+	 *                  <span class="zh-CN">用户名</span>
+	 * @param passWord  <span class="en-US">Authentication password</span>
+	 *                  <span class="zh-CN">密码</span>
 	 * @return <span class="en-US">Generated trust store authentication instance object</span>
 	 * <span class="zh-CN">证书库中X.509证书认证信息实例对象</span>
 	 */
-	private static final UserAuthentication authentication(final Authentication existAuth,
-	                                                       final String userName, final String passWord) {
+	private static UserAuthentication authentication(final Authentication existAuth,
+	                                                 final String userName, final String passWord) {
 		UserAuthentication authentication;
 		if (existAuth instanceof UserAuthentication) {
 			authentication = (UserAuthentication) existAuth;
@@ -406,9 +404,9 @@ public abstract class SchemaConfigBuilder<P extends ParentBuilder, T extends Sch
 	 * @return <span class="en-US">Generated trust store authentication instance object</span>
 	 * <span class="zh-CN">证书库中X.509证书认证信息实例对象</span>
 	 */
-	private static final TrustStoreAuthentication authentication(final Authentication existAuth,
-	                                                             final String storePath, final String storePassword,
-	                                                             final String certificateName) {
+	private static TrustStoreAuthentication authentication(final Authentication existAuth,
+	                                                       final String storePath, final String storePassword,
+	                                                       final String certificateName) {
 		TrustStoreAuthentication authentication;
 		if (existAuth instanceof TrustStoreAuthentication) {
 			authentication = (TrustStoreAuthentication) existAuth;
@@ -440,17 +438,13 @@ public abstract class SchemaConfigBuilder<P extends ParentBuilder, T extends Sch
 	 *
 	 * @param existAuth       <span class="en-US">Exists authentication information</span>
 	 *                        <span class="zh-CN">已存在的认证信息</span>
-	 * @param storePath       <span class="en-US">Trust certificate store path</span>
-	 *                        <span class="zh-CN">信任证书库地址</span>
-	 * @param storePassword   <span class="en-US">Trust certificate store password</span>
-	 *                        <span class="zh-CN">信任证书库密码</span>
-	 * @param certificateName <span class="en-US">Certificate name</span>
-	 *                        <span class="zh-CN">证书名称</span>
+	 * @param x509Certificate <span class="en-US">X.509 certificate instance object</span>
+	 *                        <span class="zh-CN">X.509证书实例对象</span>
 	 * @return <span class="en-US">Generated trust store authentication instance object</span>
 	 * <span class="zh-CN">证书库中X.509证书认证信息实例对象</span>
 	 */
-	private static final X509Authentication authentication(final Authentication existAuth,
-	                                                       @Nonnull final X509Certificate x509Certificate) {
+	private static X509Authentication authentication(final Authentication existAuth,
+	                                                 @Nonnull final X509Certificate x509Certificate) {
 		X509Authentication authentication;
 		if (existAuth instanceof X509Authentication) {
 			authentication = (X509Authentication) existAuth;
@@ -468,6 +462,7 @@ public abstract class SchemaConfigBuilder<P extends ParentBuilder, T extends Sch
 				authentication.setLastModified(DateTimeUtils.currentUTCTimeMillis());
 			}
 		} catch (CertificateEncodingException e) {
+			authentication = null;
 		}
 		return authentication;
 	}
@@ -487,11 +482,11 @@ public abstract class SchemaConfigBuilder<P extends ParentBuilder, T extends Sch
 	 * @return <span class="en-US">Generated trust store authentication instance object</span>
 	 * <span class="zh-CN">证书库中X.509证书认证信息实例对象</span>
 	 */
-	private static final TokenAuthentication token(final Authentication existAuth,
-	                                               @Nonnull final String keyId, @Nonnull final String secretKey,
-	                                               final String sessionToken) {
+	private static TokenAuthentication token(final Authentication existAuth,
+	                                         @Nonnull final String keyId, @Nonnull final String secretKey,
+	                                         final String sessionToken) {
 		TokenAuthentication authentication;
-		if (existAuth instanceof X509Authentication) {
+		if (existAuth instanceof TokenAuthentication) {
 			authentication = (TokenAuthentication) existAuth;
 		} else {
 			authentication = new TokenAuthentication();

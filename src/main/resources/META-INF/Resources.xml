@@ -19,17 +19,11 @@
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
     <entry key="Register_Schema_Config_Error">Register schema configure error! Configure information: {0}</entry>
-    <entry key="Dialect_Not_Registered">Database dialect not registered! Dialect name: {0}</entry>
+    <entry key="Dialect_Not_Registered">Database dialect wasn't registered! Dialect name: {0}</entry>
     <entry key="Table_Not_Found">Can't found columns define in source name: {0}, table name: {1}</entry>
-    <entry key="Table_Struct_Modified">The data table structure has been modified. New columns: {0}, modified columns:
-        {1}, removed columns: {2}
-    </entry>
-    <entry key="Override_Registered_Dialect">Override exists database dialect, dialect name: {0}, implementation class
-        name: {1}
-    </entry>
-    <entry key="Dialect_Annotation_Not_Found">Cannot found the org.nervousync.magi.annotations.dialect.DatabaseDialect
-        information. Class name: {0}
-    </entry>
+    <entry key="Table_Struct_Modified">The data table structure has been modified. New columns: {0}, modified columns: {1}, removed columns: {2}</entry>
+    <entry key="Override_Registered_Dialect">Override exists database dialect, dialect name: {0}, implementation class name: {1}</entry>
+    <entry key="Dialect_Annotation_Not_Found">Cannot found the org.nervousync.magi.annotations.dialect.DatabaseDialect information. Class name: {0}</entry>
     <entry key="Dialect_Type_None">Cannot found data type define! Dialect name: {0}</entry>
     <entry key="Dialect_Type_Override">Override data type define! Dialect name: {0}, type code: {1}</entry>
     <entry key="Read_Lob_Error">Read {0} data error!</entry>
@@ -60,17 +54,15 @@
     <entry key="Connection_Used_Time">Obtain connection used time: {0} ms</entry>
     <entry key="Pool_Connection_Debug">Current data source activated connections: {0}, connections in pool: {1}</entry>
     <entry key="Invalid_Destroy_Connection">Destroy database connection because current connection was invalid!</entry>
-    <entry key="Pool_Full_Destroy_Connection">Destroy database connection because current connection pool is full!
-    </entry>
-    <entry key="Create_Connection_Full">Connection pool is full, ignore creating operate!</entry>
+    <entry key="Pool_Full_Destroy_Connection">Destroy database connection because current connection pool is full!</entry>
+    <entry key="Create_Connection_Full">Connection pool is full, ignore creating operating!</entry>
     <entry key="Transactional_Level_Debug">Transactional level code of the current connection is: {0}</entry>
     <entry key="Create_Connection_Begin_Debug">Beginning create connection thread</entry>
     <entry key="Create_Connection_End_Debug">Finished create connection thread</entry>
     <entry key="Sharding_Template_Error">Sharding template string not found parameter: {catalog}! JDBC url: {0}</entry>
     <entry key="Database_Server_Error">Database server information invalid!</entry>
     <entry key="Connection_Pool_Not_Found">Connection pool not found! Server info: {0}, sharding key: {1}</entry>
-    <entry key="Duplicate_Record_Found">Duplicate records found at retrieve mode! Table name: {0}, filter map: {1}
-    </entry>
+    <entry key="Duplicate_Record_Found">Duplicate records found at retrieve mode! Table name: {0}, filter map: {1}</entry>
     <entry key="Create_Table_Cmd_Error">Generate create table command error!</entry>
     <entry key="Execute_Query_Log">Execute command: {0}, parameters: {1}</entry>
     <entry key="Low_Query_Log">Execute command: {0}, parameters: {1}, used time: {2}, out of timeout: {3}</entry>
@@ -83,9 +75,9 @@
     <entry key="Drop_Table_Error">Drop table failed!</entry>
     <entry key="Truncate_Table_Error">Truncate table failed!</entry>
     <entry key="Close_DataSource_Error">Close data source error!</entry>
-    <entry key="Read_Configure_Error">Read configure information error! Configure file path: {0}, configure name: {1}</entry>
+    <entry key="Read_Configure_Error">Read configure information error! Configure file paths: {0}, configure name: {1}</entry>
     <entry key="Configure_Type_Mismatch">Schema configure type mismatch! Schema name: {0}, target type: {1}, current type: {2}</entry>
-    <entry key="Record_Insert_Failed">Insert record to database failed! Table name: {0}, data map: {1}</entry>
+    <entry key="Record_Insert_Failed">Insert record to the database failed! Table name: {0}, data map: {1}</entry>
     <entry key="Record_Insert_Error">Exception occurred while inserting data! Table name: {0}, data map: {1}</entry>
     <entry key="Record_Update_Error">Exception occurred while updating data! Table name: {0}, data map: {1}, filter map: {2}</entry>
     <entry key="Record_Delete_Error">Exception occurred while deleting data! Table name: {0}, filter map: {1}</entry>
@@ -94,9 +86,11 @@
     <entry key="SSL_Context_Error">Initialize ssl context error!</entry>
     <entry key="Remote_Dialect_Title">Simple remote dialect</entry>
     <entry key="Remote_Dialect_Description">Simple remote dialect, only support username/password authenticator and pass clear text password information</entry>
-    <entry key="Dialect_Type_Not_Matched">Database dialect type not matched! Dialect type: {0}, configure dialect type: {1}</entry>
+    <entry key="Dialect_Type_Not_Matched">Database dialect type wasn’t matched! Dialect type: {0}, configure dialect type: {1}</entry>
     <entry key="Query_From_Empty">Query from command is null</entry>
     <entry key="Query_Alias_Exists">Query alias name was existed</entry>
     <entry key="Query_Cache_Debug">Query cache information: {0}</entry>
     <entry key="Read_Long_Value_Debug">Read {0} long value: {1}</entry>
+    <entry key="Illegal_Transactional_Status">Illegal transactional status</entry>
+    <entry key="Read_Only_Status">Read only mode</entry>
 </properties>

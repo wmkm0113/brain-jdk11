@@ -27,7 +27,6 @@ import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
-import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.StrategyDefine;
 import org.nervousync.brain.defines.TableDefine;
@@ -46,9 +45,11 @@ import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.brain.schemas.distribute.DistributeSchema;
 import org.nervousync.brain.schemas.jdbc.JdbcSchema;
 import org.nervousync.brain.schemas.remote.RemoteSchema;
+import org.nervousync.brain.transactional.TransactionalProxy;
 import org.nervousync.commons.Globals;
 import org.nervousync.enumerations.beans.StringType;
 import org.nervousync.utils.core.BeanUtils;
+import org.nervousync.utils.core.ClassUtils;
 import org.nervousync.utils.core.ObjectUtils;
 import org.nervousync.utils.core.StringUtils;
 import org.nervousync.utils.jmx.JMXUtils;
@@ -169,7 +170,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	}
 
 	/**
-	 * <h3 class="en-US">Static method is used to obtain the data source singleton instance object</h3>
+	 * <h3 class="en-US">Static method is used to get the data source singleton instance object</h3>
 	 * <h3 class="zh-CN">静态方法用于获取数据源单例实例对象</h3>
 	 *
 	 * @return <span class="en-US">Data source singleton instance object</span>
@@ -180,7 +181,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	}
 
 	/**
-	 * <h3 class="en-US">Destroy current instance</h3>
+	 * <h3 class="en-US">Destroy the current instance</h3>
 	 * <h3 class="zh-CN">销毁当前实例</h3>
 	 */
 	public static void destroy() {
@@ -212,6 +213,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 		this.optimizerName = configure.getOptimizerName();
 		this.poolSize = configure.getPoolSize();
 		this.ddlType = (configure.getDdlType() == null) ? DDLType.NONE : configure.getDdlType();
+		Optional.ofNullable(configure.getTransactionalManagerClass()).ifPresent(TransactionalProxy::initialize);
 		this.jmxEnabled(configure.isJmxMonitor());
 		for (SchemaConfig schemaConfig : configure.getSchemaConfigs()) {
 			try {
@@ -283,6 +285,45 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	}
 
 	/**
+	 * <h3 class="en-US">Close the given client connection</h3>
+	 * <h3 class="zh-CN">关闭给定的客户端连接</h3>
+	 *
+	 * @param schemaName <span class="en-US">Data schema name</span>
+	 *                   <span class="zh-CN">数据源名称</span>
+	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
+	 *                      <span class="zh-CN">执行过程中出错</span>
+	 */
+	public void rollback(final String schemaName) throws Exception {
+		this.retrieveSchema(schemaName).rollback();
+	}
+
+	/**
+	 * <h3 class="en-US">Close the given client connection</h3>
+	 * <h3 class="zh-CN">关闭给定的客户端连接</h3>
+	 *
+	 * @param schemaName <span class="en-US">Data schema name</span>
+	 *                   <span class="zh-CN">数据源名称</span>
+	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
+	 *                      <span class="zh-CN">执行过程中出错</span>
+	 */
+	public void commit(final String schemaName) throws Exception {
+		this.retrieveSchema(schemaName).commit();
+	}
+
+	/**
+	 * <h3 class="en-US">Close the given client connection</h3>
+	 * <h3 class="zh-CN">关闭给定的客户端连接</h3>
+	 *
+	 * @param schemaName <span class="en-US">Data schema name</span>
+	 *                   <span class="zh-CN">数据源名称</span>
+	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
+	 *                      <span class="zh-CN">执行过程中出错</span>
+	 */
+	public void endTransactional(final String schemaName) throws Exception {
+		this.retrieveSchema(schemaName).endTransactional();
+	}
+
+	/**
 	 * <h3 class="en-US">Convert default value to string</h3>
 	 * <h3 class="zh-CN">转换默认值为字符串</h3>
 	 *
@@ -320,68 +361,15 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	public void initTable(@Nonnull final TableDefine tableDefine,
 	                      final StrategyDefine databaseStrategy, final StrategyDefine tableStrategy) throws Exception {
+		if (TransactionalProxy.isReadOnly()) {
+			throw new MultilingualSQLException(0x00DB00000050L);
+		}
 		BaseSchema<?> schema = this.retrieveSchema(tableDefine.getSchemaName());
 		if (schema instanceof JdbcSchema) {
 			schema.unwrap(JdbcSchema.class).registerStrategy(tableDefine, databaseStrategy, tableStrategy);
 		}
 		schema.initTable(this.ddlType, tableDefine);
 		this.tableManager.register(tableDefine);
-	}
-
-	/**
-	 * <h3 class="en-US">Initialize the current thread used operator based on the given transaction configuration information</h3>
-	 * <h3 class="zh-CN">根据给定的事务配置信息初始化当前线程的操作器</h3>
-	 *
-	 * @param transactionalConfig <span class="en-US">Transactional configure information</span>
-	 *                            <span class="zh-CN">事务配置信息</span>
-	 * @throws Exception <span class="en-US">An error occurred during execution</span>
-	 *                   <span class="zh-CN">执行过程中出错</span>
-	 */
-	public void initTransactional(final TransactionalConfig transactionalConfig) throws Exception {
-		for (final BaseSchema<?> schema : this.registeredSchemas.values()) {
-			schema.initTransactional(transactionalConfig);
-		}
-	}
-
-	/**
-	 * <h3 class="en-US">Finish current transactional</h3>
-	 * <h3 class="zh-CN">结束当前事务</h3>
-	 *
-	 * @throws Exception <span class="en-US">An error occurred during execution</span>
-	 *                   <span class="zh-CN">执行过程中出错</span>
-	 */
-	public void endTransactional() throws Exception {
-		for (final BaseSchema<?> schema : this.registeredSchemas.values()) {
-			schema.endTransactional();
-		}
-	}
-
-	/**
-	 * <h3 class="en-US">Rollback transactional</h3>
-	 * <h3 class="zh-CN">回滚事务</h3>
-	 *
-	 * @param e <span class="en-US">Cached execution information</span>
-	 *          <span class="zh-CN">捕获的异常信息</span>
-	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
-	 *                   <span class="zh-CN">如果执行过程中出错</span>
-	 */
-	public void rollback(final Exception e) throws Exception {
-		for (final BaseSchema<?> schema : this.registeredSchemas.values()) {
-			schema.rollback(e);
-		}
-	}
-
-	/**
-	 * <h3 class="en-US">Submit transactional execute</h3>
-	 * <h3 class="zh-CN">提交事务执行</h3>
-	 *
-	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
-	 *                   <span class="zh-CN">如果执行过程中出错</span>
-	 */
-	public void commit() throws Exception {
-		for (final BaseSchema<?> schema : this.registeredSchemas.values()) {
-			schema.commit();
-		}
 	}
 
 	/**
@@ -392,6 +380,9 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public void truncateTables() throws Exception {
+		if (TransactionalProxy.isReadOnly()) {
+			throw new MultilingualSQLException(0x00DB00000050L);
+		}
 		for (final BaseSchema<?> schema : this.registeredSchemas.values()) {
 			schema.truncateTables();
 		}
@@ -407,6 +398,9 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public void truncateTable(@Nonnull final String tableName) throws Exception {
+		if (TransactionalProxy.isReadOnly()) {
+			throw new MultilingualSQLException(0x00DB00000050L);
+		}
 		TableDefine tableDefine = this.tableManager.define(tableName);
 		this.retrieveSchema(tableDefine.getSchemaName()).truncateTable(tableDefine);
 	}
@@ -421,13 +415,16 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public void dropTables(final DropOption dropOption) throws Exception {
+		if (TransactionalProxy.isReadOnly()) {
+			throw new MultilingualSQLException(0x00DB00000050L);
+		}
 		for (final BaseSchema<?> schema : this.registeredSchemas.values()) {
 			schema.dropTables(dropOption);
 		}
 	}
 
 	/**
-	 * <h3 class="en-US">Drop data table</h3>
+	 * <h3 class="en-US">Drop the data table</h3>
 	 * <h3 class="zh-CN">删除数据表</h3>
 	 *
 	 * @param tableName  <span class="en-US">Data table name</span>
@@ -438,6 +435,9 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public void dropTable(@Nonnull final String tableName, @Nonnull final DropOption dropOption) throws Exception {
+		if (TransactionalProxy.isReadOnly()) {
+			throw new MultilingualSQLException(0x00DB00000050L);
+		}
 		TableDefine tableDefine = this.tableManager.define(tableName);
 		this.retrieveSchema(tableDefine.getSchemaName()).dropTable(tableDefine, dropOption);
 	}
@@ -459,6 +459,9 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	public boolean lockRecord(@Nonnull final String tableName, @Nonnull final Map<String, Object> filterMap,
 	                          final LockModeType lockOption) throws Exception {
+		if (TransactionalProxy.isReadOnly()) {
+			throw new MultilingualSQLException(0x00DB00000050L);
+		}
 		TableDefine tableDefine = this.tableManager.define(tableName);
 		return this.retrieveSchema(tableDefine.getSchemaName()).lockRecord(tableDefine, filterMap, lockOption);
 	}
@@ -478,6 +481,9 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	public Map<String, Object> insert(@Nonnull final String tableName, @Nonnull final Map<String, Object> dataMap)
 			throws Exception {
+		if (TransactionalProxy.isReadOnly()) {
+			throw new MultilingualSQLException(0x00DB00000050L);
+		}
 		TableDefine tableDefine = this.tableManager.define(tableName);
 		return this.retrieveSchema(tableDefine.getSchemaName()).insert(tableDefine, dataMap);
 	}
@@ -504,6 +510,9 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	public Map<String, Object> retrieve(@Nonnull final String tableName, final String columns,
 	                                    @Nonnull final Map<String, Object> filterMap, final boolean forUpdate,
 	                                    final LockModeType lockOption) throws Exception {
+		if (forUpdate && TransactionalProxy.isReadOnly()) {
+			throw new MultilingualSQLException(0x00DB00000050L);
+		}
 		TableDefine tableDefine = this.tableManager.define(tableName);
 		return this.retrieveSchema(tableDefine.getSchemaName()).retrieve(tableDefine, columns, filterMap, forUpdate, lockOption);
 	}
@@ -525,6 +534,9 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	public int update(@Nonnull final String tableName, @Nonnull final Map<String, Object> dataMap,
 	                  @Nonnull final Map<String, Object> filterMap) throws Exception {
+		if (TransactionalProxy.isReadOnly()) {
+			throw new MultilingualSQLException(0x00DB00000050L);
+		}
 		TableDefine tableDefine = this.tableManager.define(tableName);
 		return this.retrieveSchema(tableDefine.getSchemaName()).update(tableDefine, dataMap, filterMap);
 	}
@@ -543,6 +555,9 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public int delete(@Nonnull final String tableName, @Nonnull final Map<String, Object> filterMap) throws Exception {
+		if (TransactionalProxy.isReadOnly()) {
+			throw new MultilingualSQLException(0x00DB00000050L);
+		}
 		TableDefine tableDefine = this.tableManager.define(tableName);
 		return this.retrieveSchema(tableDefine.getSchemaName()).delete(tableDefine, filterMap);
 	}
@@ -775,6 +790,26 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                      <span class="zh-CN">如果数据源未找到</span>
 	 */
 	@Nonnull
+	private <T> T retrieveSchema(final String schemaName, final Class<T> schemaClass) throws SQLException {
+		BaseSchema<?> baseSchema = this.retrieveSchema(schemaName);
+		if (ClassUtils.isAssignable(baseSchema.getClass(), schemaClass)) {
+			return schemaClass.cast(baseSchema);
+		}
+		throw new MultilingualSQLException(0x00DB00000032L, schemaName);
+	}
+
+	/**
+	 * <h3 class="en-US">Retrieve target data schema</h3>
+	 * <h3 class="zh-CN">获取目标数据源</h3>
+	 *
+	 * @param schemaName <span class="en-US">Data schema name</span>
+	 *                   <span class="zh-CN">数据源名称</span>
+	 * @return <span class="en-US">Data schema instance object</span>
+	 * <span class="zh-CN">数据源实例对象</span>
+	 * @throws SQLException <span class="en-US">If data schema not found</span>
+	 *                      <span class="zh-CN">如果数据源未找到</span>
+	 */
+	@Nonnull
 	private BaseSchema<?> retrieveSchema(final String schemaName) throws SQLException {
 		this.initialize();
 		BaseSchema<?> baseSchema =
@@ -808,7 +843,7 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 		}
 		BaseSchema<?> schema;
 		if (schemaConfig instanceof DistributeSchemaConfig) {
-			schema = new DistributeSchema((DistributeSchemaConfig) schemaConfig);
+			schema = new DistributeSchema<>((DistributeSchemaConfig) schemaConfig);
 		} else if (schemaConfig instanceof JdbcSchemaConfig) {
 			schema = new JdbcSchema((JdbcSchemaConfig) schemaConfig);
 		} else if (schemaConfig instanceof RemoteSchemaConfig) {

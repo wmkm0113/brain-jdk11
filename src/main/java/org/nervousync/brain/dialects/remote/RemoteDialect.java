@@ -78,7 +78,7 @@ public final class RemoteDialect extends BaseDialect {
 	 * @throws MalformedURLException <span class="en-US">if no protocol is specified, or an unknown protocol is found, or spec is null.</span>
 	 *                               <span class="zh-CN">如果没有指定协议，或者发现未知协议，或者spec为空。</span>
 	 */
-	public RemoteClient soapClient(final String targetAddress, final Map<String, String> configMap)
+	public RemoteClient soapClient(final String targetAddress, final Map<String, Object> configMap)
 			throws MalformedURLException {
 		return ServiceUtils.SOAPClient(targetAddress, RemoteClient.class, configMap);
 	}
@@ -99,7 +99,7 @@ public final class RemoteDialect extends BaseDialect {
 	 *                               <span class="zh-CN">如果没有指定协议，或者发现未知协议，或者spec为空。</span>
 	 */
 	public RemoteClient restfulClient(final String targetAddress, final ClientBuilder clientBuilder,
-	                                  final Map<String, String> headerMap) throws MalformedURLException {
+	                                  final Map<String, Object> headerMap) throws MalformedURLException {
 		return ServiceUtils.RestfulClient(targetAddress, clientBuilder, RemoteClient.class, headerMap);
 	}
 }

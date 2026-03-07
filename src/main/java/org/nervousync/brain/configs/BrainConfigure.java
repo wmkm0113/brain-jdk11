@@ -18,6 +18,7 @@
 package org.nervousync.brain.configs;
 
 import jakarta.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
@@ -25,6 +26,7 @@ import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.commons.Globals;
+import org.nervousync.xml.adapters.ClassAdapter;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -66,6 +68,13 @@ public final class BrainConfigure implements Serializable {
 	 */
 	@XmlElement(name = "ddl_type")
 	private DDLType ddlType = DDLType.NONE;
+	/**
+	 * <span class="en-US">Transactional manager implement class</span>
+	 * <span class="zh-CN">事务管理器实现类</span>
+	 */
+	@XmlJavaTypeAdapter(ClassAdapter.class)
+	@XmlElement(name = "transactional_manager_class")
+	private Class<?> transactionalManagerClass;
 	/**
 	 * <span class="en-US">Data source configure information list</span>
 	 * <span class="zh-CN">数据源配置信息列表</span>
@@ -168,6 +177,28 @@ public final class BrainConfigure implements Serializable {
 	 */
 	public void setDdlType(DDLType ddlType) {
 		this.ddlType = ddlType;
+	}
+
+	/**
+	 * <h3 class="en-US">Getter method for the transactional manager implement class</h3>
+	 * <h3 class="zh-CN">事务管理器实现类的 Getter 方法</h3>
+	 *
+	 * @return <span class="en-US">Transactional manager implement class</span>
+	 * <span class="zh-CN">事务管理器实现类</span>
+	 */
+	public Class<?> getTransactionalManagerClass() {
+		return this.transactionalManagerClass;
+	}
+
+	/**
+	 * <h3 class="en-US">Setter method for the transactional manager implement class</h3>
+	 * <h3 class="zh-CN">事务管理器实现类的 Setter 方法</h3>
+	 *
+	 * @param transactionalManagerClass <span class="en-US">Transactional manager implement class</span>
+	 *                                  <span class="zh-CN">事务管理器实现类</span>
+	 */
+	public void setTransactionalManagerClass(final Class<?> transactionalManagerClass) {
+		this.transactionalManagerClass = transactionalManagerClass;
 	}
 
 	/**

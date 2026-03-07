@@ -83,8 +83,19 @@
 		<!-- Utils -->
 		<dependency>
 			<groupId>org.nervousync</groupId>
-			<artifactId>utils-all</artifactId>
-			<version>${nervousync.utils.version}</version>
+			<artifactId>utils-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.nervousync</groupId>
+			<artifactId>utils-beans</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.nervousync</groupId>
+			<artifactId>utils-config</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.nervousync</groupId>
+			<artifactId>utils-net</artifactId>
 		</dependency>
 		<!-- Jersey Support -->
 		<dependency>
@@ -182,6 +193,17 @@
 			</exclusions>
 		</dependency>
 	</dependencies>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.nervousync</groupId>
+				<artifactId>utils-bom</artifactId>
+				<version>${nervousync.utils.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<build>
 		<plugins>
 			<plugin>

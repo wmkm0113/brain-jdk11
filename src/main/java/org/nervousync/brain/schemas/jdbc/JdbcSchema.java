@@ -49,6 +49,8 @@ import org.nervousync.brain.query.sort.OrderBy;
 import org.nervousync.brain.query.subqueries.ScalarSubQuery;
 import org.nervousync.brain.query.subqueries.TableSubQuery;
 import org.nervousync.brain.schemas.BaseSchema;
+import org.nervousync.brain.transactional.TransactionalProxy;
+import org.nervousync.brain.transactional.impl.TransactionalContext;
 import org.nervousync.commons.Globals;
 import org.nervousync.enumerations.beans.StringType;
 import org.nervousync.utils.core.BeanUtils;
@@ -168,11 +170,6 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * <span class="zh-CN">数据库连接池映射表</span>
 	 */
 	private final Map<Integer, JdbcConnectionPool> registeredPools = new HashMap<>();
-	/**
-	 * <span class="en-US">List of database connections used by the current thread</span>
-	 * <span class="zh-CN">当前线程使用的数据库连接列表</span>
-	 */
-	private final ThreadLocal<List<JdbcConnection>> currentConnections = new ThreadLocal<>();
 
 	/**
 	 * <h3 class="en-US">Constructor method for JDBC data source implementation class</h3>
@@ -408,6 +405,43 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		this.initialized = Boolean.FALSE;
 	}
 
+	@Override
+	public void rollback() throws Exception {
+		if (TransactionalProxy.getTransactionalManager().inTransactional()) {
+			TransactionalContext transactionalContext = TransactionalProxy.getTransactionalManager().get();
+			if (transactionalContext != null) {
+				for (JdbcConnection connection : transactionalContext.getAll(this.schemaName, JdbcConnection.class)) {
+					connection.rollback();
+				}
+			}
+		}
+	}
+
+	@Override
+	public void commit() throws Exception {
+		if (TransactionalProxy.getTransactionalManager().inTransactional()) {
+			TransactionalContext transactionalContext = TransactionalProxy.getTransactionalManager().get();
+			if (transactionalContext != null) {
+				for (JdbcConnection connection : transactionalContext.getAll(this.schemaName, JdbcConnection.class)) {
+					connection.commit();
+				}
+				transactionalContext.unbindAll(this.schemaName);
+			}
+		}
+	}
+
+	@Override
+	public void endTransactional() throws Exception {
+		if (TransactionalProxy.getTransactionalManager().inTransactional()) {
+			TransactionalContext transactionalContext = TransactionalProxy.getTransactionalManager().get();
+			if (transactionalContext != null) {
+				for (JdbcConnection connection : transactionalContext.getAll(this.schemaName, JdbcConnection.class)) {
+					connection.close();
+				}
+			}
+		}
+	}
+
 	/**
 	 * <h3 class="en-US">Generate JDBC connection url string</h3>
 	 * <h3 class="zh-CN">生成JDBC连接字符串</h3>
@@ -452,34 +486,10 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	}
 
 	@Override
-	public void beginTransactional() {
-		if (this.currentConnections.get() == null) {
-			this.currentConnections.set(new ArrayList<>());
-		}
-	}
-
-	@Override
-	public void rollback(final Exception e) throws Exception {
-		TransactionalConfig transactionalConfig = this.txConfig.get();
-		if (transactionalConfig != null && transactionalConfig.getIsolation() != Connection.TRANSACTION_NONE
-				&& transactionalConfig.rollback(e)) {
-			for (Connection connection : this.currentConnections.get()) {
-				connection.rollback();
-			}
-		}
-	}
-
-	@Override
-	public void commit() throws Exception {
-		if (this.txConfig.get() != null && this.txConfig.get().getIsolation() != Connection.TRANSACTION_NONE) {
-			for (Connection connection : this.currentConnections.get()) {
-				connection.commit();
-			}
-		}
-	}
-
-	@Override
 	public void truncateTables() throws SQLException {
+		if (TransactionalProxy.getTransactionalManager().readOnly()) {
+			throw new MultilingualSQLException(0x00DB00010010L);
+		}
 		for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
 			connectionPool.truncateTables();
 		}
@@ -487,6 +497,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 
 	@Override
 	public void truncateTable(@Nonnull final TableDefine tableDefine) throws Exception {
+		if (TransactionalProxy.getTransactionalManager().readOnly()) {
+			throw new MultilingualSQLException(0x00DB00010010L);
+		}
 		for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
 			connectionPool.truncateTable(this.strategyConfigs.get(tableDefine.getTableName()));
 		}
@@ -494,6 +507,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 
 	@Override
 	public void dropTables(final DropOption dropOption) throws SQLException {
+		if (TransactionalProxy.getTransactionalManager().readOnly()) {
+			throw new MultilingualSQLException(0x00DB00010010L);
+		}
 		for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
 			connectionPool.dropTables(dropOption);
 		}
@@ -502,6 +518,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	@Override
 	public void dropTable(@Nonnull final TableDefine tableDefine, @Nonnull final DropOption dropOption)
 			throws Exception {
+		if (TransactionalProxy.getTransactionalManager().readOnly()) {
+			throw new MultilingualSQLException(0x00DB00010010L);
+		}
 		for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
 			connectionPool.dropTable(tableDefine, dropOption, this.strategyConfigs.get(tableDefine.getTableName()));
 		}
@@ -510,12 +529,18 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	@Override
 	public boolean lockRecord(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap,
 	                          final LockModeType lockOption) throws Exception {
+		if (TransactionalProxy.getTransactionalManager().readOnly()) {
+			throw new MultilingualSQLException(0x00DB00010010L);
+		}
 		return !this.retrieve(tableDefine, Globals.DEFAULT_VALUE_STRING, filterMap, Boolean.TRUE, lockOption).isEmpty();
 	}
 
 	@Override
 	public Map<String, Object> insert(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> dataMap)
 			throws SQLException, InsertException {
+		if (TransactionalProxy.getTransactionalManager().readOnly()) {
+			throw new MultilingualSQLException(0x00DB00010010L);
+		}
 		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
 		String catalog = strategyConfig.dbKey(dataMap);
 		String shardingName = strategyConfig.tableKey(dataMap);
@@ -596,6 +621,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	@Override
 	public int update(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> dataMap,
 	                  @Nonnull final Map<String, Object> filterMap) throws SQLException, UpdateException {
+		if (TransactionalProxy.getTransactionalManager().readOnly()) {
+			throw new MultilingualSQLException(0x00DB00010010L);
+		}
 		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
 		String catalog = strategyConfig.dbKey(filterMap);
 		Map<String, Object> updatedMap = new HashMap<>(filterMap);
@@ -633,6 +661,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	@Override
 	public int delete(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap)
 			throws SQLException, DropException {
+		if (TransactionalProxy.getTransactionalManager().readOnly()) {
+			throw new MultilingualSQLException(0x00DB00010010L);
+		}
 		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
 		String tableName = strategyConfig.tableKey(filterMap);
 		GeneratedCommand sqlCommand = this.dialect.deleteCommand(tableName, filterMap);
@@ -682,16 +713,6 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 			}
 		}
 		return totalCount;
-	}
-
-	@Override
-	public void clearTransactional() throws SQLException {
-		if (this.txConfig.get() != null) {
-			for (JdbcConnection connection : this.currentConnections.get()) {
-				connection.close();
-			}
-			this.currentConnections.remove();
-		}
 	}
 
 	@Override
@@ -841,24 +862,30 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 			throws SQLException {
 		ServerInfo serverInfo = this.currentServer(forUpdate);
 		int identifyCode = this.identifyCode(serverInfo);
-		JdbcConnection connection = null;
-		int isolation = (this.txConfig.get() != null) ? this.txConfig.get().getIsolation() : Connection.TRANSACTION_NONE;
-		if (isolation != Connection.TRANSACTION_NONE) {
-			connection = this.currentConnections.get().stream()
-					.filter(jdbcConnection -> jdbcConnection.match(identifyCode, catalog))
-					.findFirst()
-					.orElse(null);
+		JdbcConnection connection;
+		TransactionalContext transactionalContext = TransactionalProxy.getTransactionalManager().get();
+		String identifyKey = this.schemaName;
+		if (StringUtils.notBlank(catalog)) {
+			identifyKey += (BrainCommons.DEFAULT_NAME_SPLIT + catalog);
+		}
+		int isolation;
+		if (transactionalContext == null) {
+			isolation = Connection.TRANSACTION_NONE;
+		} else {
+			connection = transactionalContext.get(identifyKey, JdbcConnection.class);
+			if (connection != null) {
+				return connection;
+			}
+			isolation = transactionalContext.getTransactionalConfig().getIsolation();
 		}
 
-		if (connection == null) {
-			JdbcConnectionPool connectionPool = this.registeredPools.get(identifyCode);
-			if (connectionPool == null) {
-				throw new MultilingualSQLException(0x00DB00000027L);
-			}
-			connection = connectionPool.obtainConnection(catalog, isolation);
-			if (isolation != Connection.TRANSACTION_NONE) {
-				this.currentConnections.get().add(connection);
-			}
+		JdbcConnectionPool connectionPool = this.registeredPools.get(identifyCode);
+		if (connectionPool == null) {
+			throw new MultilingualSQLException(0x00DB00000027L);
+		}
+		connection = connectionPool.obtainConnection(catalog, isolation);
+		if (transactionalContext != null) {
+			transactionalContext.bind(identifyKey, connection);
 		}
 		return connection;
 	}
@@ -873,7 +900,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
 	private void configTimeout(@Nonnull final PreparedStatement preparedStatement) throws SQLException {
-		TransactionalConfig txConfig = this.txConfig.get();
+		TransactionalConfig txConfig = Optional.ofNullable(TransactionalProxy.getTransactionalManager().get())
+				.map(TransactionalContext::getTransactionalConfig)
+				.orElse(null);
 		if (txConfig != null && txConfig.getIsolation() != Connection.TRANSACTION_NONE && txConfig.getTimeout() > 0) {
 			preparedStatement.setQueryTimeout(txConfig.getTimeout());
 		}

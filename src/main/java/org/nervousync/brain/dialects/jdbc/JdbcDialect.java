@@ -952,7 +952,7 @@ public abstract class JdbcDialect extends BaseDialect {
 				.filter(StringUtils::notBlank)
 				.ifPresent(whereClause ->
 						sqlBuilder.append(BrainCommons.WHITE_SPACE)
-								.append(ConnectionCode.OR)
+								.append(ConnectionCode.AND)
 								.append(BrainCommons.WHITE_SPACE)
 								.append(BrainCommons.BRACKETS_BEGIN)
 								.append(whereClause)
@@ -1674,9 +1674,6 @@ public abstract class JdbcDialect extends BaseDialect {
 								itemBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER);
 							}
 							itemBuilder.append(item);
-						}
-						if (StringUtils.notBlank(queryItem.getAliasName())) {
-							itemBuilder.append(this.aliasCommand()).append(queryItem.getAliasName());
 						}
 					});
 		}

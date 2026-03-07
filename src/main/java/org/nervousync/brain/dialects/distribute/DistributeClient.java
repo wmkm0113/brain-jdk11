@@ -18,7 +18,6 @@
 package org.nervousync.brain.dialects.distribute;
 
 import jakarta.annotation.Nonnull;
-import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
@@ -37,7 +36,7 @@ import java.util.Map;
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:38:52 $
  */
 @SuppressWarnings({"unused", "RedundantThrows"})
-public interface DistributeClient extends Closeable {
+public interface DistributeClient<T> extends Closeable {
 
 	/**
 	 * <h3 class="en-US">Setup retry configure</h3>
@@ -49,44 +48,6 @@ public interface DistributeClient extends Closeable {
 	 *                    <span class="zh-CN">获取连接的重试次数</span>
 	 */
 	void configRetry(final int retryCount, final long retryPeriod);
-
-	/**
-	 * <h3 class="en-US">Begin transactional</h3>
-	 * <h3 class="zh-CN">开启事务</h3>
-	 *
-	 * @param transactionalConfig <span class="en-US">Transactional configure information</span>
-	 *                            <span class="zh-CN">事务配置信息</span>
-	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
-	 *                   <span class="zh-CN">如果执行过程中出错</span>
-	 */
-	void beginTransactional(final TransactionalConfig transactionalConfig) throws Exception;
-
-	/**
-	 * <h3 class="en-US">Rollback transactional</h3>
-	 * <h3 class="zh-CN">回滚事务</h3>
-	 *
-	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
-	 *                   <span class="zh-CN">如果执行过程中出错</span>
-	 */
-	void rollback() throws Exception;
-
-	/**
-	 * <h3 class="en-US">Submit transactional execute</h3>
-	 * <h3 class="zh-CN">提交事务执行</h3>
-	 *
-	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
-	 *                   <span class="zh-CN">如果执行过程中出错</span>
-	 */
-	void commit() throws Exception;
-
-	/**
-	 * <h3 class="en-US">Finish current transactional</h3>
-	 * <h3 class="zh-CN">结束当前事务</h3>
-	 *
-	 * @throws Exception <span class="en-US">An error occurred during execution</span>
-	 *                   <span class="zh-CN">执行过程中出错</span>
-	 */
-	void clearTransactional() throws Exception;
 
 	/**
 	 * <h3 class="en-US">Truncate all data tables</h3>
@@ -120,7 +81,7 @@ public interface DistributeClient extends Closeable {
 	void dropTables(final DropOption dropOption) throws Exception;
 
 	/**
-	 * <h3 class="en-US">Drop data table</h3>
+	 * <h3 class="en-US">Drop the data table</h3>
 	 * <h3 class="zh-CN">删除数据表</h3>
 	 *
 	 * @param tableDefine <span class="en-US">Table defines information</span>
@@ -258,4 +219,37 @@ public interface DistributeClient extends Closeable {
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine) throws Exception;
+
+	/**
+	 * <h3 class="en-US">Clear the current transactional</h3>
+	 * <h3 class="zh-CN">清理当前事务</h3>
+	 *
+	 * @param object <span class="en-US">Transactional object</span>
+	 *               <span class="zh-CN">事务对象</span>
+	 * @throws Exception <span class="en-US">An error occurred during execution</span>
+	 *                   <span class="zh-CN">执行过程中出错</span>
+	 */
+	void endTransactional(@Nonnull final T object) throws Exception;
+
+	/**
+	 * <h3 class="en-US">Rollback transactional</h3>
+	 * <h3 class="zh-CN">回滚事务</h3>
+	 *
+	 * @param object <span class="en-US">Transactional object</span>
+	 *               <span class="zh-CN">事务对象</span>
+	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
+	 *                   <span class="zh-CN">如果执行过程中出错</span>
+	 */
+	void rollback(@Nonnull final T object) throws Exception;
+
+	/**
+	 * <h3 class="en-US">Submit transactional execute</h3>
+	 * <h3 class="zh-CN">提交事务执行</h3>
+	 *
+	 * @param object <span class="en-US">Transactional object</span>
+	 *               <span class="zh-CN">事务对象</span>
+	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
+	 *                   <span class="zh-CN">如果执行过程中出错</span>
+	 */
+	void commit(@Nonnull final T object) throws Exception;
 }

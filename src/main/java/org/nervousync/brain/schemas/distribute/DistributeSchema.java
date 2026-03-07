@@ -22,7 +22,6 @@ import jakarta.persistence.LockModeType;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.server.ServerInfo;
-import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.DialectFactory;
 import org.nervousync.brain.dialects.distribute.DistributeClient;
@@ -33,9 +32,10 @@ import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.schemas.BaseSchema;
+import org.nervousync.brain.transactional.TransactionalProxy;
+import org.nervousync.brain.transactional.impl.TransactionalContext;
 import org.nervousync.utils.core.StringUtils;
 
-import java.sql.Connection;
 import java.util.*;
 
 /**
@@ -45,7 +45,7 @@ import java.util.*;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Feb 18, 2019 10:38:52 $
  */
-public final class DistributeSchema extends BaseSchema<DistributeDialect> implements DistributeSchemaMBean {
+public final class DistributeSchema<T> extends BaseSchema<DistributeDialect<T>> implements DistributeSchemaMBean {
 
 	/**
 	 * <span class="en-US">Using SSL when connect to server</span>
@@ -66,7 +66,7 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 	 * <span class="en-US">Distributed database client implementation class</span>
 	 * <span class="zh-CN">分布式数据库客户端实现类</span>
 	 */
-	private final DistributeClient distributeClient;
+	private final DistributeClient<T> distributeClient;
 
 	/**
 	 * <h3 class="en-US">Constructor method for distribute data source implementation class</h3>
@@ -77,6 +77,7 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 	 * @throws Exception <span class="en-US">Database server information hasn't found or sharding configuration error</span>
 	 *                   <span class="zh-CN">数据库服务器信息未找到或分片配置出错</span>
 	 */
+	@SuppressWarnings("unchecked")
 	public DistributeSchema(@Nonnull final DistributeSchemaConfig schemaConfig) throws Exception {
 		super(schemaConfig, DialectFactory.retrieve(schemaConfig.getDialectName()).unwrap(DistributeDialect.class));
 		this.useSsl = schemaConfig.isUseSsl();
@@ -93,29 +94,6 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 
 	@Override
 	public void initialize() {
-	}
-
-	@Override
-	public void beginTransactional() throws Exception {
-		if (this.txConfig.get() != null) {
-			this.distributeClient.beginTransactional(this.txConfig.get());
-		}
-	}
-
-	@Override
-	public void rollback(final Exception e) throws Exception {
-		TransactionalConfig transactionalConfig = this.txConfig.get();
-		if (transactionalConfig != null && transactionalConfig.getIsolation() != Connection.TRANSACTION_NONE
-				&& transactionalConfig.rollback(e)) {
-			this.distributeClient.rollback();
-		}
-	}
-
-	@Override
-	public void commit() throws Exception {
-		if (this.txConfig.get() != null) {
-			this.distributeClient.commit();
-		}
 	}
 
 	@Override
@@ -190,11 +168,6 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 	}
 
 	@Override
-	protected void clearTransactional() throws Exception {
-		this.distributeClient.clearTransactional();
-	}
-
-	@Override
 	public void close() {
 		try {
 			this.distributeClient.close();
@@ -202,6 +175,46 @@ public final class DistributeSchema extends BaseSchema<DistributeDialect> implem
 			this.logger.error("Close_DataSource_Error");
 			if (this.logger.isDebugEnabled()) {
 				this.logger.debug("Stack_Message_Error", e);
+			}
+		}
+	}
+
+	@Override
+	public void rollback() throws Exception {
+		if (TransactionalProxy.getTransactionalManager().inTransactional()) {
+			TransactionalContext transactionalContext = TransactionalProxy.getTransactionalManager().get();
+			if (transactionalContext != null) {
+				T object = transactionalContext.get(this.schemaName, this.dialect.getTargetClass());
+				if (object != null) {
+					this.distributeClient.rollback(object);
+				}
+			}
+		}
+	}
+
+	@Override
+	public void commit() throws Exception {
+		if (TransactionalProxy.getTransactionalManager().inTransactional()) {
+			TransactionalContext transactionalContext = TransactionalProxy.getTransactionalManager().get();
+			if (transactionalContext != null) {
+				T object = transactionalContext.get(this.schemaName, this.dialect.getTargetClass());
+				if (object != null) {
+					this.distributeClient.commit(object);
+				}
+			}
+		}
+	}
+
+	@Override
+	public void endTransactional() throws Exception {
+		if (TransactionalProxy.getTransactionalManager().inTransactional()) {
+			TransactionalContext transactionalContext = TransactionalProxy.getTransactionalManager().get();
+			if (transactionalContext != null) {
+				T object = transactionalContext.get(this.schemaName, this.dialect.getTargetClass());
+				if (object != null) {
+					this.distributeClient.endTransactional(object);
+				}
+				transactionalContext.unbind(this.schemaName);
 			}
 		}
 	}

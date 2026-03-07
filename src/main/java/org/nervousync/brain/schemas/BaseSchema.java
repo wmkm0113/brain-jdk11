@@ -22,7 +22,6 @@ import jakarta.persistence.LockModeType;
 import org.nervousync.brain.configs.auth.Authentication;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.secure.TrustStore;
-import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.core.BaseDialect;
@@ -68,6 +67,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <span class="zh-CN">最后修改时间戳</span>
 	 */
 	private final long lastModified;
+	protected final String schemaName;
 	/**
 	 * <span class="en-US">Identity authentication configuration information</span>
 	 * <span class="zh-CN">身份认证配置信息</span>
@@ -103,16 +103,6 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 * <span class="zh-CN">数据源初始化状态</span>
 	 */
 	protected boolean initialized = Boolean.FALSE;
-	/**
-	 * <span class="en-US">The transactional configure information used by the thread</span>
-	 * <span class="zh-CN">线程使用的事务配置信息</span>
-	 */
-	protected final ThreadLocal<TransactionalConfig> txConfig = new ThreadLocal<>();
-	/**
-	 * <span class="en-US">The transactional configure flag of current thread</span>
-	 * <span class="zh-CN">线程事务配置标记</span>
-	 */
-	private final ThreadLocal<Boolean> txInit = new ThreadLocal<>();
 
 	/**
 	 * <h3 class="en-US">Constructor method for data source abstract implementation classes</h3>
@@ -129,6 +119,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 		if (!dialect.type().equals(schemaConfig.getDialectType())) {
 			throw new MultilingualSQLException(0x00DB00000045L, dialect.type(), schemaConfig.getDialectType());
 		}
+		this.schemaName = schemaConfig.getSchemaName();
 		this.lastModified = schemaConfig.getLastModified();
 		this.authentication = schemaConfig.getAuthentication();
 		this.trustStore = schemaConfig.getTrustStore();
@@ -237,37 +228,13 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	public abstract void close();
 
 	/**
-	 * <h3 class="en-US">Initialize the current thread used operator based on the given transaction configuration information</h3>
-	 * <h3 class="zh-CN">根据给定的事务配置信息初始化当前线程的操作器</h3>
+	 * <h3 class="en-US">Rollback transactional</h3>
+	 * <h3 class="zh-CN">回滚事务</h3>
 	 *
-	 * @param transactionalConfig <span class="en-US">Transactional configure information</span>
-	 *                            <span class="zh-CN">事务配置信息</span>
-	 * @throws Exception <span class="en-US">If an error occurs during executing</span>
-	 *                   <span class="zh-CN">如果执行过程出错</span>
+	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
+	 *                   <span class="zh-CN">如果执行过程中出错</span>
 	 */
-	public final void initTransactional(final TransactionalConfig transactionalConfig) throws Exception {
-		if (this.txInit.get() == null || !this.txInit.get()) {
-			this.txInit.set(Boolean.TRUE);
-			this.txConfig.set(transactionalConfig);
-			this.beginTransactional();
-		}
-	}
-
-	/**
-	 * <h3 class="en-US">Convert default value to string</h3>
-	 * <h3 class="zh-CN">转换默认值为字符串</h3>
-	 *
-	 * @param columnDefine <span class="en-US">Column define information</span>
-	 *                     <span class="zh-CN">数据列定义信息</span>
-	 * @param object    <span class="en-US">Default value instance object</span>
-	 *                  <span class="zh-CN">默认值实例对象</span>
-	 * @return <span class="en-US">Default value string</span>
-	 * <span class="zh-CN">默认值字符串</span>
-	 */
-	public final String defaultValue(final ColumnDefine columnDefine, final Object object) {
-		return Optional.ofNullable(this.dialect.defaultValue(columnDefine, object))
-				.orElse(Globals.DEFAULT_VALUE_STRING);
-	}
+	public abstract void rollback() throws Exception;
 
 	/**
 	 * <h3 class="en-US">Submit transactional execute</h3>
@@ -277,6 +244,31 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	 *                   <span class="zh-CN">如果执行过程中出错</span>
 	 */
 	public abstract void commit() throws Exception;
+
+	/**
+	 * <h3 class="en-US">Clear the current transactional</h3>
+	 * <h3 class="zh-CN">清理当前事务</h3>
+	 *
+	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
+	 *                   <span class="zh-CN">如果执行过程中出错</span>
+	 */
+	public abstract void endTransactional() throws Exception;
+
+	/**
+	 * <h3 class="en-US">Convert default value to string</h3>
+	 * <h3 class="zh-CN">转换默认值为字符串</h3>
+	 *
+	 * @param columnDefine <span class="en-US">Column define information</span>
+	 *                     <span class="zh-CN">数据列定义信息</span>
+	 * @param object       <span class="en-US">Default value instance object</span>
+	 *                     <span class="zh-CN">默认值实例对象</span>
+	 * @return <span class="en-US">Default value string</span>
+	 * <span class="zh-CN">默认值字符串</span>
+	 */
+	public final String defaultValue(final ColumnDefine columnDefine, final Object object) {
+		return Optional.ofNullable(this.dialect.defaultValue(columnDefine, object))
+				.orElse(Globals.DEFAULT_VALUE_STRING);
+	}
 
 	/**
 	 * <h3 class="en-US">Truncate all data tables</h3>
@@ -310,7 +302,7 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 	public abstract void dropTables(final DropOption dropOption) throws Exception;
 
 	/**
-	 * <h3 class="en-US">Drop data table</h3>
+	 * <h3 class="en-US">Drop a data table</h3>
 	 * <h3 class="zh-CN">删除数据表</h3>
 	 *
 	 * @param tableDefine <span class="en-US">Table defines information</span>
@@ -443,58 +435,16 @@ public abstract class BaseSchema<D extends BaseDialect> implements Wrapper, Base
 			throws Exception;
 
 	/**
-	 * <h3 class="en-US">Finish current transactional</h3>
-	 * <h3 class="zh-CN">结束当前事务</h3>
-	 *
-	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
-	 *                      <span class="zh-CN">执行过程中出错</span>
-	 */
-	public final void endTransactional() throws Exception {
-		this.clearTransactional();
-		this.txInit.set(Boolean.FALSE);
-		this.txConfig.remove();
-	}
-
-	/**
-	 * <h3 class="en-US">Begin transactional</h3>
-	 * <h3 class="zh-CN">开启事务</h3>
-	 *
-	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
-	 *                   <span class="zh-CN">如果执行过程中出错</span>
-	 */
-	protected abstract void beginTransactional() throws Exception;
-
-	/**
-	 * <h3 class="en-US">Rollback transactional</h3>
-	 * <h3 class="zh-CN">回滚事务</h3>
-	 *
-	 * @param e <span class="en-US">Cached execution information</span>
-	 *          <span class="zh-CN">捕获的异常信息</span>
-	 * @throws Exception <span class="en-US">If an error occurs during execution</span>
-	 *                   <span class="zh-CN">如果执行过程中出错</span>
-	 */
-	public abstract void rollback(final Exception e) throws Exception;
-
-	/**
 	 * <h3 class="en-US">Initialize data table</h3>
 	 * <h3 class="zh-CN">初始化数据表</h3>
 	 *
-	 * @param ddlType        <span class="en-US">Enumeration value of DDL operate</span>
-	 *                       <span class="zh-CN">操作类型枚举值</span>
-	 * @param tableDefine    <span class="en-US">Table defines information</span>
-	 *                       <span class="zh-CN">数据表定义信息</span>
+	 * @param ddlType     <span class="en-US">Enumeration value of DDL operate</span>
+	 *                    <span class="zh-CN">操作类型枚举值</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
+	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public abstract void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine)
 			throws Exception;
-
-	/**
-	 * <h3 class="en-US">Clear current transactional</h3>
-	 * <h3 class="zh-CN">清理当前事务</h3>
-	 *
-	 * @throws Exception <span class="en-US">An error occurred during execution</span>
-	 *                   <span class="zh-CN">执行过程中出错</span>
-	 */
-	protected abstract void clearTransactional() throws Exception;
 }

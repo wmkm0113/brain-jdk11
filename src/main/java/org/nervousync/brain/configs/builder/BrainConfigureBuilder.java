@@ -25,6 +25,7 @@ import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.schema.impl.RemoteSchemaConfig;
 import org.nervousync.brain.enumerations.ddl.DDLType;
+import org.nervousync.brain.transactional.TransactionalManager;
 import org.nervousync.builder.AbstractBuilder;
 import org.nervousync.builder.ParentBuilder;
 import org.nervousync.exceptions.builder.BuilderException;
@@ -148,7 +149,7 @@ public final class BrainConfigureBuilder<P extends ParentBuilder> extends Abstra
 	 * <h3 class="zh-CN">设置数据源JMX监控状态</h3>
 	 *
 	 * @param monitor <span class="en-US">Enable monitor flag</span>
-	 *                 <span class="zh-CN">监控启用标记</span>
+	 *                <span class="zh-CN">监控启用标记</span>
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
@@ -198,6 +199,23 @@ public final class BrainConfigureBuilder<P extends ParentBuilder> extends Abstra
 	public BrainConfigureBuilder<P> ddlMode(final DDLType ddlType) {
 		if (!ObjectUtils.nullSafeEquals(this.configure.getDdlType(), ddlType)) {
 			this.configure.setDdlType(ddlType);
+			this.modified = Boolean.TRUE;
+		}
+		return this;
+	}
+
+	/**
+	 * <h3 class="en-US">Configure the transactional manager implement class</h3>
+	 * <h3 class="zh-CN">设置事务管理器实现类</h3>
+	 *
+	 * @param transactionalManagerClass <span class="en-US">Transactional manager implement class</span>
+	 *                                  <span class="zh-CN">事务管理器实现类</span>
+	 * @return <span class="en-US">Current builder instance object</span>
+	 * <span class="zh-CN">当前构建器实例对象</span>
+	 */
+	public BrainConfigureBuilder<P> transactionalManager(final Class<?> transactionalManagerClass) {
+		if (ClassUtils.isAssignable(transactionalManagerClass, TransactionalManager.class)) {
+			this.configure.setTransactionalManagerClass(transactionalManagerClass);
 			this.modified = Boolean.TRUE;
 		}
 		return this;

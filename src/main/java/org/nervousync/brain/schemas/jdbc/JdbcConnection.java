@@ -124,7 +124,7 @@ public final class JdbcConnection implements Connection {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for maximum size of the prepared statement</h3>
+	 * <h3 class="en-US">Setter method for the maximum size of the prepared statement</h3>
 	 * <h3 class="zh-CN">查询分析器的最大缓存结果的Setter方法</h3>
 	 *
 	 * @param cachedLimitSize <span class="en-US">Maximum size of prepared statement</span>
@@ -135,7 +135,7 @@ public final class JdbcConnection implements Connection {
 	}
 
 	/**
-	 * <h3 class="en-US">Reset the transactional configure of current connection</h3>
+	 * <h3 class="en-US">Reset the transactional configuring of the current connection</h3>
 	 * <h3 class="zh-CN">重置当前连接的事务配置</h3>
 	 *
 	 * @throws SQLException <span class="en-US">Error occurs when reset transactional configure information</span>
@@ -157,7 +157,7 @@ public final class JdbcConnection implements Connection {
 	}
 
 	/**
-	 * <h3 class="en-US">Destroy current connection</h3>
+	 * <h3 class="en-US">Destroy the current connection</h3>
 	 * <h3 class="zh-CN">销毁当前连接</h3>
 	 *
 	 * @throws SQLException <span class="en-US">Error closing connection</span>
