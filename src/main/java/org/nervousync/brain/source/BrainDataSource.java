@@ -527,18 +527,20 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 *                  <span class="zh-CN">更新数据映射表</span>
 	 * @param filterMap <span class="en-US">Update filter mapping</span>
 	 *                  <span class="zh-CN">更新条件映射表</span>
+	 * @param lockMode  <span class="en-US">Lock option</span>
+	 *                  <span class="zh-CN">数据锁选项</span>
 	 * @return <span class="en-US">Updated records count</span>
 	 * <span class="zh-CN">更新记录条数</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */
 	public int update(@Nonnull final String tableName, @Nonnull final Map<String, Object> dataMap,
-	                  @Nonnull final Map<String, Object> filterMap) throws Exception {
+	                  @Nonnull final Map<String, Object> filterMap, final LockModeType lockMode) throws Exception {
 		if (TransactionalProxy.isReadOnly()) {
 			throw new MultilingualSQLException(0x00DB00000050L);
 		}
 		TableDefine tableDefine = this.tableManager.define(tableName);
-		return this.retrieveSchema(tableDefine.getSchemaName()).update(tableDefine, dataMap, filterMap);
+		return this.retrieveSchema(tableDefine.getSchemaName()).update(tableDefine, dataMap, filterMap, lockMode);
 	}
 
 	/**
@@ -560,6 +562,31 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 		}
 		TableDefine tableDefine = this.tableManager.define(tableName);
 		return this.retrieveSchema(tableDefine.getSchemaName()).delete(tableDefine, filterMap);
+	}
+
+	/**
+	 * <h3 class="en-US">Execute query record command</h3>
+	 * <h3 class="zh-CN">执行数据检索命令</h3>
+	 *
+	 * @param tableDefine <span class="en-US">Table defines information</span>
+	 *                    <span class="zh-CN">数据表定义信息</span>
+	 * @param columns     <span class="en-US">Query column names</span>
+	 *                    <span class="zh-CN">查询数据列名</span>
+	 * @param filterMap   <span class="en-US">Retrieve filter mapping</span>
+	 *                    <span class="zh-CN">查询条件映射表</span>
+	 * @param forUpdate   <span class="en-US">Retrieve result using for update record</span>
+	 *                    <span class="zh-CN">检索结果用于更新记录</span>
+	 * @param lockMode    <span class="en-US">Lock option</span>
+	 *                    <span class="zh-CN">数据锁选项</span>
+	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
+	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
+	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
+	 *                      <span class="zh-CN">执行过程中出错</span>
+	 */
+	public PartialCollection directQuery(@Nonnull final TableDefine tableDefine, final String columns,
+	                                     @Nonnull final Map<String, Object> filterMap,
+	                                     final boolean forUpdate, final LockModeType lockMode) throws SQLException {
+		return this.retrieveSchema(tableDefine.getSchemaName()).query(tableDefine, columns, filterMap, forUpdate, lockMode);
 	}
 
 	/**
@@ -590,6 +617,39 @@ public final class BrainDataSource implements BrainDataSourceMBean {
 	 */
 	public Long directQueryTotal(@Nonnull final QueryInfo queryInfo) throws Exception {
 		return this.retrieveSchema(queryInfo.getQueryFrom()).queryTotal(queryInfo);
+	}
+
+	/**
+	 * <h3 class="en-US">Execute query record command</h3>
+	 * <h3 class="zh-CN">执行数据检索命令</h3>
+	 *
+	 * @param tableDefine <span class="en-US">Table defines information</span>
+	 *                    <span class="zh-CN">数据表定义信息</span>
+	 * @param columns     <span class="en-US">Query column names</span>
+	 *                    <span class="zh-CN">查询数据列名</span>
+	 * @param filterMap   <span class="en-US">Retrieve filter mapping</span>
+	 *                    <span class="zh-CN">查询条件映射表</span>
+	 * @param forUpdate   <span class="en-US">Retrieve result using for update record</span>
+	 *                    <span class="zh-CN">检索结果用于更新记录</span>
+	 * @param lockMode    <span class="en-US">Lock option</span>
+	 *                    <span class="zh-CN">数据锁选项</span>
+	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
+	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
+	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
+	 *                      <span class="zh-CN">执行过程中出错</span>
+	 */
+	public PartialCollection query(@Nonnull final TableDefine tableDefine, final String columns,
+	                               @Nonnull final Map<String, Object> filterMap,
+	                               final boolean forUpdate, final LockModeType lockMode) throws SQLException {
+		QueryOptimizer optimizer = this.borrowOptimizer();
+		if (optimizer == null) {
+			return this.directQuery(tableDefine, columns, filterMap, forUpdate, lockMode);
+		} else {
+			PartialCollection partialCollection =
+					optimizer.query(this, tableDefine, columns, filterMap, forUpdate, lockMode);
+			this.returnOptimizer(optimizer);
+			return partialCollection;
+		}
 	}
 
 	/**

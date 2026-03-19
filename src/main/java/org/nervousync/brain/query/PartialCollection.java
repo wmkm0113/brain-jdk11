@@ -18,6 +18,7 @@
 package org.nervousync.brain.query;
 
 import jakarta.annotation.Nonnull;
+import org.nervousync.brain.commons.ResultMapUtils;
 import org.nervousync.commons.Globals;
 import org.nervousync.enumerations.beans.StringType;
 import org.nervousync.utils.core.BeanUtils;
@@ -81,7 +82,7 @@ public final class PartialCollection implements Serializable {
 	}
 
 	/**
-	 * <h3 class="en-US">Get result size of the current partial collection</h3>
+	 * <h3 class="en-US">Get the result size of the current partial collection</h3>
 	 * <h3 class="zh-CN">获取当前结果集中的记录数</h3>
 	 *
 	 * @return <span class="en-US">Number of elements in partial collection</span>
@@ -148,16 +149,7 @@ public final class PartialCollection implements Serializable {
 		if (StringUtils.isEmpty(resultData)) {
 			return new PartialCollection(Collections.emptyList(), Long.parseLong(totalCount, 16));
 		}
-		List<Map<String, Object>> resultList = new ArrayList<>();
-		for (Map<?, ?> dataMap : BeanUtils.stringToList(resultData, StringType.JSON, Globals.DEFAULT_ENCODING, Map.class)) {
-			Map<String, Object> resultMap = new HashMap<>();
-			dataMap.forEach((key, value) -> {
-				if (key instanceof String) {
-					resultMap.put((String) key, value);
-				}
-			});
-			resultList.add(resultMap);
-		}
+		List<Map<String, Object>> resultList = ResultMapUtils.stringToResultList(resultData);
 		return new PartialCollection(resultList, Long.parseLong(totalCount, 16));
 	}
 
@@ -165,7 +157,7 @@ public final class PartialCollection implements Serializable {
 	public String toString() {
 		Map<String, Object> convertMap = new HashMap<>();
 		convertMap.put(TOTAL_COUNT_KEY, Long.toHexString(this.totalCount));
-		convertMap.put(RESULT_LIST_KEY, BeanUtils.objectToString(this.resultList, StringType.JSON));
+		convertMap.put(RESULT_LIST_KEY, ResultMapUtils.listToString(this.resultList));
 		return BeanUtils.objectToString(convertMap, StringType.JSON);
 	}
 }

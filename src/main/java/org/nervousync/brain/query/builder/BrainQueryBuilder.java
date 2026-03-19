@@ -18,8 +18,6 @@
 package org.nervousync.brain.query.builder;
 
 import jakarta.annotation.Nonnull;
-import jakarta.persistence.LockModeType;
-import org.intellij.lang.annotations.MagicConstant;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.QueryInfo;
 import org.nervousync.brain.query.condition.Condition;
@@ -101,27 +99,17 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 * <span class="en-US">Query result can cacheable</span>
 	 * <span class="zh-CN">查询结果可以缓存</span>
 	 */
-	private boolean cacheables = Boolean.FALSE;
+	private boolean cacheable = Boolean.FALSE;
 	/**
 	 * <span class="en-US">Current page number</span>
 	 * <span class="zh-CN">当前页数</span>
 	 */
 	private int pageNo = Globals.DEFAULT_VALUE_INT;
 	/**
-	 * <span class="en-US">Page limit records count</span>
+	 * <span class="en-US">Page limit record count</span>
 	 * <span class="zh-CN">每页的记录数</span>
 	 */
 	private int pageLimit = Globals.DEFAULT_VALUE_INT;
-	/**
-	 * <span class="en-US">Query result using for update record</span>
-	 * <span class="zh-CN">查询结果用于更新记录</span>
-	 */
-	private boolean forUpdate = Boolean.FALSE;
-	/**
-	 * <span class="en-US">Query record lock option</span>
-	 * <span class="zh-CN">查询记录锁定选项</span>
-	 */
-	private LockModeType lockOption = LockModeType.NONE;
 
 	/**
 	 * <h3 class="en-US">Constructor method for query information builder</h3>
@@ -272,7 +260,7 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
 	public BrainQueryBuilder useCache() {
-		this.cacheables = Boolean.TRUE;
+		this.cacheable = Boolean.TRUE;
 		return this;
 	}
 
@@ -298,21 +286,6 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 		return this;
 	}
 
-	/**
-	 * <h3 class="en-US">Setting for the query result will use for update records</h3>
-	 * <h3 class="zh-CN">设置查询结果用于更新数据</h3>
-	 *
-	 * @param lockOption <span class="en-US">Query record lock option</span>
-	 *                   <span class="zh-CN">查询记录锁定选项</span>
-	 * @return <span class="en-US">Current builder instance object</span>
-	 * <span class="zh-CN">当前构建器实例对象</span>
-	 */
-	public BrainQueryBuilder forUpdate(@MagicConstant(valuesFromClass = LockModeType.class) final LockModeType lockOption) {
-		this.forUpdate = Boolean.TRUE;
-		this.lockOption = lockOption;
-		return this;
-	}
-
 	@Override
 	public QueryInfo build() throws BuilderException {
 		if (this.itemList.isEmpty()) {
@@ -328,11 +301,9 @@ public final class BrainQueryBuilder extends ParentBuilder implements Builder<Qu
 		queryInfo.setGroupByList(this.groupByList);
 		queryInfo.setOrderByList(this.orderByList);
 		queryInfo.setHavingList(this.havingList);
-		queryInfo.setCacheables(this.cacheables);
+		queryInfo.setCacheables(this.cacheable);
 		queryInfo.setPageNo(this.pageNo);
 		queryInfo.setPageLimit(this.pageLimit);
-		queryInfo.setForUpdate(this.forUpdate);
-		queryInfo.setLockOption(this.lockOption);
 		return queryInfo;
 	}
 

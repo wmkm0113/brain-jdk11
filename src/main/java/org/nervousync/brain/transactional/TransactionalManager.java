@@ -79,12 +79,6 @@ public interface TransactionalManager {
 	void end(final boolean newTransactional) throws Exception;
 
 	/**
-	 * <h3 class="en-US">Clear transactional</h3>
-	 * <h3 class="zh-CN">清理事务</h3>
-	 */
-	void clear();
-
-	/**
 	 * <h3 class="en-US">Get the context of the current transactional</h3>
 	 * <h3 class="zh-CN">获取当前事务上下文</h3>
 	 *

@@ -17,6 +17,8 @@
 
 package org.nervousync.brain.schemas.jdbc;
 
+import org.intellij.lang.annotations.MagicConstant;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -51,8 +53,8 @@ public final class CallableStatementWrapper extends StatementWrapper<CallableSta
 	 *                      <span class="zh-CN">如果解析过程出错</span>
 	 */
 	public CallableStatementWrapper(final String identifyKey, final long lowQueryTimeout,
-	                                final Connection connection, final String sql) throws SQLException {
-		super(identifyKey, lowQueryTimeout, connection, connection.prepareCall(sql), sql);
+	                                final JdbcConnection connection, final String sql) throws SQLException {
+		super(identifyKey, lowQueryTimeout, connection, connection.createCall(sql), sql);
 	}
 
 	/**
@@ -75,10 +77,11 @@ public final class CallableStatementWrapper extends StatementWrapper<CallableSta
 	 *                      <span class="zh-CN">如果解析过程出错</span>
 	 */
 	public CallableStatementWrapper(final String identifyKey, final long lowQueryTimeout,
-	                                final Connection connection, final String sql,
-	                                final int resultSetType, final int resultSetConcurrency) throws SQLException {
+	                                final JdbcConnection connection, final String sql,
+	                                @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE}) final int resultSetType,
+	                                @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE}) final int resultSetConcurrency) throws SQLException {
 		super(identifyKey, lowQueryTimeout, connection,
-				connection.prepareCall(sql, resultSetType, resultSetConcurrency), sql);
+				connection.createCall(sql, resultSetType, resultSetConcurrency), sql);
 	}
 
 	/**
@@ -103,11 +106,12 @@ public final class CallableStatementWrapper extends StatementWrapper<CallableSta
 	 *                      <span class="zh-CN">如果解析过程出错</span>
 	 */
 	public CallableStatementWrapper(final String identifyKey, final long lowQueryTimeout,
-	                                final Connection connection, final String sql,
-	                                final int resultSetType, final int resultSetConcurrency,
-	                                final int resultSetHoldability) throws SQLException {
+	                                final JdbcConnection connection, final String sql,
+	                                @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE}) final int resultSetType,
+	                                @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE}) final int resultSetConcurrency,
+	                                @MagicConstant(intValues = {ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT}) final int resultSetHoldability) throws SQLException {
 		super(identifyKey, lowQueryTimeout, connection,
-				connection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql);
+				connection.createCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql);
 	}
 
 	@Override

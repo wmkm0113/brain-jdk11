@@ -19,7 +19,6 @@ package org.nervousync.brain.schemas.jdbc;
 
 import jakarta.annotation.Nonnull;
 import org.intellij.lang.annotations.MagicConstant;
-import org.nervousync.brain.configs.server.ServerInfo;
 import org.nervousync.brain.configs.sharding.StrategyConfig;
 import org.nervousync.brain.defines.ColumnDefine;
 import org.nervousync.brain.defines.IndexDefine;
@@ -35,7 +34,12 @@ import org.nervousync.utils.logger.LoggerUtils;
 
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * <h2 class="en-US">JDBC database connection pool</h2>
@@ -81,17 +85,27 @@ public final class JdbcConnectionPool {
 	 * <span class="en-US">Database connection queue</span>
 	 * <span class="zh-CN">数据库连接队列</span>
 	 */
-	private final List<JdbcConnection> createdConnections;
+	private final Queue<JdbcConnection> createdConnections;
 	/**
 	 * <span class="en-US">Using database connection list</span>
 	 * <span class="zh-CN">使用中的数据库连接列表</span>
 	 */
 	private final List<JdbcConnection> activeConnections;
 	/**
-	 * <span class="en-US">Waiting to get count of connections</span>
-	 * <span class="zh-CN">等待获取连接的计数</span>
+	 * <span class="en-US">Waiting to acquire connection counter</span>
+	 * <span class="zh-CN">等待获取连接计数器</span>
 	 */
-	private final AtomicInteger waitCount;
+	private final AtomicInteger waitCount = new AtomicInteger(Globals.INITIALIZE_INT_VALUE);
+	/**
+	 * <span class="en-US">Thread lock instance object</span>
+	 * <span class="zh-CN">线程锁实例对象</span>
+	 */
+	private final Lock lock = new ReentrantLock();
+	/**
+	 * <span class="en-US">Waiting condition</span>
+	 * <span class="zh-CN">等待线程</span>
+	 */
+	private final Condition waitCondition = this.lock.newCondition();
 	/**
 	 * <span class="en-US">Default database sharding value</span>
 	 * <span class="zh-CN">默认数据库分片值</span>
@@ -116,7 +130,7 @@ public final class JdbcConnectionPool {
 	 * <span class="en-US">Create connection task execution status</span>
 	 * <span class="zh-CN">创建连接任务执行状态</span>
 	 */
-	private boolean createRunning = Boolean.FALSE;
+	private final AtomicBoolean createRunning = new AtomicBoolean(Boolean.FALSE);
 
 
 	/**
@@ -129,27 +143,30 @@ public final class JdbcConnectionPool {
 	 *                           <span class="zh-CN">数据库方言实例对象</span>
 	 * @param pooled             <span class="en-US">Using connection pool</span>
 	 *                           <span class="zh-CN">使用连接池</span>
-	 * @param serverInfo         <span class="en-US">Server information</span>
-	 *                           <span class="zh-CN">服务器信息</span>
+	 * @param identifyCode       <span class="en-US">Connection pool identify code</span>
+	 *                           <span class="zh-CN">连接池识别代码</span>
+	 * @param properties         <span class="en-US">Connect properties instance object</span>
+	 *                           <span class="zh-CN">连接属性值</span>
+	 * @param jdbcUrl            <span class="en-US">Database JDBC connection string</span>
+	 *                           <span class="zh-CN">数据库JDBC连接字符串</span>
 	 * @param defaultCatalog     <span class="en-US">Default database sharding value</span>
 	 *                           <span class="zh-CN">默认的数据库分片值</span>
 	 * @param databaseParameters <span class="en-US">Parameter value of create databases</span>
 	 *                           <span class="zh-CN">创建数据库时使用的参数信息</span>
 	 */
-	JdbcConnectionPool(final JdbcSchema jdbcSchema, final JdbcDialect dialect,
-	                   final boolean pooled, final ServerInfo serverInfo, final String defaultCatalog,
-	                   final String databaseParameters) throws SQLException {
+	JdbcConnectionPool(final JdbcSchema jdbcSchema, final JdbcDialect dialect, final boolean pooled,
+	                   final int identifyCode, final Properties properties, final String jdbcUrl,
+	                   final String defaultCatalog, final String databaseParameters) throws SQLException {
 		this.schema = jdbcSchema;
 		this.dialect = dialect;
-		this.properties = jdbcSchema.properties(serverInfo);
-		this.identifyCode = jdbcSchema.identifyCode(serverInfo);
-		this.jdbcUrl = this.schema.shardingUrl(serverInfo);
+		this.properties = properties;
+		this.identifyCode = identifyCode;
+		this.jdbcUrl = jdbcUrl;
 		this.defaultCatalog = defaultCatalog;
 		this.databaseParameters = StringUtils.isEmpty(databaseParameters) ? Globals.DEFAULT_VALUE_STRING : databaseParameters;
 		this.pooled = pooled;
-		this.createdConnections = new ArrayList<>();
+		this.createdConnections = new LinkedList<>();
 		this.activeConnections = new ArrayList<>();
-		this.waitCount = new AtomicInteger(Globals.INITIALIZE_INT_VALUE);
 		this.databaseNames = new ArrayList<>();
 		this.createConnections();
 		this.scanExists();
@@ -173,7 +190,7 @@ public final class JdbcConnectionPool {
 	 * @return <span class="en-US">Database connection instance object</span>
 	 * <span class="zh-CN">数据库连接实例对象</span>
 	 */
-	JdbcConnection createConnection(final String catalog) throws SQLException {
+	JdbcConnection createConnection() throws SQLException {
 		boolean process = Boolean.TRUE;
 		int retryCount = Globals.INITIALIZE_INT_VALUE;
 		Connection connection = null;
@@ -187,10 +204,10 @@ public final class JdbcConnectionPool {
 				}
 			}
 			if (connection == null) {
-				if (retryCount < this.schema.retryCount) {
+				if (retryCount < this.schema.getRetryCount()) {
 					try {
 						retryCount++;
-						Thread.sleep(this.schema.retryPeriod);
+						Thread.sleep(this.schema.getRetryPeriod());
 					} catch (InterruptedException e) {
 						LOGGER.error("Thread_Sleep_Error");
 						if (LOGGER.isDebugEnabled()) {
@@ -209,28 +226,15 @@ public final class JdbcConnectionPool {
 		if (connection == null) {
 			throw new MultilingualSQLException(0x00DB00000023L);
 		}
-		if (StringUtils.notBlank(catalog)) {
-			if (!this.databaseNames.contains(catalog)) {
-				String sqlCmd = this.dialect.createDatabase(catalog, this.databaseParameters);
-				if (StringUtils.notBlank(sqlCmd)) {
-					try (Statement statement = connection.createStatement()) {
-						statement.execute(sqlCmd);
-					}
-				}
-			}
-			connection.setCatalog(catalog);
-		}
 		return new JdbcConnection(this, connection,
-				this.schema.getLowQueryTimeout(), this.schema.cachedLimitSize);
+				this.schema.getLowQueryTimeout(), this.schema.getCachedLimitSize());
 	}
 
 	void configPooled(final boolean pooled) {
 		boolean original = this.pooled;
 		this.pooled = pooled;
-		if (original) {
-			if (!pooled) {
-				this.closePool();
-			}
+		if (original && !pooled) {
+			this.closePool();
 		}
 		if (this.pooled) {
 			this.createConnections();
@@ -267,30 +271,18 @@ public final class JdbcConnectionPool {
 	 * @return <span class="en-US">Check result</span>
 	 * <span class="zh-CN">检查结果</span>
 	 */
-	boolean invalidConnection(@Nonnull final JdbcConnection connection) {
+	boolean invalidConnection(final JdbcConnection connection) {
+		if (connection == null) {
+			return Boolean.TRUE;
+		}
 		boolean validate;
-		Statement statement = null;
 		try {
-			String validateQuery = this.dialect.getValidationQuery();
-			if (StringUtils.isEmpty(validateQuery)) {
-				validate = connection.isValid(this.schema.getValidateTimeout());
-			} else {
-				statement = connection.createStatement();
-				statement.setQueryTimeout(this.schema.getValidateTimeout());
-				validate = statement.execute(validateQuery);
-			}
+			validate = connection.isValid(this.schema.getValidateTimeout());
 		} catch (SQLException e) {
 			if (LOGGER.isDebugEnabled()) {
 				LOGGER.debug("Check_Connection_Error", e);
 			}
 			validate = Boolean.FALSE;
-		} finally {
-			if (statement != null) {
-				try {
-					statement.close();
-				} catch (SQLException ignore) {
-				}
-			}
 		}
 
 		if (!validate) {
@@ -300,14 +292,35 @@ public final class JdbcConnectionPool {
 	}
 
 	/**
+	 * <h3 class="en-US">Total number of connections in the connection pool</h3>
+	 * <h3 class="zh-CN">获取连接池中的总连接数</h3>
+	 *
+	 * @return <span class="en-US">Number of connections</span>
+	 * <span class="zh-CN">总连接数</span>
+	 */
+	int poolCount() {
+		this.lock.lock();
+		try {
+			return this.createdConnections.size() + this.activeConnections.size();
+		} finally {
+			this.lock.unlock();
+		}
+	}
+
+	/**
 	 * <h3 class="en-US">Number of connections in the connection queue</h3>
-	 * <h3 class="zh-CN">连接队列中的连接数</h3>
+	 * <h3 class="zh-CN">获取当前队列中的连接数</h3>
 	 *
 	 * @return <span class="en-US">Number of connections</span>
 	 * <span class="zh-CN">连接数</span>
 	 */
-	int poolCount() {
-		return this.createdConnections.size();
+	int queueCount() {
+		this.lock.lock();
+		try {
+			return this.createdConnections.size();
+		} finally {
+			this.lock.unlock();
+		}
 	}
 
 	/**
@@ -318,7 +331,12 @@ public final class JdbcConnectionPool {
 	 * <span class="zh-CN">连接数</span>
 	 */
 	int activeCount() {
-		return this.activeConnections.size();
+		this.lock.lock();
+		try {
+			return this.activeConnections.size();
+		} finally {
+			this.lock.unlock();
+		}
 	}
 
 	/**
@@ -399,7 +417,7 @@ public final class JdbcConnectionPool {
 	}
 
 	/**
-	 * <h3 class="en-US">Drop data table</h3>
+	 * <h3 class="en-US">Drop the data table</h3>
 	 * <h3 class="zh-CN">删除数据表</h3>
 	 *
 	 * @param tableDefine    <span class="en-US">Table defines information</span>
@@ -418,12 +436,10 @@ public final class JdbcConnectionPool {
 				try (Connection connection = this.obtainConnection(catalog);
 				     Statement statement = connection.createStatement()) {
 					for (String tableName : this.tableNames(connection, strategyConfig)) {
-						if (strategyConfig.tableMatch(tableName)) {
-							for (IndexDefine indexDefine : tableDefine.getIndexDefines()) {
-								statement.addBatch(this.dialect.dropIndexCommand(indexDefine.getIndexName(), tableName));
-							}
-							statement.addBatch(this.dialect.dropTableCommand(tableName, dropOption));
+						for (IndexDefine indexDefine : tableDefine.getIndexDefines()) {
+							statement.addBatch(this.dialect.dropIndexCommand(indexDefine.getIndexName(), tableName));
 						}
+						statement.addBatch(this.dialect.dropTableCommand(tableName, dropOption));
 					}
 					if (strategyConfig.shardingTable()) {
 						statement.addBatch(this.dialect.dropShardingView(tableDefine));
@@ -435,7 +451,7 @@ public final class JdbcConnectionPool {
 	}
 
 	/**
-	 * <h3 class="en-US">Obtain data table names list</h3>
+	 * <h3 class="en-US">Get data table names list</h3>
 	 * <h3 class="zh-CN">获取数据表名称列表</h3>
 	 *
 	 * @param connection     <span class="en-US">Used database connection instance object</span>
@@ -482,7 +498,7 @@ public final class JdbcConnectionPool {
 	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
-	private void initTable(final Connection connection, final Statement statement, @Nonnull final DDLType ddlType,
+	private void initTable(final JdbcConnection connection, final Statement statement, @Nonnull final DDLType ddlType,
 	                       @Nonnull final TableDefine tableDefine, final StrategyConfig strategyConfig,
 	                       @Nonnull final String tableName) throws SQLException {
 		String catalog = connection.getCatalog();
@@ -491,28 +507,30 @@ public final class JdbcConnectionPool {
 		}
 		String schema = connection.getSchema();
 		String tableNamePattern = this.dialect.nameCase(tableName);
-		DatabaseMetaData databaseMetaData = connection.getMetaData();
-		try (ResultSet resultSet = databaseMetaData.getTables(catalog, schema, tableNamePattern, new String[]{"TABLE"})) {
+		DatabaseMetaData metaData = connection.getMetaData();
+		try (ResultSet resultSet = metaData.getTables(catalog, schema, tableNamePattern, new String[]{"TABLE"})) {
 			if (resultSet.next()) {
 				if (DDLType.SYNCHRONIZE.equals(ddlType) || DDLType.VALIDATE.equals(ddlType)) {
-					ResultSet primaryKeyResultSet = databaseMetaData.getPrimaryKeys(catalog, schema, tableNamePattern);
 					List<String> primaryKeys = new ArrayList<>();
-					while (primaryKeyResultSet.next()) {
-						primaryKeys.add(primaryKeyResultSet.getString("COLUMN_NAME"));
+					try (ResultSet primaryKeyResultSet = metaData.getPrimaryKeys(catalog, schema, tableNamePattern)) {
+						while (primaryKeyResultSet.next()) {
+							primaryKeys.add(primaryKeyResultSet.getString("COLUMN_NAME"));
+						}
 					}
 
 					List<String> uniqueKeys = new ArrayList<>();
-					ResultSet indexResultSet =
-							databaseMetaData.getIndexInfo(catalog, schema, tableNamePattern, Boolean.TRUE, Boolean.TRUE);
-					while (indexResultSet.next()) {
-						uniqueKeys.add(indexResultSet.getString("COLUMN_NAME"));
+					try (ResultSet indexResultSet = metaData.getIndexInfo(catalog, schema, tableNamePattern, Boolean.TRUE, Boolean.TRUE)) {
+						while (indexResultSet.next()) {
+							uniqueKeys.add(indexResultSet.getString("COLUMN_NAME"));
+						}
 					}
 
-					ResultSet columnResultSet =
-							databaseMetaData.getColumns(catalog, schema, tableNamePattern, "%");
+
 					List<ColumnDefine> existColumns = new ArrayList<>();
-					while (columnResultSet.next()) {
-						existColumns.add(ColumnDefine.newInstance(columnResultSet, this.dialect, primaryKeys, uniqueKeys));
+					try (ResultSet columnResultSet = metaData.getColumns(catalog, schema, tableNamePattern, "%")) {
+						while (columnResultSet.next()) {
+							existColumns.add(ColumnDefine.newInstance(columnResultSet, this.dialect, primaryKeys, uniqueKeys));
+						}
 					}
 
 					switch (ddlType) {
@@ -575,22 +593,22 @@ public final class JdbcConnectionPool {
 	void initTable(@Nonnull final TableDefine tableDefine, final StrategyConfig strategyConfig,
 	               @Nonnull final String catalog, @Nonnull final String tableName) throws SQLException {
 		String currentCatalog = StringUtils.isEmpty(catalog) ? this.defaultCatalog : catalog;
-		Connection connection = this.obtainConnection(currentCatalog);
-		if (LOGGER.isDebugEnabled()) {
-			LOGGER.debug("Transactional_Level_Debug", connection.getTransactionIsolation());
-		}
-		if (StringUtils.notBlank(currentCatalog) && !this.databaseNames.contains(currentCatalog)) {
-			//  Create the database
-			try (Statement statement = connection.createStatement()) {
-				statement.execute(this.dialect.createDatabase(currentCatalog, this.databaseParameters));
+		try (JdbcConnection connection = this.obtainConnection(currentCatalog)) {
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("Transactional_Level_Debug", connection.getTransactionIsolation());
 			}
-			this.databaseNames.add(currentCatalog);
+			if (StringUtils.notBlank(currentCatalog) && !this.databaseNames.contains(currentCatalog)) {
+				//  Create the database
+				try (Statement statement = connection.createStatement()) {
+					statement.execute(this.dialect.createDatabase(currentCatalog, this.databaseParameters));
+				}
+				this.databaseNames.add(currentCatalog);
+			}
+			try (Statement statement = connection.createStatement()) {
+				this.initTable(connection, statement, DDLType.CREATE, tableDefine, strategyConfig, tableName);
+				statement.executeBatch();
+			}
 		}
-		try (Statement statement = connection.createStatement()) {
-			this.initTable(connection, statement, DDLType.CREATE, tableDefine, strategyConfig, tableName);
-			statement.executeBatch();
-		}
-		connection.close();
 	}
 
 	/**
@@ -610,7 +628,7 @@ public final class JdbcConnectionPool {
 	               @Nonnull final StrategyConfig strategyConfig) throws SQLException {
 		for (String catalog : this.databaseNames) {
 			if (strategyConfig.dbMatch(catalog)) {
-				try (Connection connection = this.obtainConnection(catalog);
+				try (JdbcConnection connection = this.obtainConnection(catalog);
 				     Statement statement = connection.createStatement()) {
 					List<String> tableNames = this.tableNames(connection, strategyConfig);
 					String currentName = strategyConfig.tableKey(Map.of());
@@ -644,29 +662,6 @@ public final class JdbcConnectionPool {
 	}
 
 	/**
-	 * <h3 class="en-US">Get a connection without transactional configured</h3>
-	 * <h3 class="zh-CN">获得无事务连接</h3>
-	 *
-	 * @param catalog <span class="en-US">Sharded database name</span>
-	 *                <span class="zh-CN">分片数据库名</span>
-	 * @throws SQLException <span class="en-US">An error occurred while obtaining the connection</span>
-	 *                      <span class="zh-CN">获得连接过程中出错</span>
-	 */
-	synchronized JdbcConnection retrieveConnection(final String catalog) throws SQLException {
-		if (this.createdConnections.isEmpty()) {
-			return null;
-		}
-		final String matchCatalog = StringUtils.isEmpty(catalog) ? this.defaultCatalog : catalog;
-		JdbcConnection connection = this.createdConnections.stream()
-				.filter(jdbcConnection -> jdbcConnection.match(this.identifyCode, matchCatalog))
-				.findFirst()
-				.orElse(this.createdConnections.get(0));
-		connection.setCatalog(catalog);
-		this.createdConnections.remove(connection);
-		return connection;
-	}
-
-	/**
 	 * <h3 class="en-US">Get a connection</h3>
 	 * <h3 class="zh-CN">获得连接</h3>
 	 *
@@ -682,77 +677,58 @@ public final class JdbcConnectionPool {
 	JdbcConnection obtainConnection(final String catalog,
 	                                @MagicConstant(valuesFromClass = Connection.class) final int isolation)
 			throws SQLException {
-		JdbcConnection connection = null;
-		if (!this.pooled) {
-			connection = this.createConnection(catalog);
-		} else {
-			long beginTime = DateTimeUtils.currentUTCTimeMillis();
-			long timeOutTime = this.schema.getConnectTimeout() * 1000L;
-
-			boolean waitCount = Boolean.FALSE;
-
-			if (LOGGER.isDebugEnabled()) {
-				LOGGER.debug("Connection_Wait_Count", this.waitCount.get());
-			}
-			synchronized (this.createdConnections) {
+		this.lock.lock();
+		try {
+			JdbcConnection connection;
+			if (this.pooled) {
+				this.waitCount.incrementAndGet();
+				long beginTimestamp = DateTimeUtils.currentUTCTimeMillis();
+				connection = this.pollConnection();
 				while (connection == null) {
-					connection = this.retrieveConnection(catalog);
-					if (connection == null && !this.limitConnections()) {
-						try {
-							connection = this.createConnection(catalog);
-						} catch (SQLException e) {
-							if (LOGGER.isDebugEnabled()) {
-								LOGGER.debug("Create_Connection_Error", e);
-							}
-						}
+					if (this.waitCondition.await(this.schema.getConnectTimeout(), TimeUnit.SECONDS)) {
+						connection = this.pollConnection();
 					}
-
-					if (connection != null && this.schema.testOnBorrow && this.invalidConnection(connection)) {
-						this.destroyConnection(connection);
-						connection = null;
-					}
-
-					if (connection == null) {
-						if (!waitCount) {
-							this.waitCount.incrementAndGet();
-							waitCount = Boolean.TRUE;
-						}
-
-						if (timeOutTime < (DateTimeUtils.currentUTCTimeMillis() - beginTime)) {
-							break;
-						}
+					if ((this.schema.getConnectTimeout() * 1000L) <= (DateTimeUtils.currentUTCTimeMillis() - beginTimestamp)) {
+						//  Obtain connection timeout
+						throw new MultilingualSQLException(0x00DB00000024L);
 					}
 				}
+				if (StringUtils.notBlank(catalog)) {
+					this.initDatabase(connection, catalog);
+					connection.setCatalog(catalog);
+				}
+			} else {
+				connection = this.createConnection();
 			}
-
-			if (waitCount) {
+			if (isolation != Connection.TRANSACTION_NONE) {
+				connection.setAutoCommit(Boolean.FALSE);
+				connection.setTransactionIsolation(isolation);
+			}
+			this.activeConnections.add(connection);
+			return connection;
+		} catch (InterruptedException e) {
+			throw new MultilingualSQLException(0x00DB00000024L, e);
+		} finally {
+			if (this.pooled) {
 				this.waitCount.decrementAndGet();
 			}
-
-			if (LOGGER.isDebugEnabled()) {
-				if (waitCount) {
-					LOGGER.debug("Connection_From_Create");
-				} else {
-					LOGGER.debug("Connection_From_Pool");
-				}
-				LOGGER.debug("Connection_Used_Time",
-						DateTimeUtils.currentUTCTimeMillis() - beginTime);
-				LOGGER.debug("Pool_Connection_Debug", this.activeConnections.size(),
-						this.createdConnections.size());
-			}
+			this.lock.unlock();
 		}
+	}
 
-		if (connection == null) {
-			throw new MultilingualSQLException(0x00DB00000024L);
+	/**
+	 * <h3 class="en-US">Get the first connection from the connection queue</h3>
+	 * <h3 class="zh-CN">获得连接队列中的第一个连接</h3>
+	 *
+	 * @return <span class="en-US">Obtained connection</span>
+	 * <span class="zh-CN">获得的连接</span>
+	 */
+	private JdbcConnection pollConnection() {
+		JdbcConnection connection = this.createdConnections.poll();
+		if (this.schema.isTestOnBorrow() && this.invalidConnection(connection)) {
+			this.destroyConnection(connection);
+			connection = null;
 		}
-
-		if (isolation != Connection.TRANSACTION_NONE) {
-			connection.setAutoCommit(Boolean.FALSE);
-			connection.setTransactionIsolation(isolation);
-		}
-
-		this.activeConnections.add(connection);
-		connection.setCachedLimitSize(this.schema.cachedLimitSize);
 		return connection;
 	}
 
@@ -760,11 +736,16 @@ public final class JdbcConnectionPool {
 	 * <h3 class="en-US">Destroy the current connection pool</h3>
 	 * <h3 class="zh-CN">销毁当前数据库连接池</h3>
 	 */
-	void destroy() {
-		//  Close all activated connection
-		this.activeConnections.forEach(this::destroyConnection);
-		this.activeConnections.clear();
-		this.closePool();
+	void shutdownNow() {
+		this.lock.lock();
+		try {
+			//  Close all activated connection
+			this.activeConnections.forEach(this::destroyConnection);
+			this.activeConnections.clear();
+			this.closePool();
+		} finally {
+			this.lock.unlock();
+		}
 	}
 
 	/**
@@ -785,43 +766,55 @@ public final class JdbcConnectionPool {
 	 * @throws SQLException <span class="en-US">An error occurred while close the connection</span>
 	 *                      <span class="zh-CN">关闭连接过程中出错</span>
 	 */
-	void closeConnection(final JdbcConnection connection) throws SQLException {
-		if (connection == null) {
-			return;
-		}
-
-		this.activeConnections.remove(connection);
-
-		if (!this.pooled || connection.isClosed() || this.schema.maxConnections <= this.poolCount()) {
-			this.destroyConnection(connection);
-			return;
-		}
-
-		if (this.schema.testOnReturn && this.invalidConnection(connection)) {
-			if (LOGGER.isDebugEnabled()) {
-				LOGGER.debug("Invalid_Destroy_Connection");
+	void closeConnection(@Nonnull final JdbcConnection connection) throws SQLException {
+		this.lock.lock();
+		try {
+			this.activeConnections.remove(connection);
+			boolean destroy = Boolean.FALSE;
+			if (!this.pooled || connection.isClosed()) {
+				if (LOGGER.isDebugEnabled()) {
+					LOGGER.debug("Closed_Destroy_Connection");
+				}
+				destroy = Boolean.TRUE;
 			}
-			this.destroyConnection(connection);
-			return;
-		}
+			if (this.schema.getMinConnections() <= this.queueCount()
+					|| this.schema.getMaxConnections() <= this.poolCount()) {
+				//  The connection pool is full or the connections count is greater than the max connections
+				destroy = Boolean.TRUE;
+			}
 
-		connection.reset();
-		this.addConnection(connection);
+			if (!destroy && this.schema.isTestOnReturn() && this.invalidConnection(connection)) {
+				if (LOGGER.isDebugEnabled()) {
+					LOGGER.debug("Invalid_Destroy_Connection");
+				}
+				destroy = Boolean.TRUE;
+			}
+
+			if (destroy) {
+				this.destroyConnection(connection);
+			} else {
+				connection.reset();
+				this.createdConnections.add(connection);
+				this.waitCondition.signal();
+			}
+		} finally {
+			this.lock.unlock();
+		}
 	}
 
 	/**
-	 * <h3 class="en-US">Check current connections count is greater or equal the maximum connections</h3>
+	 * <h3 class="en-US">Check the current connections count is greater or equal to the maximum connections</h3>
 	 * <h3 class="zh-CN">检查当前连接数是否超过最大连接数</h3>
 	 *
 	 * @return <span class="en-US">Check result</span>
 	 * <span class="zh-CN">检查结果</span>
 	 */
 	private boolean limitConnections() {
-		return this.schema.maxConnections < (this.activeCount() + this.poolCount());
+		return (this.activeCount() + this.poolCount()) >= this.schema.getMaxConnections();
 	}
 
 	/**
-	 * <h3 class="en-US">Add connection to connection pool</h3>
+	 * <h3 class="en-US">Add a connection to the connection pool</h3>
 	 * <h3 class="zh-CN">添加连接到连接池</h3>
 	 *
 	 * @param connection <span class="en-US">Obtained connection</span>
@@ -833,11 +826,15 @@ public final class JdbcConnectionPool {
 			return;
 		}
 		boolean destroy = Boolean.TRUE;
-		synchronized (this.createdConnections) {
+		this.lock.lock();
+		try {
 			if (this.needConnections()) {
 				this.createdConnections.add(connection);
 				destroy = Boolean.FALSE;
+				this.waitCondition.signal();
 			}
+		} finally {
+			this.lock.unlock();
 		}
 		if (destroy) {
 			if (LOGGER.isDebugEnabled()) {
@@ -848,14 +845,14 @@ public final class JdbcConnectionPool {
 	}
 
 	/**
-	 * <h3 class="en-US">Check current connections count in connection pool is less than the pool maximum connections</h3>
+	 * <h3 class="en-US">Check current connections count in the connection pool is less than the pool maximum connections</h3>
 	 * <h3 class="zh-CN">检查当前连接池中的连接数是否小于连接池最大连接数</h3>
 	 *
 	 * @return <span class="en-US">Check result</span>
 	 * <span class="zh-CN">检查结果</span>
 	 */
 	private boolean needConnections() {
-		return this.pooled ? (this.poolCount() < this.schema.minConnections) : Boolean.FALSE;
+		return this.pooled ? (this.queueCount() < this.schema.getMinConnections()) : Boolean.FALSE;
 	}
 
 	/**
@@ -863,34 +860,36 @@ public final class JdbcConnectionPool {
 	 * <h3 class="zh-CN">检查数据库连接池中的连接数是否满足配置需求</h3>
 	 */
 	void createConnections() {
-		if (this.createRunning || !this.pooled) {
+		if (!this.createRunning.compareAndSet(Boolean.FALSE, Boolean.TRUE) || !this.pooled) {
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("Create_Connection_Running");
+			}
+			//  Reset flag to not running
+			this.createRunning.set(Boolean.FALSE);
 			return;
 		}
 
-		this.createRunning = Boolean.TRUE;
-		if (this.limitConnections()) {
-			LOGGER.debug("Create_Connection_Full");
-			return;
-		}
-		if (LOGGER.isDebugEnabled()) {
-			LOGGER.debug("Create_Connection_Begin_Debug");
-		}
-		int poolSize = this.poolCount(), count = Globals.INITIALIZE_INT_VALUE;
-		while (count < poolSize) {
-			JdbcConnection connection = this.createdConnections.get(count);
-			count++;
-			if (connection == null) {
-				continue;
+		this.lock.lock();
+		try {
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("Create_Connection_Begin_Debug");
 			}
-			if (this.invalidConnection(connection)) {
-				this.destroyConnection(connection);
-				this.createdConnections.remove(connection);
+			if (this.limitConnections()) {
+				LOGGER.debug("Create_Connection_Full");
+				this.createRunning.set(Boolean.FALSE);
+				return;
 			}
-		}
-		synchronized (this.createdConnections) {
+
+			this.createdConnections.removeIf(connection -> {
+				if (this.invalidConnection(connection)) {
+					this.destroyConnection(connection);
+					return Boolean.TRUE;
+				}
+				return Boolean.FALSE;
+			});
 			while (this.needConnections()) {
 				try {
-					this.addConnection(this.createConnection(Globals.DEFAULT_VALUE_STRING));
+					this.addConnection(this.createConnection());
 				} catch (SQLException e) {
 					LOGGER.error("Create_Connection_Error");
 					if (LOGGER.isDebugEnabled()) {
@@ -899,16 +898,36 @@ public final class JdbcConnectionPool {
 					break;
 				}
 			}
+		} catch (Exception e) {
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("Stack_Message_Error", e);
+			}
+		} finally {
+			this.createRunning.set(Boolean.FALSE);
+			this.lock.unlock();
 		}
 
 		if (LOGGER.isDebugEnabled()) {
 			LOGGER.debug("Create_Connection_End_Debug");
 		}
-		this.createRunning = Boolean.FALSE;
+	}
+
+	private void initDatabase(@Nonnull final JdbcConnection connection, @Nonnull final String catalog) throws SQLException {
+		if (StringUtils.notBlank(catalog)) {
+			if (!this.databaseNames.contains(catalog)) {
+				String sqlCmd = this.dialect.createDatabase(catalog, this.databaseParameters);
+				if (StringUtils.notBlank(sqlCmd)) {
+					try (Statement statement = connection.createStatement()) {
+						statement.execute(sqlCmd);
+					}
+				}
+			}
+			connection.setCatalog(catalog);
+		}
 	}
 
 	void scanExists() throws SQLException {
-		try (Connection connection = this.obtainConnection(Globals.DEFAULT_VALUE_STRING);
+		try (JdbcConnection connection = this.obtainConnection(Globals.DEFAULT_VALUE_STRING);
 		     ResultSet resultSet = connection.getMetaData().getCatalogs()) {
 			while (resultSet.next()) {
 				String databaseName = resultSet.getString("TABLE_CAT");

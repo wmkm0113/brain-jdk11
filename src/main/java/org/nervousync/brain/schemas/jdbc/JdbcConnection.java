@@ -17,12 +17,18 @@
 
 package org.nervousync.brain.schemas.jdbc;
 
+import jakarta.annotation.Nonnull;
 import org.intellij.lang.annotations.MagicConstant;
+import org.nervousync.brain.command.GeneratedCommand;
+import org.nervousync.brain.commons.BrainCommons;
+import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
+import org.nervousync.brain.transactional.TransactionalProxy;
+import org.nervousync.brain.transactional.impl.TransactionalContext;
+import org.nervousync.commons.Globals;
 import org.nervousync.enumerations.beans.StringType;
 import org.nervousync.enumerations.security.EncodeType;
 import org.nervousync.utils.core.BeanUtils;
-import org.nervousync.utils.core.ClassUtils;
 import org.nervousync.utils.core.ObjectUtils;
 import org.nervousync.utils.core.StringUtils;
 import org.nervousync.utils.logger.LoggerUtils;
@@ -30,6 +36,7 @@ import org.nervousync.utils.security.SecurityUtils;
 
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 
 /**
@@ -62,7 +69,7 @@ public final class JdbcConnection implements Connection {
 	 * <span class="en-US">Maximum size of prepared statement</span>
 	 * <span class="zh-CN">查询分析器的最大缓存结果</span>
 	 */
-	private int cachedLimitSize;
+	private final int cachedLimitSize;
 	/**
 	 * <span class="en-US">Database connection instance object</span>
 	 * <span class="zh-CN">数据库连接实例对象</span>
@@ -77,17 +84,12 @@ public final class JdbcConnection implements Connection {
 	 * <span class="en-US">Cached prepared statement mapping</span>
 	 * <span class="zh-CN">缓存的查询分析器映射表</span>
 	 */
-	private final List<StatementWrapper<?>> cachedStatements;
+	private final CopyOnWriteArrayList<StatementWrapper<?>> cachedStatements;
 	/**
 	 * <span class="en-US">Current database sharding value</span>
 	 * <span class="zh-CN">当前数据库分片值</span>
 	 */
 	private String currentCatalog;
-	/**
-	 * <span class="en-US">Commited flag for transactional</span>
-	 * <span class="zh-CN">事务提交标记</span>
-	 */
-	private boolean commited = Boolean.FALSE;
 
 	/**
 	 * <h3 class="en-US">Constructor method for the data source creates a wrapper class for the connection</h3>
@@ -109,29 +111,8 @@ public final class JdbcConnection implements Connection {
 		this.transactionalLevel = connection.getTransactionIsolation();
 		this.lowQueryTimeout = lowQueryTimeout;
 		this.cachedLimitSize = cachedLimitSize;
-		this.cachedStatements = new ArrayList<>();
+		this.cachedStatements = new CopyOnWriteArrayList<>();
 		this.currentCatalog = connection.getCatalog();
-	}
-
-	boolean match(final int identifyCode, final String catalog) {
-		if (this.connectionPool.getIdentifyCode() != identifyCode) {
-			return Boolean.FALSE;
-		}
-		if (this.currentCatalog == null) {
-			return StringUtils.isEmpty(catalog);
-		}
-		return ObjectUtils.nullSafeEquals(this.currentCatalog, catalog);
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for the maximum size of the prepared statement</h3>
-	 * <h3 class="zh-CN">查询分析器的最大缓存结果的Setter方法</h3>
-	 *
-	 * @param cachedLimitSize <span class="en-US">Maximum size of prepared statement</span>
-	 *                        <span class="zh-CN">查询分析器的最大缓存结果</span>
-	 */
-	public void setCachedLimitSize(final int cachedLimitSize) {
-		this.cachedLimitSize = cachedLimitSize;
 	}
 
 	/**
@@ -145,15 +126,27 @@ public final class JdbcConnection implements Connection {
 		if (LOGGER.isDebugEnabled()) {
 			LOGGER.debug("Transactional_Level_Debug", this.connection.getTransactionIsolation());
 		}
+		this.connection.setReadOnly(Boolean.FALSE);
 		this.connection.setAutoCommit(Boolean.TRUE);
 		this.connection.setTransactionIsolation(this.transactionalLevel);
-		this.commited = Boolean.FALSE;
 	}
+
 	@Override
 	public void close() throws SQLException {
-		if (this.connection.getAutoCommit() || this.commited) {
-			this.connectionPool.closeConnection(this);
+		if (this.getAutoCommit()) {
+			this.closeConnection();
 		}
+	}
+
+	/**
+	 * <h3 class="en-US">Return the current connection to the corresponding connection pool.</h3>
+	 * <h3 class="zh-CN">归还当前连接到对应的连接池</h3>
+	 *
+	 * @throws SQLException <span class="en-US">Error occurs when return connection</span>
+	 *                      <span class="zh-CN">归还连接时出错</span>
+	 */
+	void closeConnection() throws SQLException {
+		this.connectionPool.closeConnection(this);
 	}
 
 	/**
@@ -164,6 +157,9 @@ public final class JdbcConnection implements Connection {
 	 *                      <span class="zh-CN">关闭连接时出错</span>
 	 */
 	public void destroy() throws SQLException {
+		for (StatementWrapper<?> cachedStatement : this.cachedStatements) {
+			cachedStatement.destroy();
+		}
 		this.cachedStatements.clear();
 		if (!this.connection.isClosed()) {
 			this.connection.close();
@@ -173,15 +169,21 @@ public final class JdbcConnection implements Connection {
 	@Override
 	public <T> T unwrap(final Class<T> clazz) throws SQLException {
 		try {
-			return clazz.cast(this);
+			if (clazz.isInstance(this)) {
+				return clazz.cast(this);
+			}
+			return this.connection.unwrap(clazz);
 		} catch (ClassCastException e) {
 			throw new SQLException(e);
 		}
 	}
 
 	@Override
-	public boolean isWrapperFor(final Class<?> clazz) {
-		return ClassUtils.isAssignable(clazz, this.getClass());
+	public boolean isWrapperFor(final Class<?> clazz) throws SQLException {
+		if (clazz.isInstance(this)) {
+			return Boolean.TRUE;
+		}
+		return this.connection.isWrapperFor(clazz);
 	}
 
 	@Override
@@ -190,10 +192,37 @@ public final class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public PreparedStatement prepareStatement(final String sql) throws SQLException {
-		return this.obtainStatement(KeyType.SQL_ONLY, sql, ResultSet.TYPE_FORWARD_ONLY,
-				ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT, Statement.NO_GENERATED_KEYS,
-				new int[0], new String[0]).unwrap(PreparedStatement.class);
+	public Statement createStatement(final int resultSetType, final int resultSetConcurrency) throws SQLException {
+		return this.connection.createStatement(resultSetType, resultSetConcurrency);
+	}
+
+	@Override
+	public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+			throws SQLException {
+		return this.connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
+	}
+
+	public PreparedStatement prepareStatement(final GeneratedCommand sqlCommand) throws SQLException {
+		return this.prepareStatement(sqlCommand, Statement.NO_GENERATED_KEYS);
+	}
+
+	public PreparedStatement prepareStatement(final GeneratedCommand sqlCommand,
+	                                          @MagicConstant(intValues = {Statement.RETURN_GENERATED_KEYS, Statement.NO_GENERATED_KEYS}) final int autoGeneratedKeys) throws SQLException {
+		PreparedStatement statement = this.obtainStatement(KeyType.SQL_ONLY, sqlCommand.getCommand(),
+				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT,
+				autoGeneratedKeys, new int[0], new String[0]);
+		TransactionalConfig txConfig = Optional.ofNullable(TransactionalProxy.getTransactionalManager().get())
+				.map(TransactionalContext::getTransactionalConfig)
+				.orElse(null);
+		if (txConfig != null && txConfig.getIsolation() != Connection.TRANSACTION_NONE && txConfig.getTimeout() > 0) {
+			statement.setQueryTimeout(txConfig.getTimeout());
+		}
+		int index = 1;
+		for (Object object : sqlCommand.getParameters()) {
+			statement.setObject(index, object);
+			index++;
+		}
+		return statement;
 	}
 
 	@Override
@@ -201,19 +230,6 @@ public final class JdbcConnection implements Connection {
 		return this.obtainStatement(KeyType.CALL_ONLY, sql, ResultSet.TYPE_FORWARD_ONLY,
 				ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT, Statement.NO_GENERATED_KEYS,
 				new int[0], new String[0]).unwrap(CallableStatement.class);
-	}
-
-	@Override
-	public Statement createStatement(final int resultSetType, final int resultSetConcurrency) throws SQLException {
-		return this.connection.createStatement(resultSetType, resultSetConcurrency);
-	}
-
-	@Override
-	public PreparedStatement prepareStatement(final String sql, final int resultSetType, final int resultSetConcurrency)
-			throws SQLException {
-		return this.obtainStatement(KeyType.SQL_CONCURRENCY, sql, resultSetType, resultSetConcurrency,
-				ResultSet.CLOSE_CURSORS_AT_COMMIT, Statement.NO_GENERATED_KEYS,
-				new int[0], new String[0]).unwrap(PreparedStatement.class);
 	}
 
 	@Override
@@ -227,9 +243,29 @@ public final class JdbcConnection implements Connection {
 	}
 
 	@Override
-	public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+	public CallableStatement prepareCall(final String sql,
+	                                     @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE}) final int resultSetType,
+	                                     @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE}) final int resultSetConcurrency,
+	                                     @MagicConstant(intValues = {ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT}) final int resultSetHoldability)
 			throws SQLException {
-		return this.connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
+		return this.obtainStatement(KeyType.CALL_HOLDABILITY, sql, resultSetType,
+				resultSetConcurrency, resultSetHoldability, Statement.NO_GENERATED_KEYS,
+				new int[0], new String[0]).unwrap(CallableStatement.class);
+	}
+
+	@Override
+	public PreparedStatement prepareStatement(final String sql) throws SQLException {
+		return this.obtainStatement(KeyType.SQL_ONLY, sql, ResultSet.TYPE_FORWARD_ONLY,
+				ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT, Statement.NO_GENERATED_KEYS,
+				new int[0], new String[0]).unwrap(PreparedStatement.class);
+	}
+
+	@Override
+	public PreparedStatement prepareStatement(final String sql, final int resultSetType, final int resultSetConcurrency)
+			throws SQLException {
+		return this.obtainStatement(KeyType.SQL_CONCURRENCY, sql, resultSetType, resultSetConcurrency,
+				ResultSet.CLOSE_CURSORS_AT_COMMIT, Statement.NO_GENERATED_KEYS,
+				new int[0], new String[0]).unwrap(PreparedStatement.class);
 	}
 
 	@Override
@@ -239,17 +275,6 @@ public final class JdbcConnection implements Connection {
 		return this.obtainStatement(KeyType.SQL_HOLDABILITY, sql, resultSetType,
 				resultSetConcurrency, resultSetHoldability, Statement.NO_GENERATED_KEYS,
 				new int[0], new String[0]).unwrap(PreparedStatement.class);
-	}
-
-	@Override
-	public CallableStatement prepareCall(final String sql,
-	                                     @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE}) final int resultSetType,
-	                                     @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE}) final int resultSetConcurrency,
-	                                     @MagicConstant(intValues = {ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT}) final int resultSetHoldability)
-			throws SQLException {
-		return this.obtainStatement(KeyType.CALL_HOLDABILITY, sql, resultSetType,
-				resultSetConcurrency, resultSetHoldability, Statement.NO_GENERATED_KEYS,
-				new int[0], new String[0]).unwrap(CallableStatement.class);
 	}
 
 	@Override
@@ -273,6 +298,59 @@ public final class JdbcConnection implements Connection {
 				new int[0], columnNames).unwrap(PreparedStatement.class);
 	}
 
+
+	CallableStatement createCall(final String sql) throws SQLException {
+		return this.connection.prepareCall(sql);
+	}
+
+	CallableStatement createCall(final String sql,
+	                             @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE}) final int resultSetType,
+	                             @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE}) final int resultSetConcurrency)
+			throws SQLException {
+		return this.connection.prepareCall(sql, resultSetType, resultSetConcurrency);
+	}
+
+	CallableStatement createCall(final String sql,
+	                             @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE}) final int resultSetType,
+	                             @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE}) final int resultSetConcurrency,
+	                             @MagicConstant(intValues = {ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT}) final int resultSetHoldability)
+			throws SQLException {
+		return this.connection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
+	}
+
+	PreparedStatement createStatement(final String sql) throws SQLException {
+		return this.connection.prepareStatement(sql);
+	}
+
+	PreparedStatement createStatement(final String sql,
+	                                  @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE}) final int resultSetType,
+	                                  @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE}) final int resultSetConcurrency)
+			throws SQLException {
+		return this.connection.prepareStatement(sql, resultSetType, resultSetConcurrency);
+	}
+
+	PreparedStatement createStatement(String sql,
+	                                  @MagicConstant(intValues = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE}) final int resultSetType,
+	                                  @MagicConstant(intValues = {ResultSet.CONCUR_READ_ONLY, ResultSet.CONCUR_UPDATABLE}) final int resultSetConcurrency,
+	                                  @MagicConstant(intValues = {ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT}) final int resultSetHoldability)
+			throws SQLException {
+		return this.connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
+	}
+
+	PreparedStatement createStatement(final String sql,
+	                                  @MagicConstant(intValues = {Statement.RETURN_GENERATED_KEYS, Statement.NO_GENERATED_KEYS}) final int autoGeneratedKeys) throws SQLException {
+		return this.connection.prepareStatement(sql, autoGeneratedKeys);
+	}
+
+	PreparedStatement createStatement(final String sql, final int[] columnIndexes) throws SQLException {
+		return this.connection.prepareStatement(sql, columnIndexes);
+	}
+
+	PreparedStatement createStatement(final String sql, final String[] columnNames) throws SQLException {
+		return this.connection.prepareStatement(sql, columnNames);
+	}
+
+
 	@Override
 	public String nativeSQL(final String sql) throws SQLException {
 		return this.connection.nativeSQL(sql);
@@ -291,13 +369,11 @@ public final class JdbcConnection implements Connection {
 	@Override
 	public void commit() throws SQLException {
 		this.connection.commit();
-		this.commited = Boolean.TRUE;
 	}
 
 	@Override
 	public void rollback() throws SQLException {
 		this.connection.rollback();
-		this.commited = Boolean.TRUE;
 	}
 
 	@Override
@@ -322,8 +398,11 @@ public final class JdbcConnection implements Connection {
 
 	@Override
 	public void setCatalog(final String catalog) throws SQLException {
-		if (StringUtils.notBlank(catalog) && ObjectUtils.nullSafeEquals(this.currentCatalog, catalog)) {
+		if (StringUtils.notBlank(catalog) && !ObjectUtils.nullSafeEquals(this.currentCatalog, catalog)) {
 			this.connection.setCatalog(catalog);
+			for (StatementWrapper<?> cachedStatement : this.cachedStatements) {
+				cachedStatement.destroy();
+			}
 			this.cachedStatements.clear();
 			this.currentCatalog = catalog;
 		}
@@ -486,6 +565,27 @@ public final class JdbcConnection implements Connection {
 	}
 
 	/**
+	 * <h3 class="en-US">Close query statement instance object</h3>
+	 * <h3 class="zh-CN">关闭查询执行器</h3>
+	 *
+	 * @param statement <span class="en-US">Query statement instance object</span>
+	 *                  <span class="zh-CN">查询执行器实例对象</span>
+	 * @throws SQLException <span class="en-US">This method is called if a database access error occurs or on a closed connection</span>
+	 *                      <span class="zh-CN">如果发生数据库访问错误，或者在关闭的连接上调用此方法</span>
+	 */
+	public void closeStatement(@Nonnull final StatementWrapper<?> statement) throws SQLException {
+		if (statement.isClosed()) {
+			return;
+		}
+		if (this.cachedStatements.stream().anyMatch(existStatement ->
+				ObjectUtils.nullSafeEquals(statement.getIdentifyKey(), existStatement.getIdentifyKey()))) {
+			statement.reset();
+		} else {
+			statement.destroy();
+		}
+	}
+
+	/**
 	 * <h3 class="en-US">Obtain query statement instance object</h3>
 	 * <h3 class="zh-CN">获取查询执行器</h3>
 	 *
@@ -529,57 +629,74 @@ public final class JdbcConnection implements Connection {
 		if (statementWrapper == null) {
 			switch (keyType) {
 				case CALL_ONLY:
-					statementWrapper = new CallableStatementWrapper(cacheKey, this.lowQueryTimeout, connection, sql);
+					statementWrapper = new CallableStatementWrapper(cacheKey, this.lowQueryTimeout, this, sql);
 					break;
 				case CALL_CONCURRENCY:
-					statementWrapper = new CallableStatementWrapper(cacheKey, this.lowQueryTimeout, connection, sql,
+					statementWrapper = new CallableStatementWrapper(cacheKey, this.lowQueryTimeout, this, sql,
 							resultSetType, resultSetConcurrency);
 					break;
 				case CALL_HOLDABILITY:
-					statementWrapper = new CallableStatementWrapper(cacheKey, this.lowQueryTimeout, connection, sql,
+					statementWrapper = new CallableStatementWrapper(cacheKey, this.lowQueryTimeout, this, sql,
 							resultSetType, resultSetConcurrency, resultSetHoldability);
 					break;
 				case SQL_ONLY:
-					statementWrapper = new PreparedStatementWrapper(cacheKey, this.lowQueryTimeout, connection, sql);
+					statementWrapper = new PreparedStatementWrapper(cacheKey, this.lowQueryTimeout, this, sql);
 					break;
 				case SQL_CONCURRENCY:
-					statementWrapper = new PreparedStatementWrapper(cacheKey, this.lowQueryTimeout, connection,
+					statementWrapper = new PreparedStatementWrapper(cacheKey, this.lowQueryTimeout, this,
 							sql, resultSetType, resultSetConcurrency);
 					break;
 				case SQL_HOLDABILITY:
-					statementWrapper = new PreparedStatementWrapper(cacheKey, this.lowQueryTimeout, connection,
+					statementWrapper = new PreparedStatementWrapper(cacheKey, this.lowQueryTimeout, this,
 							sql, resultSetType, resultSetConcurrency, resultSetHoldability);
 					break;
 				case SQL_AUTO_GENERATED_KEYS:
-					statementWrapper = new PreparedStatementWrapper(cacheKey, this.lowQueryTimeout, connection, sql,
+					statementWrapper = new PreparedStatementWrapper(cacheKey, this.lowQueryTimeout, this, sql,
 							autoGeneratedKeys);
 					break;
 				case SQL_COLUMN_INDEXES:
-					statementWrapper = new PreparedStatementWrapper(cacheKey, this.lowQueryTimeout, connection, sql,
+					statementWrapper = new PreparedStatementWrapper(cacheKey, this.lowQueryTimeout, this, sql,
 							columnIndexes);
 					break;
 				case SQL_COLUMN_NAMES:
-					statementWrapper = new PreparedStatementWrapper(cacheKey, this.lowQueryTimeout, connection, sql,
+					statementWrapper = new PreparedStatementWrapper(cacheKey, this.lowQueryTimeout, this, sql,
 							columnNames);
 					break;
 				default:
 					throw new MultilingualSQLException(0x00DB00000022L, keyType);
 			}
 			if (this.cachedLimitSize > 0) {
+				statementWrapper.incrementHitCount();
 				this.cachedStatements.add(statementWrapper);
+				this.cachedStatements.sort(StatementWrapper.reverseOrder());
 			}
 		}
 		if (this.cachedLimitSize > 0) {
-			statementWrapper.incrementHitCount();
-			this.cachedStatements.sort((o1, o2) -> Integer.compare(o2.getHitCount(), o1.getHitCount()));
-			while (this.cachedLimitSize < this.cachedStatements.size()) {
-				StatementWrapper<?> removeWrapper = this.cachedStatements.get(this.cachedStatements.size() - 1);
-				removeWrapper.close();
-				this.cachedStatements.remove(removeWrapper);
-			}
+			this.clearCacheStatements();
 		}
 
 		return statementWrapper;
+	}
+
+	/**
+	 * <h3 class="en-US">Clear the cached query statement instance object</h3>
+	 * <h3 class="zh-CN">清理缓存的查询执行器</h3>
+	 */
+	private void clearCacheStatements() {
+		if (this.cachedLimitSize <= 0 || this.cachedStatements.size() <= this.cachedLimitSize) {
+			return;
+		}
+		while (this.cachedLimitSize < this.cachedStatements.size()) {
+			StatementWrapper<?> statement = this.cachedStatements.remove(this.cachedLimitSize);
+			try {
+				statement.destroy();
+			} catch (SQLException e) {
+				LOGGER.error("Close_Statement_Error");
+				if (LOGGER.isDebugEnabled()) {
+					LOGGER.debug("Stack_Message_Error", e);
+				}
+			}
+		}
 	}
 
 	/**
@@ -612,13 +729,11 @@ public final class JdbcConnection implements Connection {
 		cacheMap.put("KeyType", keyType.toString().toUpperCase());
 		cacheMap.put("SQLCmd", sql);
 		switch (keyType) {
-//			case SQL_CONCURRENCY:
 			case CALL_CONCURRENCY:
 			case SQL_CONCURRENCY:
 				cacheMap.put("ResultSetType", resultSetType);
 				cacheMap.put("ResultSetConcurrency", resultSetConcurrency);
 				break;
-//			case SQL_HOLDABILITY:
 			case CALL_HOLDABILITY:
 			case SQL_HOLDABILITY:
 				cacheMap.put("ResultSetType", resultSetType);
@@ -629,10 +744,17 @@ public final class JdbcConnection implements Connection {
 				cacheMap.put("AutoGeneratedKeys", autoGeneratedKeys);
 				break;
 			case SQL_COLUMN_INDEXES:
-				cacheMap.put("ColumnIndexes", columnIndexes);
+				StringBuilder stringBuilder = new StringBuilder();
+				for (int columnIndex : columnIndexes) {
+					stringBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER).append(columnIndex);
+				}
+				cacheMap.put("ColumnIndexes",
+						stringBuilder.length() == 0
+								? Globals.DEFAULT_VALUE_STRING
+								: "[" + stringBuilder.substring(BrainCommons.DEFAULT_SPLIT_CHARACTER.length()) + "]");
 				break;
 			case SQL_COLUMN_NAMES:
-				cacheMap.put("ColumnNames", columnNames);
+				cacheMap.put("ColumnNames", Arrays.asList(columnNames));
 				break;
 		}
 		String jsonData = BeanUtils.objectToString(cacheMap, StringType.JSON);

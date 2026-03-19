@@ -22,8 +22,7 @@ import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.exceptions.transactional.TransactionalException;
 import org.nervousync.brain.transactional.TransactionalManager;
 
-import java.util.Optional;
-import java.util.Stack;
+import java.util.ArrayDeque;
 
 /**
  * <h2 class="en-US">Transactional manager implement class by ThreadLocal</h2>
@@ -38,7 +37,7 @@ public final class ThreadLocalTransactionalManagerImpl implements TransactionalM
 	 * <span class="en-US">Hang-up transactional context stack</span>
 	 * <span class="zh-CN">挂起的事务上下文</span>
 	 */
-	private static final ThreadLocal<Stack<TransactionalContext>> HANG_UP = new ThreadLocal<>();
+	private static final ThreadLocal<ArrayDeque<TransactionalContext>> HANG_UP = new ThreadLocal<>();
 	/**
 	 * <span class="en-US">Current transactional context</span>
 	 * <span class="zh-CN">当前事务上下文</span>
@@ -137,12 +136,6 @@ public final class ThreadLocalTransactionalManagerImpl implements TransactionalM
 	}
 
 	@Override
-	public void clear() {
-		CURRENT.remove();
-		HANG_UP.remove();
-	}
-
-	@Override
 	public TransactionalContext get() {
 		return CURRENT.get();
 	}
@@ -158,9 +151,9 @@ public final class ThreadLocalTransactionalManagerImpl implements TransactionalM
 	 */
 	private void hangUp() {
 		if (CURRENT.get() != null) {
-			Stack<TransactionalContext> hangUp = HANG_UP.get();
+			ArrayDeque<TransactionalContext> hangUp = HANG_UP.get();
 			if (hangUp == null) {
-				hangUp = new Stack<>();
+				hangUp = new ArrayDeque<>();
 			}
 			hangUp.push(CURRENT.get());
 			HANG_UP.set(hangUp);
@@ -173,6 +166,17 @@ public final class ThreadLocalTransactionalManagerImpl implements TransactionalM
 	 * <h3 class="zh-CN">继续挂起的事务</h3>
 	 */
 	private void resume() {
-		Optional.ofNullable(HANG_UP.get()).map(Stack::pop).ifPresent(CURRENT::set);
+		ArrayDeque<TransactionalContext> queue = HANG_UP.get();
+		if (queue != null) {
+			if (queue.isEmpty()) {
+				HANG_UP.remove();
+			} else {
+				TransactionalContext transactionalContext = queue.removeFirst();
+				CURRENT.set(transactionalContext);
+				return;
+			}
+		}
+		CURRENT.remove();
+		HANG_UP.remove();
 	}
 }

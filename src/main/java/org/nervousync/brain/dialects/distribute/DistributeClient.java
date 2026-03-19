@@ -18,6 +18,7 @@
 package org.nervousync.brain.dialects.distribute;
 
 import jakarta.annotation.Nonnull;
+import jakarta.persistence.LockModeType;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
@@ -185,6 +186,29 @@ public interface DistributeClient<T> extends Closeable {
 	 * <h3 class="en-US">Execute query record command</h3>
 	 * <h3 class="zh-CN">执行数据检索命令</h3>
 	 *
+	 * @param tableDefine <span class="en-US">Table defines information</span>
+	 *                    <span class="zh-CN">数据表定义信息</span>
+	 * @param columns     <span class="en-US">Query column names</span>
+	 *                    <span class="zh-CN">查询数据列名</span>
+	 * @param filterMap   <span class="en-US">Retrieve filter mapping</span>
+	 *                    <span class="zh-CN">查询条件映射表</span>
+	 * @param forUpdate   <span class="en-US">Retrieve result using for update record</span>
+	 *                    <span class="zh-CN">检索结果用于更新记录</span>
+	 * @param lockMode    <span class="en-US">Lock option</span>
+	 *                    <span class="zh-CN">数据锁选项</span>
+	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
+	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
+	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
+	 *                      <span class="zh-CN">执行过程中出错</span>
+	 */
+	PartialCollection query(@Nonnull final TableDefine tableDefine, final String columns,
+	                        @Nonnull final Map<String, Object> filterMap,
+	                        final boolean forUpdate, final LockModeType lockMode) throws SQLException;
+
+	/**
+	 * <h3 class="en-US">Execute query record command</h3>
+	 * <h3 class="zh-CN">执行数据检索命令</h3>
+	 *
 	 * @param queryInfo <span class="en-US">Query record information</span>
 	 *                  <span class="zh-CN">数据检索信息</span>
 	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
@@ -211,10 +235,10 @@ public interface DistributeClient<T> extends Closeable {
 	 * <h3 class="en-US">Initialize data table</h3>
 	 * <h3 class="zh-CN">初始化数据表</h3>
 	 *
-	 * @param ddlType        <span class="en-US">Enumeration value of DDL operate</span>
-	 *                       <span class="zh-CN">操作类型枚举值</span>
-	 * @param tableDefine    <span class="en-US">Table defines information</span>
-	 *                       <span class="zh-CN">数据表定义信息</span>
+	 * @param ddlType     <span class="en-US">Enumeration value of DDL operate</span>
+	 *                    <span class="zh-CN">操作类型枚举值</span>
+	 * @param tableDefine <span class="en-US">Table defines information</span>
+	 *                    <span class="zh-CN">数据表定义信息</span>
 	 * @throws Exception <span class="en-US">An error occurred during execution</span>
 	 *                   <span class="zh-CN">执行过程中出错</span>
 	 */

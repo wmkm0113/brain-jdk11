@@ -53,8 +53,8 @@ public final class TransactionalConfig {
 	 */
 	private final boolean readOnly;
 	/**
-	 * <span class="en-US">The timeout value of transactional</span>
-	 * <span class="zh-CN">事务的超时时间</span>
+	 * <span class="en-US">The timeout value of transactional (Unit: seconds)</span>
+	 * <span class="zh-CN">事务的超时时间（单位：秒）</span>
 	 */
 	private final int timeout;
 	/**
@@ -113,8 +113,10 @@ public final class TransactionalConfig {
 	 * <h3 class="en-US">Generate transactional configure information instance by given annotation instance</h3>
 	 * <h3 class="zh-CN">根据给定的注解实例对象生成数事务配置信息实例对象</h3>
 	 *
-	 * @param timeout            <span class="en-US">The timeout value of transactional</span>
-	 *                           <span class="zh-CN">事务的超时时间</span>
+	 * @param propagation        <span class="en-US">The enumeration value of transactional types</span>
+	 *                           <span class="zh-CN">事务类型的枚举值</span>
+	 * @param timeout            <span class="en-US">The timeout value of transactional (Unit: seconds)</span>
+	 *                           <span class="zh-CN">事务的超时时间（单位：秒）</span>
 	 * @param isolation          <span class="en-US">The isolation value of transactional</span>
 	 *                           <span class="zh-CN">事务的等级代码</span>
 	 * @param rollBackForClasses <span class="en-US">The rollback exception class of transactional</span>
@@ -127,7 +129,7 @@ public final class TransactionalConfig {
 	                                              @MagicConstant(valuesFromClass = Connection.class) final int isolation,
 	                                              final Class<?>[] rollBackForClasses) {
 		return new TransactionalConfig(propagation, Boolean.FALSE,
-				(timeout < 0) ? Globals.DEFAULT_VALUE_INT : timeout, isolation, rollBackForClasses);
+				(timeout <= 0) ? Globals.DEFAULT_VALUE_INT : timeout, isolation, rollBackForClasses);
 	}
 
 	/**
@@ -167,8 +169,8 @@ public final class TransactionalConfig {
 	 * <h3 class="en-US">Getter method for the timeout value of transactional</h3>
 	 * <h3 class="zh-CN">事务的超时时间的Getter方法</h3>
 	 *
-	 * @return <span class="en-US">The timeout value of transactional</span>
-	 * <span class="zh-CN">事务的超时时间</span>
+	 * @return <span class="en-US">The timeout value of transactional (Unit: seconds)</span>
+	 * <span class="zh-CN">事务的超时时间（单位：秒）</span>
 	 */
 	public int getTimeout() {
 		return this.timeout;

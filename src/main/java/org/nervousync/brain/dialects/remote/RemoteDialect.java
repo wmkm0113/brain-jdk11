@@ -56,7 +56,7 @@ public final class RemoteDialect extends BaseDialect {
 
 	@Override
 	protected String parameterValue(final Map<String, String> aliasMap, final AbstractParameter<?> abstractParameter,
-	                                final List<Object> values) {
+	                                final List<Object> values, final boolean sharding) {
 		return Globals.DEFAULT_VALUE_STRING;
 	}
 

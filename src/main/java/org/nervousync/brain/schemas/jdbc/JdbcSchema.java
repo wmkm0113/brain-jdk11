@@ -24,17 +24,13 @@ import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.schema.impl.JdbcSchemaConfig;
 import org.nervousync.brain.configs.server.ServerInfo;
 import org.nervousync.brain.configs.sharding.StrategyConfig;
-import org.nervousync.brain.configs.transactional.TransactionalConfig;
 import org.nervousync.brain.defines.StrategyDefine;
 import org.nervousync.brain.defines.TableDefine;
 import org.nervousync.brain.dialects.DialectFactory;
 import org.nervousync.brain.dialects.jdbc.JdbcDialect;
 import org.nervousync.brain.enumerations.ddl.DDLType;
 import org.nervousync.brain.enumerations.ddl.DropOption;
-import org.nervousync.brain.exceptions.data.DropException;
-import org.nervousync.brain.exceptions.data.InsertException;
-import org.nervousync.brain.exceptions.data.RetrieveException;
-import org.nervousync.brain.exceptions.data.UpdateException;
+import org.nervousync.brain.exceptions.data.*;
 import org.nervousync.brain.exceptions.sql.MultilingualSQLException;
 import org.nervousync.brain.query.PartialCollection;
 import org.nervousync.brain.query.QueryInfo;
@@ -59,9 +55,7 @@ import org.nervousync.utils.core.StringUtils;
 
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -104,37 +98,37 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * <span class="en-US">Maximum number of connection retries</span>
 	 * <span class="zh-CN">连接最大重试次数</span>
 	 */
-	int retryCount;
+	private int retryCount;
 	/**
-	 * <span class="en-US">Retry count if obtains connection has error</span>
-	 * <span class="zh-CN">获取连接的重试次数</span>
+	 * <span class="en-US">Retry period time if obtains connection has error (Unit: milliseconds)</span>
+	 * <span class="zh-CN">获取连接的重试间隔（单位：毫秒）</span>
 	 */
-	long retryPeriod;
+	private long retryPeriod;
 	/**
 	 * <span class="en-US">Maximum size of prepared statement</span>
 	 * <span class="zh-CN">查询分析器的最大缓存结果</span>
 	 */
-	int cachedLimitSize;
+	private int cachedLimitSize;
 	/**
 	 * <span class="en-US">Minimum connection limit</span>
 	 * <span class="zh-CN">最小连接数</span>
 	 */
-	int minConnections;
+	private int minConnections;
 	/**
 	 * <span class="en-US">Maximum connection limit</span>
 	 * <span class="zh-CN">最大连接数</span>
 	 */
-	int maxConnections;
+	private int maxConnections;
 	/**
 	 * <span class="en-US">Check connection validate when obtains database connection</span>
 	 * <span class="zh-CN">在获取连接时检查连接是否有效</span>
 	 */
-	boolean testOnBorrow;
+	private boolean testOnBorrow;
 	/**
 	 * <span class="en-US">Check connection validate when return database connection</span>
 	 * <span class="zh-CN">在归还连接时检查连接是否有效</span>
 	 */
-	boolean testOnReturn;
+	private boolean testOnReturn;
 	/**
 	 * <span class="en-US">Database main/writable server info</span>
 	 * <span class="zh-CN">数据库主服务器（写入服务器）</span>
@@ -149,12 +143,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * <span class="en-US">Secondary/Readable server list index value</span>
 	 * <span class="zh-CN">从服务器列表索引值</span>
 	 */
-	private final AtomicInteger serverIndex = new AtomicInteger(Globals.INITIALIZE_INT_VALUE);
-	/**
-	 * <span class="en-US">Sharding configure information mapping</span>
-	 * <span class="zh-CN">分片配置信息映射表</span>
-	 */
-	private final Hashtable<String, StrategyConfig> strategyConfigs = new Hashtable<>();
+	private final AtomicInteger pollingIndex = new AtomicInteger(Globals.INITIALIZE_INT_VALUE);
 	/**
 	 * <span class="en-US">The interval between scheduled task executions</span>
 	 * <span class="zh-CN">调度任务执行的间隔时间</span>
@@ -169,7 +158,12 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * <span class="en-US">Database connection pools mapping</span>
 	 * <span class="zh-CN">数据库连接池映射表</span>
 	 */
-	private final Map<Integer, JdbcConnectionPool> registeredPools = new HashMap<>();
+	private final ConcurrentHashMap<Integer, JdbcConnectionPool> registeredPools = new ConcurrentHashMap<>();
+	/**
+	 * <span class="en-US">Sharding configure information mapping</span>
+	 * <span class="zh-CN">分片配置信息映射表</span>
+	 */
+	private final ConcurrentHashMap<String, StrategyConfig> strategyConfigs = new ConcurrentHashMap<>();
 
 	/**
 	 * <h3 class="en-US">Constructor method for JDBC data source implementation class</h3>
@@ -190,7 +184,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 					throw new MultilingualSQLException(0x00DB00000025L, this.jdbcUrl);
 				}
 			} else {
-				this.logger.warn("");
+				this.logger.warn("Dialect_Sharding_Not_Support", schemaConfig.getDialectName());
 			}
 		}
 		this.defaultCatalog = Optional.ofNullable(schemaConfig.getCatalog()).orElse(Globals.DEFAULT_VALUE_STRING);
@@ -209,13 +203,12 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		this.testOnBorrow = schemaConfig.isTestOnBorrow();
 		this.testOnReturn = schemaConfig.isTestOnReturn();
 		List<ServerInfo> serverList = schemaConfig.getServerList();
+		this.serverList = new ArrayList<>();
 		if (serverList == null || serverList.isEmpty()) {
-			this.serverList = Collections.emptyList();
 			this.serverInfo = null;
 		} else {
 			serverList.sort((o1, o2) -> Integer.compare(o2.getServerLevel(), o1.getServerLevel()));
 			this.serverInfo = serverList.get(0);
-			this.serverList = new ArrayList<>();
 			for (int i = 1; i < serverList.size(); i++) {
 				this.serverList.add(serverList.get(i));
 			}
@@ -230,7 +223,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * @return <span class="en-US">Connect properties instance object</span>
 	 * <span class="zh-CN">连接属性值</span>
 	 */
-	Properties properties(final ServerInfo serverInfo) {
+	private Properties properties(final ServerInfo serverInfo) {
 		if (serverInfo == null) {
 			return this.dialect.properties(this.trustStore, this.authentication);
 		} else {
@@ -346,21 +339,21 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	}
 
 	@Override
-	public void initialize() {
-		if (this.initialized || this.sharding) {
+	public synchronized void initialize() {
+		if (this.initialized) {
 			return;
 		}
 
 		if (this.pooled) {
 			this.executorService = Executors.newSingleThreadScheduledExecutor();
-			this.executorService.scheduleWithFixedDelay(
+			this.executorService.scheduleAtFixedRate(
 					() -> this.registeredPools.values().forEach(JdbcConnectionPool::createConnections),
 					SCHEDULE_PERIOD_TIME, SCHEDULE_PERIOD_TIME, TimeUnit.MILLISECONDS);
 		}
 		this.initialized = Boolean.TRUE;
 	}
 
-	int identifyCode(final ServerInfo serverInfo) throws SQLException {
+	private int identifyCode(final ServerInfo serverInfo) throws SQLException {
 		if (serverInfo == null || StringUtils.isEmpty(serverInfo.getServerAddress())) {
 			return this.jdbcUrl.hashCode();
 		}
@@ -376,32 +369,36 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * <h3 class="zh-CN">初始化分片连接</h3>
 	 */
 	private void initPools() throws SQLException {
-		if (this.serverList.isEmpty()) {
-			if (this.registeredPools.isEmpty()) {
+		if (this.serverInfo == null) {
+			return;
+		}
+		//  Register the main pool
+		JdbcConnectionPool mainPool =
+				new JdbcConnectionPool(this, this.dialect, this.pooled, this.identifyCode(this.serverInfo),
+						this.properties(this.serverInfo), this.jdbcUrl(this.serverInfo),
+						this.defaultCatalog, this.databaseParameters);
+		this.registeredPools.put(mainPool.getIdentifyCode(), mainPool);
+
+		for (ServerInfo serverInfo : this.serverList) {
+			int identifyCode = this.identifyCode(serverInfo);
+			if (!this.registeredPools.containsKey(identifyCode)) {
 				JdbcConnectionPool connectionPool =
-						new JdbcConnectionPool(this, this.dialect, this.pooled, this.serverInfo,
+						new JdbcConnectionPool(this, this.dialect, this.pooled, this.identifyCode(serverInfo),
+								this.properties(serverInfo), this.jdbcUrl(serverInfo),
 								this.defaultCatalog, this.databaseParameters);
-				this.registeredPools.put(connectionPool.getIdentifyCode(), connectionPool);
-			}
-		} else {
-			for (ServerInfo serverInfo : this.serverList) {
-				int identifyCode = this.identifyCode(serverInfo);
-				if (!this.registeredPools.containsKey(identifyCode)) {
-					JdbcConnectionPool connectionPool =
-							new JdbcConnectionPool(this, this.dialect, this.pooled, serverInfo,
-									this.defaultCatalog, this.databaseParameters);
-					this.registeredPools.put(identifyCode, connectionPool);
-				}
+				this.registeredPools.put(identifyCode, connectionPool);
 			}
 		}
 	}
 
 	@Override
-	public void close() {
-		this.executorService.shutdown();
-		this.registeredPools.values().forEach(JdbcConnectionPool::destroy);
+	public synchronized void close() {
+		if (this.initialized && this.pooled && this.executorService != null) {
+			this.executorService.shutdown();
+			this.executorService = null;
+		}
+		this.registeredPools.values().forEach(JdbcConnectionPool::shutdownNow);
 		this.registeredPools.clear();
-		this.executorService = null;
 		this.initialized = Boolean.FALSE;
 	}
 
@@ -425,7 +422,6 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 				for (JdbcConnection connection : transactionalContext.getAll(this.schemaName, JdbcConnection.class)) {
 					connection.commit();
 				}
-				transactionalContext.unbindAll(this.schemaName);
 			}
 		}
 	}
@@ -436,8 +432,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 			TransactionalContext transactionalContext = TransactionalProxy.getTransactionalManager().get();
 			if (transactionalContext != null) {
 				for (JdbcConnection connection : transactionalContext.getAll(this.schemaName, JdbcConnection.class)) {
-					connection.close();
+					connection.closeConnection();
 				}
+				transactionalContext.unbindAll(this.schemaName);
 			}
 		}
 	}
@@ -451,7 +448,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * @return <span class="en-US">JDBC connection url string</span>
 	 * <span class="zh-CN">JDBC连接字符串</span>
 	 */
-	String shardingUrl(final ServerInfo serverInfo) {
+	private String jdbcUrl(final ServerInfo serverInfo) {
 		String shardingUrl = this.jdbcUrl;
 		if (serverInfo != null) {
 			String serverAddress = serverInfo.info();
@@ -475,10 +472,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		if (forUpdate || this.serverList.isEmpty()) {
 			return this.serverInfo;
 		}
-		ServerInfo serverInfo = this.serverList.get(this.serverIndex.getAndIncrement());
-		if (this.serverIndex.get() >= this.serverList.size()) {
-			this.serverIndex.set(Globals.INITIALIZE_INT_VALUE);
-		}
+		int index = this.pollingIndex.getAndUpdate(n -> n == Integer.MAX_VALUE ? 0 : n + 1);
+		index = Math.abs(index % this.serverList.size());
+		ServerInfo serverInfo = this.serverList.get(index);
 		if (serverInfo == null) {
 			throw new MultilingualSQLException(0x00DB00000026L);
 		}
@@ -500,8 +496,11 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		if (TransactionalProxy.getTransactionalManager().readOnly()) {
 			throw new MultilingualSQLException(0x00DB00010010L);
 		}
-		for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
-			connectionPool.truncateTable(this.strategyConfigs.get(tableDefine.getTableName()));
+		if (this.strategyConfigs.containsKey(tableDefine.getTableName())) {
+			StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
+			for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
+				connectionPool.truncateTable(strategyConfig);
+			}
 		}
 	}
 
@@ -521,8 +520,11 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		if (TransactionalProxy.getTransactionalManager().readOnly()) {
 			throw new MultilingualSQLException(0x00DB00010010L);
 		}
-		for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
-			connectionPool.dropTable(tableDefine, dropOption, this.strategyConfigs.get(tableDefine.getTableName()));
+		if (this.strategyConfigs.containsKey(tableDefine.getTableName())) {
+			StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
+			for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
+				connectionPool.dropTable(tableDefine, dropOption, strategyConfig);
+			}
 		}
 	}
 
@@ -541,30 +543,30 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		if (TransactionalProxy.getTransactionalManager().readOnly()) {
 			throw new MultilingualSQLException(0x00DB00010010L);
 		}
-		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
-		String catalog = strategyConfig.dbKey(dataMap);
-		String shardingName = strategyConfig.tableKey(dataMap);
-		//  Initialize table
-		JdbcConnectionPool connectionPool = this.registeredPools.get(this.identifyCode(this.currentServer(Boolean.TRUE)));
-		if (connectionPool == null) {
-			throw new MultilingualSQLException(0x00DB00000027L);
-		}
-		if (this.dialect.isDatabaseSharding()) {
+		String catalog = tableDefine.getCatalog();
+		String shardingName = tableDefine.getTableName();
+		if (this.strategyConfigs.containsKey(tableDefine.getTableName()) && this.sharding) {
+			StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
+			catalog = strategyConfig.dbKey(dataMap);
+			shardingName = strategyConfig.tableKey(dataMap);
+			//  Initialize table
+			JdbcConnectionPool connectionPool = this.registeredPools.get(this.identifyCode(this.currentServer(Boolean.TRUE)));
+			if (connectionPool == null) {
+				throw new MultilingualSQLException(0x00DB00000027L);
+			}
 			connectionPool.initTable(tableDefine, strategyConfig, catalog, shardingName);
+		} else {
+			if (StringUtils.isEmpty(catalog)) {
+				catalog = this.defaultCatalog;
+			}
 		}
 		GeneratedCommand sqlCommand = this.dialect.insertCommand(tableDefine, shardingName, dataMap);
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
 		}
-		try (Connection connection = this.obtainConnection(Boolean.TRUE, catalog);
+		try (JdbcConnection connection = this.obtainConnection(Boolean.TRUE, catalog);
 		     PreparedStatement statement =
-				     connection.prepareStatement(sqlCommand.getCommand(), Statement.RETURN_GENERATED_KEYS)) {
-			this.configTimeout(statement);
-			int index = Globals.INITIALIZE_INT_VALUE;
-			for (Object object : sqlCommand.getParameters()) {
-				statement.setObject(index + 1, object);
-				index++;
-			}
+				     connection.prepareStatement(sqlCommand, Statement.RETURN_GENERATED_KEYS)) {
 			if (statement.executeUpdate() == 1) {
 				ResultSet resultSet = statement.getGeneratedKeys();
 				if (resultSet.next()) {
@@ -588,24 +590,26 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	                                    @Nonnull final Map<String, Object> filterMap, final boolean forUpdate,
 	                                    final LockModeType lockOption)
 			throws SQLException, RetrieveException {
-		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
-		String catalog = strategyConfig.dbKey(filterMap);
-		String shardingTable = strategyConfig.tableKey(filterMap);
+		String catalog = tableDefine.getCatalog();
+		String shardingTable = tableDefine.getTableName();
+		if (this.strategyConfigs.containsKey(tableDefine.getTableName()) && this.sharding) {
+			StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
+			catalog = strategyConfig.dbKey(filterMap);
+			shardingTable = strategyConfig.tableKey(filterMap);
+		} else {
+			if (StringUtils.isEmpty(catalog)) {
+				catalog = this.defaultCatalog;
+			}
+		}
 		String queryColumns = StringUtils.isEmpty(columns) ? SELECT_ALL_COLUMNS : columns;
 		GeneratedCommand sqlCommand =
-				this.dialect.retrieveCommand(tableDefine, shardingTable, queryColumns, filterMap, forUpdate, lockOption);
+				this.dialect.queryCommand(tableDefine, shardingTable, queryColumns, filterMap, forUpdate, lockOption);
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
 		}
-		try (Connection connection = this.obtainConnection(forUpdate, catalog);
-		     PreparedStatement statement = connection.prepareStatement(sqlCommand.getCommand())) {
-			this.configTimeout(statement);
-			int index = Globals.INITIALIZE_INT_VALUE;
-			for (Object object : sqlCommand.getParameters()) {
-				statement.setObject(index + 1, object);
-				index++;
-			}
-			ResultSet resultSet = statement.executeQuery();
+		try (JdbcConnection connection = this.obtainConnection(forUpdate, catalog);
+		     PreparedStatement statement = connection.prepareStatement(sqlCommand);
+		     ResultSet resultSet = statement.executeQuery()) {
 			Map<String, Object> resultMap = new HashMap<>();
 			while (resultSet.next()) {
 				if (!resultMap.isEmpty()) {
@@ -620,40 +624,64 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 
 	@Override
 	public int update(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> dataMap,
-	                  @Nonnull final Map<String, Object> filterMap) throws SQLException, UpdateException {
+	                  @Nonnull final Map<String, Object> filterMap, final LockModeType lockMode)
+			throws SQLException, InsertException, UpdateException, DropException {
 		if (TransactionalProxy.getTransactionalManager().readOnly()) {
 			throw new MultilingualSQLException(0x00DB00010010L);
 		}
+
+		ShardingResult shardingResult =
+				new ShardingResult(tableDefine, filterMap, this.strategyConfigs.get(tableDefine.getTableName()),
+						this.sharding, this.defaultCatalog);
 		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
-		String catalog = strategyConfig.dbKey(filterMap);
-		Map<String, Object> updatedMap = new HashMap<>(filterMap);
-		updatedMap.putAll(dataMap);
-		String newCatalog = strategyConfig.dbKey(updatedMap);
-		if (!ObjectUtils.nullSafeEquals(catalog, newCatalog)) {
-			//  After update operated, will result of data migration
-			throw new UpdateException(0x00DB00000043L,
-					tableDefine.getTableName(), BeanUtils.objectToString(dataMap, StringType.JSON),
-					BeanUtils.objectToString(filterMap, StringType.JSON), catalog, newCatalog);
+
+		//  Initialize table
+		JdbcConnectionPool connectionPool = this.registeredPools.get(this.identifyCode(this.currentServer(Boolean.TRUE)));
+		if (connectionPool == null) {
+			throw new MultilingualSQLException(0x00DB00000027L);
 		}
-		String tableName = strategyConfig.tableKey(filterMap);
-		GeneratedCommand sqlCommand = this.dialect.updateCommand(tableName, dataMap, filterMap);
-		if (this.logger.isDebugEnabled()) {
-			this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
-		}
-		int count = Globals.INITIALIZE_INT_VALUE;
-		try (Connection connection = this.obtainConnection(Boolean.TRUE, catalog);
-		     PreparedStatement statement = connection.prepareStatement(sqlCommand.getCommand())) {
-			this.configTimeout(statement);
-			int index = 1;
-			for (Object object : sqlCommand.getParameters()) {
-				statement.setObject(index, object);
-				index++;
+
+		int count = 0;
+		for (String catalog : shardingResult.getCatalogs()) {
+			for (String tableName : shardingResult.getTableNames()) {
+				Map<String, Object> recordMap = new HashMap<>(filterMap);
+				recordMap.putAll(dataMap);
+				String destCatalog = strategyConfig.dbKey(recordMap);
+				String destTableName = strategyConfig.tableKey(recordMap);
+				try (JdbcConnection connection = this.obtainConnection(Boolean.TRUE, catalog)) {
+					if (ObjectUtils.nullSafeEquals(catalog, destCatalog)) {
+						if (ObjectUtils.nullSafeEquals(tableName, destTableName)) {
+							//  Process update
+							GeneratedCommand sqlCommand = this.dialect.updateCommand(tableName, dataMap, filterMap);
+							try (PreparedStatement statement = connection.prepareStatement(sqlCommand)) {
+								count += statement.executeUpdate();
+							}
+						} else {
+							GeneratedCommand dropCommand = this.dialect.deleteCommand(tableName, filterMap);
+							try (PreparedStatement statement = connection.prepareStatement(dropCommand)) {
+								statement.executeUpdate();
+							}
+							GeneratedCommand insertCommand = this.dialect.insertCommand(tableDefine, destTableName, recordMap);
+							connectionPool.initTable(tableDefine, strategyConfig, catalog, destTableName);
+							try (PreparedStatement statement = connection.prepareStatement(insertCommand)) {
+								count += statement.executeUpdate();
+							}
+						}
+					} else {
+						GeneratedCommand dropCommand = this.dialect.deleteCommand(tableName, filterMap);
+						try (PreparedStatement statement = connection.prepareStatement(dropCommand)) {
+							statement.executeUpdate();
+						}
+
+						GeneratedCommand insertCommand = this.dialect.insertCommand(tableDefine, destTableName, recordMap);
+						connectionPool.initTable(tableDefine, strategyConfig, destCatalog, destTableName);
+						try (JdbcConnection destConn = this.obtainConnection(Boolean.TRUE, destCatalog);
+						     PreparedStatement statement = destConn.prepareStatement(insertCommand)) {
+							count += statement.executeUpdate();
+						}
+					}
+				}
 			}
-			count += statement.executeUpdate();
-		} catch (SQLException e) {
-			throw new UpdateException(0x00DB00000040L, e,
-					tableDefine.getTableName(), BeanUtils.objectToString(dataMap, StringType.JSON),
-					BeanUtils.objectToString(filterMap, StringType.JSON));
 		}
 		return count;
 	}
@@ -664,23 +692,21 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		if (TransactionalProxy.getTransactionalManager().readOnly()) {
 			throw new MultilingualSQLException(0x00DB00010010L);
 		}
-		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
-		String tableName = strategyConfig.tableKey(filterMap);
-		GeneratedCommand sqlCommand = this.dialect.deleteCommand(tableName, filterMap);
-		if (this.logger.isDebugEnabled()) {
-			this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
-		}
+		ShardingResult shardingResult =
+				new ShardingResult(tableDefine, filterMap, this.strategyConfigs.get(tableDefine.getTableName()),
+						this.sharding, this.defaultCatalog);
 		int count = Globals.INITIALIZE_INT_VALUE;
-		for (String catalog : strategyConfig.dbKeys(filterMap)) {
-			try (Connection connection = this.obtainConnection(Boolean.TRUE, catalog);
-			     PreparedStatement statement = connection.prepareStatement(sqlCommand.getCommand())) {
-				this.configTimeout(statement);
-				int index = 1;
-				for (Object object : sqlCommand.getParameters()) {
-					statement.setObject(index, object);
-					index++;
+		for (String catalog : shardingResult.getCatalogs()) {
+			try (JdbcConnection connection = this.obtainConnection(Boolean.TRUE, catalog)) {
+				for (String tableName : shardingResult.getTableNames()) {
+					GeneratedCommand sqlCommand = this.dialect.deleteCommand(tableName, filterMap);
+					if (this.logger.isDebugEnabled()) {
+						this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
+					}
+					try (PreparedStatement statement = connection.prepareStatement(sqlCommand)) {
+						count += statement.executeUpdate();
+					}
 				}
-				count += statement.executeUpdate();
 			} catch (SQLException e) {
 				throw new DropException(0x00DB00000041L, e,
 						tableDefine.getTableName(), BeanUtils.objectToString(filterMap, StringType.JSON));
@@ -690,23 +716,16 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	}
 
 	@Override
-	public Long queryTotal(final QueryInfo queryInfo) throws Exception {
-		GeneratedCommand sqlCommand = this.dialect.queryTotalCommand(queryInfo);
+	public Long queryTotal(final QueryInfo queryInfo) throws SQLException {
+		GeneratedCommand sqlCommand = this.dialect.queryCommand(queryInfo, Boolean.TRUE, this.sharding);
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
 		}
 		long totalCount = 0L;
 		for (String catalog : this.dbKeys(queryInfo)) {
-			try (Connection connection = this.obtainConnection(Boolean.TRUE, catalog);
-			     PreparedStatement statement = connection.prepareStatement(sqlCommand.getCommand())) {
-				this.configTimeout(statement);
-				int index = 1;
-				for (Object object : sqlCommand.getParameters()) {
-					statement.setObject(index, object);
-					index++;
-				}
-
-				ResultSet resultSet = statement.executeQuery();
+			try (JdbcConnection connection = this.obtainConnection(Boolean.FALSE, catalog);
+			     PreparedStatement statement = connection.prepareStatement(sqlCommand);
+			     ResultSet resultSet = statement.executeQuery()) {
 				if (resultSet.next()) {
 					totalCount += resultSet.getLong(1);
 				}
@@ -716,24 +735,62 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	}
 
 	@Override
-	public PartialCollection query(@Nonnull final QueryInfo queryInfo) throws Exception {
+	public PartialCollection query(@Nonnull final TableDefine tableDefine, final String columns,
+	                               @Nonnull final Map<String, Object> filterMap,
+	                               final boolean forUpdate, final LockModeType lockMode)
+			throws SQLException {
+		if (forUpdate && TransactionalProxy.getTransactionalManager().readOnly()) {
+			throw new MultilingualSQLException(0x00DB00010010L);
+		}
+
+		ShardingResult shardingResult =
+				new ShardingResult(tableDefine, filterMap, this.strategyConfigs.get(tableDefine.getTableName()),
+						this.sharding, this.defaultCatalog);
+
+		List<Map<String, Object>> resultList = new ArrayList<>();
+		long totalCount = 0L;
+		for (String catalog : shardingResult.getCatalogs()) {
+			try (JdbcConnection connection = this.obtainConnection(forUpdate, catalog)) {
+				for (String tableName : shardingResult.getTableNames()) {
+					GeneratedCommand sqlCommand =
+							this.dialect.queryCommand(tableDefine, tableName,
+									StringUtils.isEmpty(columns) ? SELECT_ALL_COLUMNS : columns,
+									filterMap, forUpdate, lockMode);
+					if (this.logger.isDebugEnabled()) {
+						this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
+					}
+					try (PreparedStatement statement = connection.prepareStatement(sqlCommand);
+					     ResultSet resultSet = statement.executeQuery()) {
+						while (resultSet.next()) {
+							resultList.add(this.parseResultSet(sqlCommand, resultSet, this.dialect));
+							totalCount++;
+						}
+					}
+				}
+			}
+		}
+		return new PartialCollection(resultList, totalCount);
+	}
+
+	@Override
+	public PartialCollection query(@Nonnull final QueryInfo queryInfo) throws SQLException {
 		List<String> catalogs = this.dbKeys(queryInfo);
+		long totalCount = catalogs.isEmpty() ? 0L : this.queryTotal(queryInfo);
 		if (catalogs.isEmpty()) {
-			return new PartialCollection(Collections.emptyList(), 0L);
+			return new PartialCollection(Collections.emptyList(), totalCount);
 		} else if (catalogs.size() == 1) {
-			long totalCount = this.queryTotal(queryInfo);
 			return new PartialCollection(
 					this.executeQuery(catalogs.get(0),
-							this.dialect.queryCommand(queryInfo, Boolean.TRUE), Boolean.FALSE),
+							this.dialect.queryCommand(queryInfo, Boolean.FALSE, this.sharding)),
 					totalCount);
 		} else {
 			List<Map<String, Object>> resultList = new ArrayList<>();
 			for (String catalog : catalogs) {
-				GeneratedCommand sqlCommand = this.dialect.queryCommand(queryInfo, Boolean.FALSE);
+				GeneratedCommand sqlCommand = this.dialect.queryCommand(queryInfo, Boolean.FALSE, this.sharding);
 				if (this.logger.isDebugEnabled()) {
 					this.logger.debug("Execute_Query_Log", sqlCommand.getCommand(), sqlCommand.getParameters());
 				}
-				resultList.addAll(this.executeQuery(catalog, sqlCommand, queryInfo.isForUpdate()));
+				resultList.addAll(this.executeQuery(catalog, sqlCommand));
 			}
 
 			List<OrderBy> orderByList = queryInfo.getOrderByList();
@@ -755,7 +812,6 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 				}
 				return 0;
 			});
-			int totalCount = resultList.size();
 			if (queryInfo.getPageNo() > 1 || queryInfo.getPageLimit() > 0) {
 				int pageNo = queryInfo.getPageNo() > 0 ? queryInfo.getPageNo() : BrainCommons.DEFAULT_PAGE_NO;
 				int pageLimit = (queryInfo.getPageLimit() > 0) ? queryInfo.getPageLimit() : BrainCommons.DEFAULT_PAGE_LIMIT;
@@ -769,9 +825,11 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 
 	@Override
 	public void initTable(@Nonnull final DDLType ddlType, @Nonnull final TableDefine tableDefine) throws Exception {
-		StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
-		for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
-			connectionPool.initTable(ddlType, tableDefine, strategyConfig);
+		if (this.strategyConfigs.containsKey(tableDefine.getTableName())) {
+			StrategyConfig strategyConfig = this.strategyConfigs.get(tableDefine.getTableName());
+			for (JdbcConnectionPool connectionPool : this.registeredPools.values()) {
+				connectionPool.initTable(ddlType, tableDefine, strategyConfig);
+			}
 		}
 	}
 
@@ -858,8 +916,7 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
-	private JdbcConnection obtainConnection(final boolean forUpdate, final String catalog)
-			throws SQLException {
+	private JdbcConnection obtainConnection(final boolean forUpdate, final String catalog) throws SQLException {
 		ServerInfo serverInfo = this.currentServer(forUpdate);
 		int identifyCode = this.identifyCode(serverInfo);
 		JdbcConnection connection;
@@ -886,26 +943,9 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 		connection = connectionPool.obtainConnection(catalog, isolation);
 		if (transactionalContext != null) {
 			transactionalContext.bind(identifyKey, connection);
+			connection.setReadOnly(TransactionalProxy.getTransactionalManager().readOnly());
 		}
 		return connection;
-	}
-
-	/**
-	 * <h3 class="en-US">Configure query transaction timeout</h3>
-	 * <h3 class="zh-CN">配置查询的事务超时时间</h3>
-	 *
-	 * @param preparedStatement <span class="en-US">Parameterized query instance object</span>
-	 *                          <span class="zh-CN">参数化查询实例对象</span>
-	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
-	 *                      <span class="zh-CN">执行过程中出错</span>
-	 */
-	private void configTimeout(@Nonnull final PreparedStatement preparedStatement) throws SQLException {
-		TransactionalConfig txConfig = Optional.ofNullable(TransactionalProxy.getTransactionalManager().get())
-				.map(TransactionalContext::getTransactionalConfig)
-				.orElse(null);
-		if (txConfig != null && txConfig.getIsolation() != Connection.TRANSACTION_NONE && txConfig.getTimeout() > 0) {
-			preparedStatement.setQueryTimeout(txConfig.getTimeout());
-		}
 	}
 
 	/**
@@ -916,25 +956,16 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 	 *                   <span class="zh-CN">分片数据库名</span>
 	 * @param sqlCommand <span class="en-US">SQL command to execute</span>
 	 *                   <span class="zh-CN">要执行的SQL命令</span>
-	 * @param forUpdate  <span class="en-US">Retrieve result using for update record</span>
-	 *                   <span class="zh-CN">检索结果用于更新记录</span>
 	 * @return <span class="en-US">Query record list</span>
 	 * <span class="zh-CN">查询到的记录列表</span>
 	 * @throws SQLException <span class="en-US">An error occurred during execution</span>
 	 *                      <span class="zh-CN">执行过程中出错</span>
 	 */
 	private List<Map<String, Object>> executeQuery(@Nonnull final String catalog,
-	                                               @Nonnull final GeneratedCommand sqlCommand,
-	                                               final boolean forUpdate) throws SQLException {
-		try (Connection connection = this.obtainConnection(forUpdate, catalog);
-		     PreparedStatement statement = connection.prepareStatement(sqlCommand.getCommand())) {
-			this.configTimeout(statement);
-			int index = 1;
-			for (Object object : sqlCommand.getParameters()) {
-				statement.setObject(index, object);
-				index++;
-			}
-			ResultSet resultSet = statement.executeQuery();
+	                                               @Nonnull final GeneratedCommand sqlCommand) throws SQLException {
+		try (JdbcConnection connection = this.obtainConnection(Boolean.FALSE, catalog);
+		     PreparedStatement statement = connection.prepareStatement(sqlCommand);
+		     ResultSet resultSet = statement.executeQuery()) {
 			List<Map<String, Object>> resultList = new ArrayList<>();
 			while (resultSet.next()) {
 				resultList.add(this.parseResultSet(sqlCommand, resultSet, this.dialect));
@@ -992,14 +1023,14 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 					break;
 				case Types.DATE:
 					java.sql.Date date = resultSet.getDate(i);
-					if (this.logger.isDebugEnabled()) {
+					if (this.logger.isDebugEnabled() && date != null) {
 						this.logger.debug("Read_Long_Value_Debug", "date", date.getTime());
 					}
 					resultMap.put(mapKey, date);
 					break;
 				case Types.TIME:
 					java.sql.Time time = resultSet.getTime(i);
-					if (this.logger.isDebugEnabled()) {
+					if (this.logger.isDebugEnabled() && time != null) {
 						this.logger.debug("Read_Long_Value_Debug", "time", time.getTime());
 					}
 					resultMap.put(mapKey, time);
@@ -1010,35 +1041,125 @@ public final class JdbcSchema extends BaseSchema<JdbcDialect> implements JdbcSch
 				case Types.BIT:
 				case Types.BOOLEAN:
 					resultMap.put(mapKey, resultSet.getBoolean(i));
+					if (resultSet.wasNull()) {
+						resultMap.remove(mapKey);
+					}
 					break;
 				case Types.TINYINT:
 					resultMap.put(mapKey, resultSet.getByte(i));
+					if (resultSet.wasNull()) {
+						resultMap.remove(mapKey);
+					}
 					break;
 				case Types.SMALLINT:
 					resultMap.put(mapKey, resultSet.getShort(i));
+					if (resultSet.wasNull()) {
+						resultMap.remove(mapKey);
+					}
 					break;
 				case Types.INTEGER:
 					resultMap.put(mapKey, resultSet.getInt(i));
+					if (resultSet.wasNull()) {
+						resultMap.remove(mapKey);
+					}
 					break;
 				case Types.BIGINT:
 					resultMap.put(mapKey, resultSet.getLong(i));
+					if (resultSet.wasNull()) {
+						resultMap.remove(mapKey);
+					}
 					break;
 				case Types.REAL:
 					resultMap.put(mapKey, resultSet.getFloat(i));
+					if (resultSet.wasNull()) {
+						resultMap.remove(mapKey);
+					}
 					break;
 				case Types.FLOAT:
 				case Types.DOUBLE:
 					resultMap.put(mapKey, resultSet.getDouble(i));
+					if (resultSet.wasNull()) {
+						resultMap.remove(mapKey);
+					}
 					break;
 				case Types.DECIMAL:
 				case Types.NUMERIC:
 					resultMap.put(mapKey, resultSet.getBigDecimal(i));
+					if (resultSet.wasNull()) {
+						resultMap.remove(mapKey);
+					}
 					break;
 				default:
 					resultMap.put(mapKey, resultSet.getObject(i));
+					if (resultSet.wasNull()) {
+						resultMap.remove(mapKey);
+					}
 					break;
 			}
 		}
 		return resultMap;
+	}
+
+	/**
+	 * <h2 class="en-US">Sharding result</h2>
+	 * <h2 class="zh-CN">分片结果</h2>
+	 *
+	 * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
+	 * @version $Revision: 1.0.0 $ $Date: Feb 18, 2026 10:15:08 $
+	 */
+	private static final class ShardingResult {
+
+		/**
+		 * <span class="en-US">Database sharding value list</span>
+		 * <span class="zh-CN">数据库分片值列表</span>
+		 */
+		private final List<String> catalogs;
+		/**
+		 * <span class="en-US">Table sharding value list</span>
+		 * <span class="zh-CN">数据表分片值列表</span>
+		 */
+		private final List<String> tableNames;
+
+		/**
+		 *
+		 * @param tableDefine <span class="en-US">Table defines information</span>
+		 *                    <span class="zh-CN">数据表定义信息</span>
+		 * @param filterMap   <span class="en-US">Retrieve filter mapping</span>
+		 *                    <span class="zh-CN">查询条件映射表</span>
+		 */
+		private ShardingResult(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap,
+		                       final StrategyConfig strategyConfig, final boolean sharding, final String defaultCatalog) {
+			if (strategyConfig == null || !sharding) {
+				this.catalogs = Collections.singletonList(StringUtils.isEmpty(tableDefine.getCatalog()) ? defaultCatalog : tableDefine.getCatalog());
+				this.tableNames = Collections.singletonList(tableDefine.getTableName());
+			} else {
+				this.catalogs = strategyConfig.dbKeys(filterMap);
+				this.tableNames = strategyConfig.tableKeys(filterMap);
+			}
+		}
+
+		/**
+		 * <h3 class="en-US">Getter method for the database sharding value list</h3>
+		 * <h3 class="zh-CN">数据库分片值列表的 Getter 方法</h3>
+		 *
+		 * @return
+		 * <span class="en-US">Database sharding value list</span>
+		 * <span class="zh-CN">数据库分片值列表</span>
+		 */
+		List<String> getCatalogs() {
+			return this.catalogs;
+		}
+
+		/**
+		 * <h3 class="en-US">Getter method for the table sharding value list</h3>
+		 * <h3 class="zh-CN">数据表分片值列表的 Getter 方法</h3>
+		 *
+		 * @return
+		 * <span class="en-US">Table sharding value list</span>
+		 * <span class="zh-CN">数据表分片值列表</span>
+		 */
+		List<String> getTableNames() {
+			return this.tableNames;
+		}
 	}
 }

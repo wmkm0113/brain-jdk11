@@ -46,4 +46,6 @@
     <entry key="0x00DB00000048">Query_Alias_Exists</entry>
     <entry key="0x00DB00000049">Illegal_Transactional_Status</entry>
     <entry key="0x00DB00000050">Read_Only_Status</entry>
+    <entry key="0x00DB00000051">Bind_IdentifyKey_Empty</entry>
+    <entry key="0x00DB00000052">Insert_Data_Empty</entry>
 </properties>

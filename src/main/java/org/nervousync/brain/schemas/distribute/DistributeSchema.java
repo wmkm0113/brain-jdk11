@@ -36,6 +36,7 @@ import org.nervousync.brain.transactional.TransactionalProxy;
 import org.nervousync.brain.transactional.impl.TransactionalContext;
 import org.nervousync.utils.core.StringUtils;
 
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -141,7 +142,7 @@ public final class DistributeSchema<T> extends BaseSchema<DistributeDialect<T>> 
 
 	@Override
 	public int update(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> dataMap,
-	                  @Nonnull final Map<String, Object> filterMap) throws Exception {
+	                  @Nonnull final Map<String, Object> filterMap, final LockModeType lockMode) throws Exception {
 		return this.distributeClient.update(tableDefine, dataMap, filterMap);
 	}
 
@@ -149,6 +150,14 @@ public final class DistributeSchema<T> extends BaseSchema<DistributeDialect<T>> 
 	public int delete(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap)
 			throws Exception {
 		return this.distributeClient.delete(tableDefine, filterMap);
+	}
+
+	@Override
+	public PartialCollection query(@Nonnull final TableDefine tableDefine, final String columns,
+	                               @Nonnull final Map<String, Object> filterMap,
+	                               final boolean forUpdate, final LockModeType lockMode)
+			throws SQLException {
+		return this.distributeClient.query(tableDefine, columns, filterMap, forUpdate, lockMode);
 	}
 
 	@Override

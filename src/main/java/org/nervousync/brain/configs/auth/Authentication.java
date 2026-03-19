@@ -19,6 +19,7 @@ package org.nervousync.brain.configs.auth;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.xml.bind.annotation.*;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.brain.configs.auth.impl.TrustStoreAuthentication;
 import org.nervousync.brain.configs.auth.impl.UserAuthentication;
 import org.nervousync.brain.configs.auth.impl.X509Authentication;
@@ -34,6 +35,7 @@ import java.io.Serializable;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Apr 10, 2018 15:44:07 $
  */
+@OutputConfig
 @XmlType(namespace = "https://nervousync.org/schemas/brain")
 @XmlSeeAlso({TrustStoreAuthentication.class, UserAuthentication.class, X509Authentication.class})
 @XmlAccessorType(XmlAccessType.NONE)

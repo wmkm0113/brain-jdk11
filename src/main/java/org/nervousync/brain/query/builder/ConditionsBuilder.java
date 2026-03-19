@@ -25,6 +25,7 @@ import org.nervousync.brain.query.condition.impl.ColumnCondition;
 import org.nervousync.brain.query.condition.impl.GroupCondition;
 import org.nervousync.brain.query.core.AbstractQuery;
 import org.nervousync.brain.query.param.AbstractParameter;
+import org.nervousync.brain.query.param.impl.ConstantParameter;
 import org.nervousync.brain.query.param.impl.FunctionParameter;
 import org.nervousync.builder.AbstractBuilder;
 import org.nervousync.builder.ParentBuilder;
@@ -32,6 +33,7 @@ import org.nervousync.exceptions.builder.BuilderException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <h2 class="en-US">Query conditions information list builder</h2>
@@ -74,6 +76,46 @@ public final class ConditionsBuilder<P extends ParentBuilder> extends AbstractBu
 		if (conditions != null) {
 			this.conditions.addAll(conditions);
 		}
+	}
+
+	/**
+	 * <h3 class="en-US">Add data to the data filtering mapping table.</h3>
+	 * <h3 class="zh-CN">添加数据过滤映射表中的数据</h3>
+	 *
+	 * @param tableName <span class="en-US">Table name</span>
+	 *                  <span class="zh-CN">数据表名</span>
+	 * @param filterMap <span class="en-US">Data filtering mapping table</span>
+	 *                  <span class="zh-CN">数据过滤映射表</span>
+	 * @return <span class="en-US">Data column query condition information builder instance object</span>
+	 * <span class="zh-CN">数据列查询信息构建器实例对象</span>
+	 */
+	public ConditionsBuilder<P> fromMap(final String tableName, final Map<String, Object> filterMap) {
+		if (filterMap == null || filterMap.isEmpty()) {
+			return this;
+		}
+
+		List<Condition> conditionList = new ArrayList<>();
+		for (Map.Entry<String, Object> entry : filterMap.entrySet()) {
+			ConstantParameter constantParameter = new ConstantParameter();
+			constantParameter.setItemValue(entry.getValue());
+			ColumnCondition columnCondition = new ColumnCondition();
+			columnCondition.setConnectionCode(ConnectionCode.AND);
+			columnCondition.setTableName(tableName);
+			columnCondition.setColumnName(entry.getKey());
+			columnCondition.setConditionParameter(constantParameter);
+			conditionList.add(columnCondition);
+		}
+
+		if (this.conditions.isEmpty()) {
+			this.conditions.addAll(conditionList);
+		} else {
+			GroupCondition groupCondition = new GroupCondition();
+			groupCondition.setConnectionCode(ConnectionCode.AND);
+			groupCondition.setConditionList(conditionList);
+			this.conditions.add(groupCondition);
+		}
+
+		return this;
 	}
 
 	/**

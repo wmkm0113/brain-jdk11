@@ -65,7 +65,7 @@ public final class BrainConfigureTest {
 
 	@Test
 	@Order(20)
-	public void jdbcConfig() {
+	public void jdbcConfig() throws Exception {
 		BrainConfigure configure =
 				this.jdbc(this.newBuilder(null).jdbcConfig("Jdbc")).build();
 		System.out.println(BeanUtils.objectToString(configure, StringType.XML));
@@ -112,7 +112,8 @@ public final class BrainConfigureTest {
 		brainConfigureBuilder = this.jdbc(brainConfigureBuilder.jdbcConfig("Jdbc"));
 		brainConfigureBuilder = this.remote(brainConfigureBuilder.remoteConfig("Remote"));
 		BrainConfigure configure = brainConfigureBuilder.defaultSchema("Jdbc").build();
-		String xml = BeanUtils.objectToString(configure, StringType.XML);
+		String xml = BeanUtils.objectToString(configure, StringType.XML, Boolean.TRUE);
+		System.out.println(xml);
 		configure = BeanUtils.stringToObject(xml, StringType.XML, Globals.DEFAULT_ENCODING, BrainConfigure.class, "https://nervousync.org/schemas/proxy", "https://nervousync.org/schemas/brain");
 		System.out.println(BeanUtils.objectToString(configure, StringType.JSON));
 		configure = this.newBuilder(configure)
@@ -153,7 +154,7 @@ public final class BrainConfigureTest {
 				.confirm();
 	}
 
-	private <P extends ParentBuilder> BrainConfigureBuilder<P> jdbc(final SchemaConfigBuilder.JdbcConfigBuilder<BrainConfigureBuilder<P>> configBuilder) {
+	private <P extends ParentBuilder> BrainConfigureBuilder<P> jdbc(final SchemaConfigBuilder.JdbcConfigBuilder<BrainConfigureBuilder<P>> configBuilder) throws Exception {
 		KeyPair keyPair = SecurityUtils.RSAKeyPair();
 		return configBuilder.dialect("JdbcDialect")
 				.serverBuilder("localhost", 2270)

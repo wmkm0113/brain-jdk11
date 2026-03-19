@@ -18,6 +18,7 @@
 package org.nervousync.brain.configs.server;
 
 import jakarta.xml.bind.annotation.*;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.brain.configs.auth.Authentication;
 import org.nervousync.brain.configs.auth.impl.TokenAuthentication;
 import org.nervousync.brain.configs.auth.impl.TrustStoreAuthentication;
@@ -37,6 +38,7 @@ import java.io.Serializable;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Dec 12, 2020 09:27:39 $
  */
+@OutputConfig
 @XmlType(name = "server_info", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "server_info", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)

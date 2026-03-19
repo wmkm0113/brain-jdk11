@@ -19,6 +19,7 @@ package org.nervousync.brain.configs.schema;
 
 import jakarta.annotation.Nonnull;
 import jakarta.xml.bind.annotation.*;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.auth.Authentication;
 import org.nervousync.brain.configs.auth.impl.TokenAuthentication;
@@ -44,6 +45,7 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Jul 12, 2020 16:15:09 $
  */
+@OutputConfig
 @XmlType(namespace = "https://nervousync.org/schemas/brain")
 @XmlSeeAlso({DistributeSchemaConfig.class, JdbcSchemaConfig.class, RemoteSchemaConfig.class})
 @XmlAccessorType(XmlAccessType.NONE)
@@ -252,7 +254,7 @@ public abstract class SchemaConfig implements Serializable {
 	 *                   <span class="zh-CN">数据库服务器列表</span>
 	 */
 	public void setServerList(final List<ServerInfo> serverList) {
-		this.serverList = serverList;
+		this.serverList = (serverList == null) ? new ArrayList<>() : serverList;
 	}
 
 	/**

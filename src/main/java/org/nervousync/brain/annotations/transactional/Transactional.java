@@ -47,8 +47,8 @@ public @interface Transactional {
      * <h3 class="en-US">Get the process timeout value of transactional</h3>
      * <h3 class="zh-CN">获取事务的执行超时时间</h3>
      *
-     * @return <span class="en-US">The process timeout value of transactional</span>
-     * <span class="zh-CN">事务的执行超时时间</span>
+     * @return <span class="en-US">The timeout value of transactional (Unit: seconds)</span>
+     * <span class="zh-CN">事务的超时时间（单位：秒）</span>
      */
     int timeout() default Globals.DEFAULT_VALUE_INT;
 
@@ -68,5 +68,5 @@ public @interface Transactional {
      * @return <span class="en-US">The rollback exception class of transactional</span>
      * <span class="zh-CN">事务的回滚异常</span>
      */
-    Class<?>[] rollbackFor() default {};
+    Class<? extends Throwable>[] rollbackFor() default {};
 }

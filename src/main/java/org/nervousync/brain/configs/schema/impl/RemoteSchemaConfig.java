@@ -57,7 +57,7 @@ public final class RemoteSchemaConfig extends SchemaConfig {
 	 * <span class="en-US">Proxy configure information</span>
 	 * <span class="zh-CN">代理服务器配置信息</span>
 	 */
-	@XmlElement(name = "proxy_config", namespace = "https://nervousync.org/schemas/proxy")
+	@XmlElement(name = "proxy_config", type = ProxyConfig.class)
 	private ProxyConfig proxyConfig;
 	/**
 	 * <span class="en-US">Keep-alive timeout (Unit: seconds)</span>

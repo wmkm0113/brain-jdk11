@@ -35,7 +35,7 @@ public final class TransactionalProxy {
 	 * <span class="en-US">Transactional manager instance object</span>
 	 * <span class="zh-CN">事务管理器实例对象</span>
 	 */
-	private static TransactionalManager TRANSACTIONAL_MANAGER = new ThreadLocalTransactionalManagerImpl();
+	private static volatile TransactionalManager TRANSACTIONAL_MANAGER = new ThreadLocalTransactionalManagerImpl();
 
 	/**
 	 * <h3 class="en-US">Get the transactional manager instance object</h3>
@@ -68,7 +68,7 @@ public final class TransactionalProxy {
 	 * @throws TransactionalException <span class="en-US">Transactional manager implement class not implement the interface</span>
 	 *                                <span class="zh-CN">事务管理器实现类没有实现接口</span>
 	 */
-	public static void initialize(final Class<?> implementClass) throws TransactionalException {
+	public static synchronized void initialize(final Class<?> implementClass) throws TransactionalException {
 		if (ClassUtils.isAssignable(TransactionalManager.class, implementClass)) {
 			TRANSACTIONAL_MANAGER = (TransactionalManager) ObjectUtils.newInstance(implementClass);
 			return;

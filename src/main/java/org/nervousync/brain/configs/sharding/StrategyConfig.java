@@ -118,7 +118,7 @@ public final class StrategyConfig {
 	}
 
 	/**
-	 * <h3 class="en-US">Get the list of calculated sharding result</h3>
+	 * <h3 class="en-US">Get the list of the calculated sharding result</h3>
 	 * <h3 class="zh-CN">获取分片值列表</h3>
 	 *
 	 * @param conditionList <span class="en-US">Query condition instance list</span>
@@ -175,6 +175,34 @@ public final class StrategyConfig {
 			return this.tableName;
 		}
 		return this.sharding(this.tableStrategy.result(conditionList));
+	}
+
+	/**
+	 * <h3 class="en-US">Calculate sharding result</h3>
+	 * <h3 class="zh-CN">计算分片值</h3>
+	 *
+	 * @param dataMap <span class="en-US">Data objects that need to be sharded</span>
+	 *                <span class="zh-CN">需要分片的数据对象</span>
+	 * @return <span class="en-US">Calculate result</span>
+	 * <span class="zh-CN">计算结果</span>
+	 */
+	public List<String> tableKeys(@Nonnull final Map<String, Object> dataMap) {
+		return (this.tableStrategy == null) ? Collections.singletonList(this.sharding(Globals.DEFAULT_VALUE_STRING)) : this.tableStrategy.keys(dataMap);
+	}
+
+	/**
+	 * <h3 class="en-US">Get the list of the calculated sharding result</h3>
+	 * <h3 class="zh-CN">获取分片值列表</h3>
+	 *
+	 * @param conditionList <span class="en-US">Query condition instance list</span>
+	 *                      <span class="zh-CN">查询条件实例对象列表</span>
+	 * @return <span class="en-US">List of calculated sharding result</span>
+	 * <span class="zh-CN">分片值列表</span>
+	 */
+	public List<String> tableKeys(@Nonnull final List<Condition> conditionList) {
+		return (this.tableStrategy == null)
+				? Collections.singletonList(this.sharding(Globals.DEFAULT_VALUE_STRING))
+				: this.tableStrategy.keys(conditionList);
 	}
 
 	private String sharding(final String shardingKey) {
@@ -302,7 +330,7 @@ public final class StrategyConfig {
 		}
 
 		/**
-		 * <h3 class="en-US">Get the list of calculated sharding result</h3>
+		 * <h3 class="en-US">Get the list of the calculated sharding result</h3>
 		 * <h3 class="zh-CN">获取分片值列表</h3>
 		 *
 		 * @param dataMap <span class="en-US">Data objects that need to be sharded</span>
@@ -320,7 +348,7 @@ public final class StrategyConfig {
 		}
 
 		/**
-		 * <h3 class="en-US">Get the list of calculated sharding result</h3>
+		 * <h3 class="en-US">Get the list of the calculated sharding result</h3>
 		 * <h3 class="zh-CN">获取分片值列表</h3>
 		 *
 		 * @param conditionList <span class="en-US">Query condition instance list</span>

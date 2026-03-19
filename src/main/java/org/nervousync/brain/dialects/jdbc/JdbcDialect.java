@@ -57,13 +57,17 @@ import org.nervousync.brain.query.param.AbstractParameter;
 import org.nervousync.brain.query.param.impl.*;
 import org.nervousync.brain.query.subqueries.ScalarSubQuery;
 import org.nervousync.brain.query.subqueries.TableSubQuery;
+import org.nervousync.brain.schemas.BaseSchema;
 import org.nervousync.commons.Globals;
 import org.nervousync.enumerations.security.EncodeType;
 import org.nervousync.utils.core.DateTimeUtils;
+import org.nervousync.utils.core.IOUtils;
 import org.nervousync.utils.core.ObjectUtils;
 import org.nervousync.utils.core.StringUtils;
 import org.nervousync.utils.security.SecurityUtils;
 
+import java.io.CharArrayWriter;
+import java.io.Reader;
 import java.sql.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -401,11 +405,7 @@ public abstract class JdbcDialect extends BaseDialect {
 		try {
 			Blob blob = resultSet.getBlob(columnIndex);
 			if (blob != null) {
-				byte[] buffer = new byte[(int) blob.length()];
-				int readLength = blob.getBinaryStream().read(buffer, 0, buffer.length);
-				if (readLength == buffer.length) {
-					return buffer;
-				}
+				return IOUtils.readBytes(blob.getBinaryStream());
 			}
 		} catch (Exception e) {
 			this.logger.warn("Read_Lob_Error", "BLOB");
@@ -428,20 +428,26 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * <span class="zh-CN">读取的字节数据</span>
 	 */
 	public char[] readClob(ResultSet resultSet, int columnIndex) {
+		Reader reader = null;
 		try {
 			Clob clob = resultSet.getClob(columnIndex);
 			if (clob != null) {
-				char[] buffer = new char[(int) clob.length()];
-				int readLength = clob.getCharacterStream().read(buffer, 0, buffer.length);
-				if (readLength == buffer.length) {
-					return buffer;
+				reader = clob.getCharacterStream();
+				char[] buffer = new char[Globals.DEFAULT_BUFFER_SIZE];
+				CharArrayWriter charArrayWriter = new CharArrayWriter();
+				int readLength;
+				while ((readLength = reader.read(buffer)) != Globals.DEFAULT_VALUE_INT) {
+					charArrayWriter.write(buffer, 0, readLength);
 				}
+				return charArrayWriter.toCharArray();
 			}
 		} catch (Exception e) {
 			this.logger.warn("Read_Lob_Error", "CLOB");
 			if (this.logger.isDebugEnabled()) {
 				this.logger.debug("Stack_Message_Error", e);
 			}
+		} finally {
+			IOUtils.closeStream(reader);
 		}
 		return new char[0];
 	}
@@ -555,14 +561,17 @@ public abstract class JdbcDialect extends BaseDialect {
 			return Globals.DEFAULT_VALUE_STRING;
 		}
 		StringBuilder stringBuilder =
-				new StringBuilder(CREATE_VIEW).append(BrainCommons.WHITE_SPACE)
+				new StringBuilder(CREATE_VIEW)
+						.append(BrainCommons.WHITE_SPACE)
 						.append(this.viewName(tableName))
 						.append(BrainCommons.WHITE_SPACE)
 						.append(" AS ");
 		String joinCharacter = Globals.DEFAULT_VALUE_STRING;
 		for (String shardingTable : shardingTables) {
 			stringBuilder.append(joinCharacter)
-					.append(SELECT_COMMAND).append(" * ").append(FROM_COMMAND)
+					.append(SELECT_COMMAND)
+					.append(BaseSchema.SELECT_ALL_COLUMNS)
+					.append(FROM_COMMAND)
 					.append(this.nameCase(shardingTable));
 			if (StringUtils.isEmpty(joinCharacter)) {
 				joinCharacter = " UNION ALL ";
@@ -581,7 +590,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * <span class="zh-CN">生成的SQL命令</span>
 	 */
 	public final String dropShardingView(@Nonnull TableDefine tableDefine) {
-		return DROP_VIEW + tableDefine.getTableName();
+		return DROP_VIEW + this.viewName(tableDefine.getTableName());
 	}
 
 	/**
@@ -850,7 +859,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	public final GeneratedCommand insertCommand(@Nonnull final TableDefine tableDefine, @Nonnull final String tableName,
 	                                            @Nonnull final Map<String, Object> dataMap) throws SQLException {
 		if (dataMap.isEmpty()) {
-			throw new SQLException("Insert parameter map is empty!");
+			throw new MultilingualSQLException(0x00DB00000052L);
 		}
 		final StringBuilder columnBuilder = new StringBuilder();
 		final StringBuilder valueBuilder = new StringBuilder();
@@ -946,9 +955,9 @@ public abstract class JdbcDialect extends BaseDialect {
 	}
 
 	private void processWhereClause(@Nonnull final StringBuilder sqlBuilder, @Nonnull final Map<String, String> aliasMap,
-	                                @Nonnull final List<Condition> conditionList, final List<Object> values)
-			throws SQLException {
-		Optional.of(this.whereClause(aliasMap, conditionList, values))
+	                                @Nonnull final List<Condition> conditionList, final List<Object> values,
+	                                final boolean sharding) throws SQLException {
+		Optional.of(this.whereClause(aliasMap, conditionList, values, sharding))
 				.filter(StringUtils::notBlank)
 				.ifPresent(whereClause ->
 						sqlBuilder.append(BrainCommons.WHITE_SPACE)
@@ -1004,59 +1013,64 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @return <span class="en-US">Generated SQL command</span>
 	 * <span class="zh-CN">生成的SQL命令</span>
 	 */
-	public final GeneratedCommand retrieveCommand(@Nonnull final TableDefine tableDefine,
-	                                              @Nonnull final String shardingName, @Nonnull final String columns,
-	                                              @Nonnull final Map<String, Object> filterMap,
-	                                              final boolean forUpdate, final LockModeType lockOption) {
-		List<Object> values = new ArrayList<>();
-		StringBuilder sqlBuilder = new StringBuilder(SELECT_COMMAND)
-				.append(StringUtils.isEmpty(columns) ? " * " : columns)
-				.append(FROM_COMMAND)
-				.append(this.nameCase(shardingName));
-		sqlBuilder.append(this.lockWhereClause(this.whereClause(filterMap, values), forUpdate, lockOption));
+	public final GeneratedCommand queryCommand(final TableDefine tableDefine, final String shardingName,
+	                                           final String columns, final Map<String, Object> filterMap,
+	                                           final boolean forUpdate, final LockModeType lockOption)
+			throws SQLException {
+		if (columns.isEmpty()) {
+			throw new MultilingualSQLException(0x00DB00000011L);
+		}
+
 		Map<String, Integer> jdbcTypeMap = new HashMap<>();
 		Map<String, String> keyMap = new HashMap<>();
-		tableDefine.getColumnDefines()
-				.forEach(columnDefine -> {
-					String columnLabel = this.nameCase(columnDefine.getColumnName());
-					jdbcTypeMap.put(columnLabel, columnDefine.getJdbcType());
-					keyMap.put(columnLabel, columnDefine.getColumnName());
-				});
-		return new GeneratedCommand(sqlBuilder.toString(), values, jdbcTypeMap, keyMap);
-	}
-
-	/**
-	 * <h3 class="en-US">Generate SQL commands to query record count</h3>
-	 * <h3 class="zh-CN">生成查询记录条数的SQL命令</h3>
-	 *
-	 * @param queryInfo <span class="en-US">Query record information</span>
-	 *                  <span class="zh-CN">数据检索信息</span>
-	 * @return <span class="en-US">Generated SQL command</span>
-	 * <span class="zh-CN">生成的SQL命令</span>
-	 * @throws SQLException <span class="en-US">An error occurred while generating the SQL command</span>
-	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
-	 */
-	public final GeneratedCommand queryTotalCommand(@Nonnull final QueryInfo queryInfo) throws SQLException {
-		final Map<String, String> aliasMap = new HashMap<>();
-		this.aliasNames(aliasMap, queryInfo.getQueryFrom(), queryInfo.getItemList(), queryInfo.getQueryJoins());
-		List<Object> values = new ArrayList<>();
-		String fromCommand = this.fromCommand(aliasMap, queryInfo.getQueryFrom(), values);
-		if (StringUtils.isEmpty(fromCommand)) {
-			throw new MultilingualSQLException(0x00DB00000047L);
-		}
-		StringBuilder sqlBuilder =
-				new StringBuilder(SELECT_COMMAND)
-						.append(" COUNT(*) ")
-						.append(FROM_COMMAND)
-						.append(fromCommand);
-		if (!queryInfo.getQueryJoins().isEmpty()) {
-			for (QueryJoin queryJoin : queryInfo.getQueryJoins()) {
-				sqlBuilder.append(this.joinCommand(aliasMap, queryJoin, values));
+		if (BaseSchema.SELECT_ALL_COLUMNS.equalsIgnoreCase(columns)) {
+			tableDefine.getColumnDefines()
+					.forEach(columnDefine -> {
+						String columnLabel = this.nameCase(columnDefine.getColumnName());
+						jdbcTypeMap.put(columnLabel, columnDefine.getJdbcType());
+						keyMap.put(columnLabel, columnDefine.getColumnName());
+					});
+		} else {
+			for (String identifyName : StringUtils.tokenizeToStringArray(columns, BrainCommons.DEFAULT_SPLIT_CHARACTER)) {
+				Optional.ofNullable(tableDefine.column(identifyName))
+						.ifPresent(columnDefine -> {
+							String columnLabel = this.nameCase(columnDefine.getColumnName());
+							jdbcTypeMap.put(columnLabel, columnDefine.getJdbcType());
+							keyMap.put(columnLabel, columnDefine.getColumnName());
+						});
 			}
 		}
-		sqlBuilder.append(WHERE_COMMAND).append(BrainCommons.CONSTANT_CLAUSE_TRUE);
-		this.processWhereClause(sqlBuilder, aliasMap, queryInfo.getConditionList(), values);
-		return new GeneratedCommand(sqlBuilder.toString(), values, Map.of(), Map.of());
+
+		List<Object> values = new ArrayList<>();
+		StringBuilder whereClause = new StringBuilder();
+		String connectionCode = Globals.DEFAULT_VALUE_STRING;
+		for (Map.Entry<String, Object> entry : filterMap.entrySet()) {
+			ColumnDefine columnDefine = tableDefine.column(entry.getKey());
+			if (columnDefine != null) {
+				whereClause.append(connectionCode)
+						.append(this.nameCase(columnDefine.getColumnName()))
+						.append(BrainCommons.OPERATOR_EQUAL)
+						.append(BrainCommons.DEFAULT_PLACE_HOLDER);
+				values.add(entry.getValue());
+				connectionCode = BrainCommons.BRACKETS_BEGIN + ConnectionCode.AND + BrainCommons.BRACKETS_END;
+			}
+		}
+		StringBuilder sqlBuilder = new StringBuilder();
+		sqlBuilder.append(SELECT_COMMAND)
+				.append(columns)
+				.append(FROM_COMMAND)
+				.append(StringUtils.isEmpty(shardingName) ? tableDefine.getTableName() : shardingName);
+		if (forUpdate) {
+			sqlBuilder.append(this.lockWhereClause(whereClause.toString(), lockOption));
+		} else {
+			sqlBuilder.append(WHERE_COMMAND)
+					.append(BrainCommons.CONSTANT_CLAUSE_TRUE)
+					.append(BrainCommons.WHITE_SPACE)
+					.append(ConnectionCode.AND)
+					.append(BrainCommons.WHITE_SPACE)
+					.append(whereClause);
+		}
+		return new GeneratedCommand(sqlBuilder.toString(), values, jdbcTypeMap, keyMap);
 	}
 
 	/**
@@ -1065,52 +1079,59 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *
 	 * @param queryInfo  <span class="en-US">Query record information</span>
 	 *                   <span class="zh-CN">数据检索信息</span>
-	 * @param pagerQuery <span class="en-US">Including the pager query information</span>
-	 *                   <span class="zh-CN">包含分页查询信息</span>
+	 * @param queryTotal <span class="en-US">Query total record count</span>
+	 *                   <span class="zh-CN">查询总记录数</span>
 	 * @return <span class="en-US">Generated SQL command</span>
 	 * <span class="zh-CN">生成的SQL命令</span>
 	 * @throws SQLException <span class="en-US">An error occurred while generating the SQL command</span>
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
-	public final GeneratedCommand queryCommand(final QueryInfo queryInfo, final boolean pagerQuery) throws SQLException {
+	public final GeneratedCommand queryCommand(final QueryInfo queryInfo, final boolean queryTotal,
+	                                           final boolean sharding) throws SQLException {
 		if (!queryInfo.getQueryJoins().isEmpty() && !this.supportJoin()) {
 			throw new MultilingualSQLException(0x00DB00000010L);
 		}
 		final Map<String, String> aliasMap = new HashMap<>();
-		this.aliasNames(aliasMap, queryInfo.getQueryFrom(), queryInfo.getItemList(), queryInfo.getQueryJoins());
-
+		List<Object> values = new ArrayList<>();
 		Map<String, Integer> jdbcTypeMap = new HashMap<>();
 		Map<String, String> keyMap = new HashMap<>();
+		this.aliasNames(aliasMap, queryInfo.getQueryFrom(), queryInfo.getItemList(), queryInfo.getQueryJoins());
 		this.handlerTypes(aliasMap, queryInfo.getItemList(), jdbcTypeMap, keyMap);
-
-		List<Object> values = new ArrayList<>();
-		String itemCommand = this.itemCommand(aliasMap, queryInfo.getItemList(), values);
-		if (StringUtils.isEmpty(itemCommand)) {
-			throw new MultilingualSQLException(0x00DB00000011L);
-		}
-
-		String fromCommand = this.fromCommand(aliasMap, queryInfo.getQueryFrom(), values);
+		String fromCommand = this.fromCommand(aliasMap, queryInfo.getQueryFrom(), values, sharding);
 		if (StringUtils.isEmpty(fromCommand)) {
 			throw new MultilingualSQLException(0x00DB00000047L);
 		}
-		StringBuilder sqlBuilder =
-				new StringBuilder(SELECT_COMMAND)
-						.append(itemCommand)
-						.append(FROM_COMMAND)
-						.append(fromCommand);
+		StringBuilder sqlBuilder = new StringBuilder();
+		if (queryTotal) {
+			sqlBuilder.append(SELECT_COMMAND)
+					.append(" COUNT(*) ")
+					.append(FROM_COMMAND)
+					.append(fromCommand);
+		} else {
+			String itemCommand = this.itemCommand(aliasMap, queryInfo.getItemList(), values, sharding);
+			if (StringUtils.isEmpty(itemCommand)) {
+				throw new MultilingualSQLException(0x00DB00000011L);
+			}
+			sqlBuilder.append(SELECT_COMMAND)
+					.append(itemCommand)
+					.append(FROM_COMMAND)
+					.append(fromCommand);
+		}
 
 		for (QueryJoin queryJoin : queryInfo.getQueryJoins()) {
-			sqlBuilder.append(this.joinCommand(aliasMap, queryJoin, values));
+			sqlBuilder.append(this.joinCommand(aliasMap, queryJoin, values, sharding));
 		}
 
-		String whereClause = this.lockWhereClause(this.whereClause(aliasMap, queryInfo.getConditionList(), values),
-				queryInfo.isForUpdate(), queryInfo.getLockOption());
+		String whereClause = this.whereClause(aliasMap, queryInfo.getConditionList(), values, sharding);
 		if (StringUtils.notBlank(whereClause)) {
-			sqlBuilder.append(whereClause);
-		}
-		String orderBy = this.orderBy(aliasMap, queryInfo.getOrderByList());
-		if (StringUtils.notBlank(orderBy)) {
-			sqlBuilder.append(ORDER_BY_COMMAND).append(orderBy);
+			sqlBuilder.append(WHERE_COMMAND)
+					.append(BrainCommons.CONSTANT_CLAUSE_TRUE)
+					.append(BrainCommons.WHITE_SPACE)
+					.append(ConnectionCode.AND)
+					.append(BrainCommons.WHITE_SPACE)
+					.append(BrainCommons.BRACKETS_BEGIN)
+					.append(whereClause)
+					.append(BrainCommons.BRACKETS_END);
 		}
 
 		String groupBy = this.groupBy(aliasMap, queryInfo.getGroupByList());
@@ -1119,14 +1140,22 @@ public abstract class JdbcDialect extends BaseDialect {
 		}
 
 		if (!queryInfo.getHavingList().isEmpty()) {
-			String havingClause = this.whereClause(aliasMap, queryInfo.getHavingList(), values);
+			String havingClause = this.whereClause(aliasMap, queryInfo.getHavingList(), values, sharding);
 			if (StringUtils.notBlank(havingClause)) {
 				sqlBuilder.append(HAVING_COMMAND).append(havingClause);
 			}
 		}
+		if (queryTotal) {
+			return new GeneratedCommand(sqlBuilder.toString(), values, Map.of(), Map.of());
+		}
+
+		String orderBy = this.orderBy(aliasMap, queryInfo.getOrderByList());
+		if (StringUtils.notBlank(orderBy)) {
+			sqlBuilder.append(ORDER_BY_COMMAND).append(orderBy);
+		}
 
 		String sqlCmd;
-		if (pagerQuery && (queryInfo.getPageNo() > 1 || queryInfo.getPageLimit() > 0)) {
+		if (queryInfo.getPageNo() > 1 || queryInfo.getPageLimit() > 0) {
 			int pageNo = queryInfo.getPageNo() > 0 ? queryInfo.getPageNo() : BrainCommons.DEFAULT_PAGE_NO;
 			int pageLimit = (queryInfo.getPageLimit() > 0) ? queryInfo.getPageLimit() : BrainCommons.DEFAULT_PAGE_LIMIT;
 			sqlCmd = this.limitCommand(sqlBuilder.toString(), pageLimit * (pageNo - 1), pageLimit, values);
@@ -1229,19 +1258,15 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *
 	 * @param whereClause <span class="en-US">Generated where sentences</span>
 	 *                    <span class="zh-CN">生成的Where字句</span>
-	 * @param forUpdate   <span class="en-US">Retrieve result using for update record</span>
-	 *                    <span class="zh-CN">检索结果用于更新记录</span>
 	 * @param lockOption  <span class="en-US">Query record lock option</span>
 	 *                    <span class="zh-CN">查询记录锁定选项</span>
 	 * @return <span class="en-US">Generated SQL command</span>
 	 * <span class="zh-CN">生成的SQL命令</span>
 	 */
-	protected String lockWhereClause(final String whereClause, final boolean forUpdate, final LockModeType lockOption) {
+	protected String lockWhereClause(final String whereClause, final LockModeType lockOption) {
 		StringBuilder sqlBuilder = new StringBuilder(WHERE_COMMAND).append(BrainCommons.CONSTANT_CLAUSE_TRUE);
 		if (StringUtils.isEmpty(whereClause)) {
-			if (this.logger.isDebugEnabled()) {
-				this.logger.warn("Query_Condition_Empty");
-			}
+			this.logger.warn("Query_Condition_Empty");
 		} else {
 			sqlBuilder.append(BrainCommons.WHITE_SPACE)
 					.append(ConnectionCode.AND)
@@ -1250,17 +1275,16 @@ public abstract class JdbcDialect extends BaseDialect {
 					.append(whereClause)
 					.append(BrainCommons.BRACKETS_END);
 		}
-		if (forUpdate) {
-			switch (lockOption) {
-				case WRITE:
-				case PESSIMISTIC_WRITE:
-					sqlBuilder.append(" FOR UPDATE NOWAIT ");
-					break;
-				case READ:
-				case PESSIMISTIC_READ:
-					sqlBuilder.append(" LOCK IN SHARE MODE ");
-					break;
-			}
+
+		switch (lockOption) {
+			case WRITE:
+			case PESSIMISTIC_WRITE:
+				sqlBuilder.append(" FOR UPDATE NOWAIT ");
+				break;
+			case READ:
+			case PESSIMISTIC_READ:
+				sqlBuilder.append(" LOCK IN SHARE MODE ");
+				break;
 		}
 		return sqlBuilder.toString();
 	}
@@ -1657,11 +1681,11 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
 	private String itemCommand(@Nonnull final Map<String, String> aliasMap, @Nonnull final List<QueryItem> itemList,
-	                           @Nonnull final List<Object> values) throws SQLException {
+	                           @Nonnull final List<Object> values, final boolean sharding) throws SQLException {
 		StringBuilder distinctBuilder = new StringBuilder();
 		StringBuilder itemBuilder = new StringBuilder();
 		for (QueryItem queryItem : itemList) {
-			Optional.of(this.queryItem(aliasMap, queryItem, values, Boolean.FALSE))
+			Optional.of(this.queryItem(aliasMap, queryItem, values, Boolean.FALSE, sharding))
 					.filter(StringUtils::notBlank)
 					.ifPresent(item -> {
 						if (queryItem instanceof ColumnItem && ((ColumnItem) queryItem).isDistinct()) {
@@ -1703,20 +1727,19 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
 	private String fromCommand(@Nonnull final Map<String, String> aliasMap, @Nonnull final QueryFrom queryFrom,
-	                           @Nonnull final List<Object> values)
-			throws SQLException {
+	                           @Nonnull final List<Object> values, final boolean sharding) throws SQLException {
 		StringBuilder sqlBuilder = new StringBuilder();
 		String aliasCommand = this.aliasCommand();
 		sqlBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER);
 		if (queryFrom instanceof FromTable) {
 			FromTable fromTable = (FromTable) queryFrom;
-			sqlBuilder.append(this.nameCase(fromTable.getTableName()))
+			sqlBuilder.append(sharding ? this.viewName(fromTable.getTableName()) : this.nameCase(fromTable.getTableName()))
 					.append(aliasCommand)
 					.append(BrainCommons.WHITE_SPACE)
 					.append(aliasMap.get(fromTable.getTableName()));
 		} else if (queryFrom instanceof FromSubQuery) {
 			FromSubQuery fromSubQuery = (FromSubQuery) queryFrom;
-			String subQueryCommand = this.subQuery(aliasMap, fromSubQuery.getQueryData(), values);
+			String subQueryCommand = this.subQuery(aliasMap, fromSubQuery.getQueryData(), values, sharding);
 			if (StringUtils.notBlank(subQueryCommand)) {
 				sqlBuilder.append(BrainCommons.BRACKETS_BEGIN)
 						.append(subQueryCommand)
@@ -1747,7 +1770,7 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
 	private String joinCommand(final Map<String, String> aliasMap, final QueryJoin queryJoin,
-	                           final List<Object> values) throws SQLException {
+	                           final List<Object> values, final boolean sharding) throws SQLException {
 		StringBuilder sqlBuilder = new StringBuilder();
 		switch (queryJoin.getJoinType()) {
 			case FULL:
@@ -1770,7 +1793,7 @@ public abstract class JdbcDialect extends BaseDialect {
 		}
 		if (queryJoin instanceof SubQueryJoin) {
 			SubQueryJoin subQueryJoin = (SubQueryJoin) queryJoin;
-			String subQueryCommand = this.subQuery(aliasMap, subQueryJoin.getSubQuery(), values);
+			String subQueryCommand = this.subQuery(aliasMap, subQueryJoin.getSubQuery(), values, sharding);
 			if (StringUtils.notBlank(subQueryCommand)) {
 				sqlBuilder.append(BrainCommons.BRACKETS_BEGIN)
 						.append(subQueryCommand)
@@ -1837,7 +1860,10 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
 	private String whereClause(final Map<String, String> aliasMap, final List<Condition> conditionList,
-	                           final List<Object> values) throws SQLException {
+	                           final List<Object> values, final boolean sharding) throws SQLException {
+		if (conditionList == null || conditionList.isEmpty()) {
+			return Globals.DEFAULT_VALUE_STRING;
+		}
 		StringBuilder sqlBuilder = new StringBuilder();
 		String connectionCode = Globals.DEFAULT_VALUE_STRING;
 		conditionList.sort(SortedItem.desc());
@@ -1847,11 +1873,11 @@ public abstract class JdbcDialect extends BaseDialect {
 					.append(BrainCommons.WHITE_SPACE);
 			switch (condition.getConditionType()) {
 				case COLUMN:
-					sqlBuilder.append(this.columnCondition(aliasMap, condition.unwrap(ColumnCondition.class), values));
+					sqlBuilder.append(this.columnCondition(aliasMap, condition.unwrap(ColumnCondition.class), values, sharding));
 					break;
 				case GROUP:
 					GroupCondition groupCondition = condition.unwrap(GroupCondition.class);
-					String groupWhereClause = this.whereClause(aliasMap, groupCondition.getConditionList(), values);
+					String groupWhereClause = this.whereClause(aliasMap, groupCondition.getConditionList(), values, sharding);
 					if (StringUtils.notBlank(groupWhereClause)) {
 						sqlBuilder.append(BrainCommons.BRACKETS_BEGIN)
 								.append(groupWhereClause)
@@ -1892,27 +1918,28 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
 	private String subQuery(final Map<String, String> aliasMap, @Nonnull final AbstractQuery queryData,
-	                        final List<Object> values) throws SQLException {
+	                        final List<Object> values, final boolean sharding) throws SQLException {
 		StringBuilder sqlBuilder = new StringBuilder(SELECT_COMMAND);
 		switch (queryData.getQueryType()) {
 			case SCALAR:
 				ScalarSubQuery scalarSubQuery = (ScalarSubQuery) queryData;
-				sqlBuilder.append(this.itemCommand(aliasMap, List.of(scalarSubQuery.getQueryItem()), values));
+				sqlBuilder.append(this.itemCommand(aliasMap, List.of(scalarSubQuery.getQueryItem()), values, sharding));
 				break;
 			case TABLE:
-				sqlBuilder.append(this.itemCommand(aliasMap, ((TableSubQuery) queryData).getItemList(), values));
+				sqlBuilder.append(this.itemCommand(aliasMap, ((TableSubQuery) queryData).getItemList(), values, sharding));
 				break;
 		}
 
 		QueryFrom queryFrom = queryData.getQueryFrom();
 		switch (queryFrom.getFromType()) {
 			case Table:
-				sqlBuilder.append(FROM_COMMAND).append(this.nameCase(((FromTable) queryFrom).getTableName()));
+				String tableName = ((FromTable) queryFrom).getTableName();
+				sqlBuilder.append(FROM_COMMAND).append(sharding ? this.viewName(tableName) : this.nameCase(tableName));
 				break;
 			case SubQuery:
 				sqlBuilder.append(FROM_COMMAND)
 						.append(BrainCommons.BRACKETS_BEGIN)
-						.append(this.subQuery(aliasMap, ((FromSubQuery) queryFrom).getQueryData(), values))
+						.append(this.subQuery(aliasMap, ((FromSubQuery) queryFrom).getQueryData(), values, sharding))
 						.append(BrainCommons.BRACKETS_END);
 				break;
 		}
@@ -1920,7 +1947,7 @@ public abstract class JdbcDialect extends BaseDialect {
 			sqlBuilder.append(this.aliasCommand()).append(queryFrom.getAliasName());
 		}
 		sqlBuilder.append(WHERE_COMMAND).append(BrainCommons.CONSTANT_CLAUSE_TRUE);
-		this.processWhereClause(sqlBuilder, aliasMap, queryData.getConditionList(), values);
+		this.processWhereClause(sqlBuilder, aliasMap, queryData.getConditionList(), values, sharding);
 		if (queryData.getGroupByList() != null && !queryData.getGroupByList().isEmpty()) {
 			StringBuilder groupByClause = new StringBuilder();
 			for (GroupBy groupBy : queryData.getGroupByList()) {
@@ -1937,7 +1964,7 @@ public abstract class JdbcDialect extends BaseDialect {
 			sqlBuilder.append(groupByClause);
 		}
 
-		String havingClause = this.whereClause(aliasMap, queryData.getHavingList(), values);
+		String havingClause = this.whereClause(aliasMap, queryData.getHavingList(), values, sharding);
 		if (StringUtils.notBlank(havingClause)) {
 			sqlBuilder.append(HAVING_COMMAND).append(havingClause);
 		}
@@ -1986,13 +2013,14 @@ public abstract class JdbcDialect extends BaseDialect {
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
 	private String queryItem(final Map<String, String> aliasMap, final QueryItem queryItem,
-	                         final List<Object> values, final boolean calculateParam) throws SQLException {
+	                         final List<Object> values, final boolean calculateParam, final boolean sharding)
+			throws SQLException {
 		StringBuilder sqlBuilder = new StringBuilder();
 		switch (queryItem.getItemType()) {
 			case FUNCTION:
 				FunctionItem functionItem = queryItem.unwrap(FunctionItem.class);
 				for (AbstractParameter<?> functionParameter : functionItem.getFunctionParams()) {
-					String parameter = this.parameterValue(aliasMap, functionParameter, values);
+					String parameter = this.parameterValue(aliasMap, functionParameter, values, sharding);
 					if (StringUtils.notBlank(parameter)) {
 						if (sqlBuilder.length() > 0) {
 							sqlBuilder.append(BrainCommons.DEFAULT_SPLIT_CHARACTER);
@@ -2016,7 +2044,7 @@ public abstract class JdbcDialect extends BaseDialect {
 				}
 				SubQueryItem subQueryItem = queryItem.unwrap(SubQueryItem.class);
 				sqlBuilder.append(BrainCommons.BRACKETS_BEGIN)
-						.append(this.subQuery(aliasMap, subQueryItem.getQueryData(), values))
+						.append(this.subQuery(aliasMap, subQueryItem.getQueryData(), values, sharding))
 						.append(BrainCommons.BRACKETS_END)
 						.append(this.aliasCommand())
 						.append(BrainCommons.WHITE_SPACE)
@@ -2080,7 +2108,7 @@ public abstract class JdbcDialect extends BaseDialect {
 					if (sqlBuilder.length() > 0) {
 						sqlBuilder.append(operator);
 					}
-					sqlBuilder.append(this.queryItem(aliasMap, paramItem, values, Boolean.TRUE));
+					sqlBuilder.append(this.queryItem(aliasMap, paramItem, values, Boolean.TRUE, sharding));
 				}
 				break;
 			default:
@@ -2092,18 +2120,18 @@ public abstract class JdbcDialect extends BaseDialect {
 	@Override
 	protected final String parameterValue(final Map<String, String> aliasMap,
 	                                      final AbstractParameter<?> abstractParameter,
-	                                      final List<Object> values) throws SQLException {
+	                                      final List<Object> values, final boolean sharding) throws SQLException {
 		StringBuilder sqlBuilder = new StringBuilder();
 		switch (abstractParameter.getItemType()) {
 			case CALCULATE:
 				sqlBuilder.append(this.queryItem(aliasMap,
 						abstractParameter.unwrap(CalculateParameter.class).getItemValue(),
-						values, Boolean.FALSE));
+						values, Boolean.FALSE, sharding));
 				break;
 			case COLUMN:
 				sqlBuilder.append(this.queryItem(aliasMap,
 						abstractParameter.unwrap(ColumnParameter.class).getItemValue(),
-						values, Boolean.FALSE));
+						values, Boolean.FALSE, sharding));
 				break;
 			case ARRAY:
 				ArrayData arrayData = abstractParameter.unwrap(ArraysParameter.class).getItemValue();
@@ -2129,7 +2157,7 @@ public abstract class JdbcDialect extends BaseDialect {
 					sqlBuilder.append(queryParameter.getFunctionName());
 				}
 				sqlBuilder.append(BrainCommons.BRACKETS_BEGIN)
-						.append(this.subQuery(aliasMap, queryParameter.getItemValue(), values))
+						.append(this.subQuery(aliasMap, queryParameter.getItemValue(), values, sharding))
 						.append(BrainCommons.BRACKETS_END);
 				break;
 			case RANGE:
@@ -2147,7 +2175,7 @@ public abstract class JdbcDialect extends BaseDialect {
 				break;
 			case FUNCTION:
 				FunctionItem functionItem = abstractParameter.unwrap(FunctionParameter.class).getItemValue();
-				sqlBuilder.append(this.queryItem(aliasMap, functionItem, values, Boolean.FALSE));
+				sqlBuilder.append(this.queryItem(aliasMap, functionItem, values, Boolean.FALSE, sharding));
 				break;
 		}
 		return sqlBuilder.toString();
@@ -2164,20 +2192,24 @@ public abstract class JdbcDialect extends BaseDialect {
 	 * @return <span class="en-US">Generated where sentences</span>
 	 * <span class="zh-CN">生成的Where字句</span>
 	 */
-	private String whereClause(final Map<String, Object> filterMap, final List<Object> values) {
-		if (filterMap.isEmpty()) {
-			return Globals.DEFAULT_VALUE_STRING;
-		}
+	private String whereClause(@Nonnull final Map<String, Object> filterMap,
+	                           @Nonnull final List<Object> values) {
 		StringBuilder whereClause = new StringBuilder();
 		for (Map.Entry<String, Object> entry : filterMap.entrySet()) {
 			whereClause.append(BrainCommons.WHITE_SPACE)
 					.append(ConnectionCode.AND)
 					.append(BrainCommons.WHITE_SPACE)
-					.append(this.nameCase(entry.getKey()))
-					.append(BrainCommons.OPERATOR_EQUAL)
-					.append(BrainCommons.DEFAULT_PLACE_HOLDER);
-			values.add(entry.getValue());
+					.append(this.nameCase(entry.getKey()));
+			if (entry.getValue() == null) {
+				whereClause.append(BrainCommons.OPERATOR_IS_NULL);
+			} else {
+				whereClause.append(BrainCommons.OPERATOR_EQUAL)
+						.append(BrainCommons.DEFAULT_PLACE_HOLDER);
+				values.add(entry.getValue());
+			}
 		}
-		return whereClause.substring((BrainCommons.WHITE_SPACE + ConnectionCode.AND).length());
+		return whereClause.length() == 0
+				? whereClause.toString()
+				: whereClause.substring((BrainCommons.WHITE_SPACE + ConnectionCode.AND).length());
 	}
 }

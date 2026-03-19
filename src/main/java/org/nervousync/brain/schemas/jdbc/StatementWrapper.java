@@ -59,7 +59,7 @@ public class StatementWrapper<S extends PreparedStatement> implements PreparedSt
 	 * <span class="en-US">Wrapper connection instance object</span>
 	 * <span class="zh-CN">数据源连接包装类实例对象</span>
 	 */
-	protected final Connection connection;
+	protected final JdbcConnection connection;
 	/**
 	 * <span class="en-US">Identification code</span>
 	 * <span class="zh-CN">唯一识别代码</span>
@@ -70,11 +70,6 @@ public class StatementWrapper<S extends PreparedStatement> implements PreparedSt
 	 * <span class="zh-CN">命中的次数</span>
 	 */
 	private final AtomicInteger hitCount;
-	/**
-	 * <span class="en-US">Close status</span>
-	 * <span class="zh-CN">关闭状态</span>
-	 */
-	protected boolean closed = Boolean.FALSE;
 	/**
 	 * <span class="en-US">PreparedStatement instance object</span>
 	 * <span class="zh-CN">参数化查询执行器实例对象</span>
@@ -96,13 +91,18 @@ public class StatementWrapper<S extends PreparedStatement> implements PreparedSt
 	 */
 	private final Map<Object, Object> parameterMap = new HashMap<>();
 	/**
+	 * <span class="en-US">Create timestamp</span>
+	 * <span class="zh-CN">创建时间戳</span>
+	 */
+	private final long createTimestamp = DateTimeUtils.currentUTCTimeMillis();
+	/**
 	 * <span class="en-US">Execution start timestamp</span>
 	 * <span class="zh-CN">执行起始时间戳</span>
 	 */
 	private long beginTime = Globals.DEFAULT_VALUE_LONG;
 
 	/**
-	 * <h3 class="en-US">Constructor method for abstract class for the cached statement</h3>
+	 * <h3 class="en-US">Constructor method for the abstract class for the cached statement</h3>
 	 * <h3 class="zh-CN">可缓存的查询执行器抽象类的构造方法</h3>
 	 *
 	 * @param identifyKey     <span class="en-US">Identification code</span>
@@ -117,7 +117,7 @@ public class StatementWrapper<S extends PreparedStatement> implements PreparedSt
 	 *                        <span class="zh-CN">要执行的SQL命令</span>
 	 */
 	protected StatementWrapper(final String identifyKey, final long lowQueryTimeout,
-	                           final Connection connection, final S statement, final String sql) {
+	                           final JdbcConnection connection, final S statement, final String sql) {
 		this.identifyKey = identifyKey;
 		this.lowQueryTimeout = lowQueryTimeout;
 		this.connection = connection;
@@ -142,7 +142,7 @@ public class StatementWrapper<S extends PreparedStatement> implements PreparedSt
 	 * @return <span class="en-US">Hit count</span>
 	 * <span class="zh-CN">命中的次数</span>
 	 */
-	public final int getHitCount() {
+	public final int hitCount() {
 		return this.hitCount.get();
 	}
 
@@ -875,13 +875,40 @@ public class StatementWrapper<S extends PreparedStatement> implements PreparedSt
 
 	@Override
 	public final void close() throws SQLException {
-		if (this.closed) {
-			return;
-		}
 		this.clearBatch();
 		this.clearWarnings();
 		this.reset();
-		this.statement.close();
-		this.closed = Boolean.TRUE;
+		this.connection.closeStatement(this);
+	}
+
+	public final void destroy() throws SQLException {
+		if (!this.statement.isClosed()) {
+			this.statement.close();
+		}
+	}
+
+	public static Comparator<StatementWrapper<?>> order() {
+		return new StatementWrapperComparator(Boolean.FALSE);
+	}
+
+	public static Comparator<StatementWrapper<?>> reverseOrder() {
+		return new StatementWrapperComparator(Boolean.TRUE);
+	}
+
+	private static final class StatementWrapperComparator implements Comparator<StatementWrapper<?>> {
+
+		private final boolean reverse;
+
+		private StatementWrapperComparator(final boolean reverse) {
+			this.reverse = reverse;
+		}
+
+		@Override
+		public int compare(StatementWrapper<?> o1, StatementWrapper<?> o2) {
+			int result = o1.hitCount() == o2.hitCount()
+					? Long.compare(o1.createTimestamp, o2.createTimestamp)
+					: Integer.compare(o1.hitCount(), o2.hitCount());
+			return this.reverse ? result * -1 : result;
+		}
 	}
 }

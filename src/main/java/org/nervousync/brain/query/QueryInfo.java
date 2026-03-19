@@ -19,7 +19,6 @@ package org.nervousync.brain.query;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.annotation.Nonnull;
-import jakarta.persistence.LockModeType;
 import jakarta.xml.bind.annotation.*;
 import org.nervousync.brain.enumerations.query.QueryType;
 import org.nervousync.brain.query.core.AbstractQuery;
@@ -103,18 +102,6 @@ public final class QueryInfo extends AbstractQuery {
 	 */
 	@XmlElement(name = "page_limit")
 	private int pageLimit = Globals.DEFAULT_VALUE_INT;
-	/**
-	 * <span class="en-US">Query result using for update record</span>
-	 * <span class="zh-CN">查询结果用于更新记录</span>
-	 */
-	@XmlElement(name = "for_update")
-	private boolean forUpdate = Boolean.FALSE;
-	/**
-	 * <span class="en-US">Query record lock option</span>
-	 * <span class="zh-CN">查询记录锁定选项</span>
-	 */
-	@XmlElement(name = "lock_option")
-	private LockModeType lockOption = LockModeType.NONE;
 
 	/**
 	 * <h3 class="en-US">Constructor method for query information define</h3>
@@ -189,8 +176,8 @@ public final class QueryInfo extends AbstractQuery {
 	 * @param itemList <span class="en-US">Query item instance list</span>
 	 *                 <span class="zh-CN">查询项目实例对象列表</span>
 	 */
-	public void setItemList(final List<QueryItem> itemList) {
-		this.itemList = (itemList == null) ? new ArrayList<>() : itemList;
+	public void setItemList(@Nonnull final List<QueryItem> itemList) {
+		this.itemList = new ArrayList<>(itemList);
 		this.itemList.sort(SortedItem.desc());
 	}
 
@@ -213,8 +200,8 @@ public final class QueryInfo extends AbstractQuery {
 	 * @param orderByList <span class="en-US">Query order by column list</span>
 	 *                    <span class="zh-CN">查询排序数据列列表</span>
 	 */
-	public void setOrderByList(final List<OrderBy> orderByList) {
-		this.orderByList = (orderByList == null) ? new ArrayList<>() : orderByList;
+	public void setOrderByList(@Nonnull final List<OrderBy> orderByList) {
+		this.orderByList = new ArrayList<>(orderByList);
 		this.orderByList.sort(SortedItem.desc());
 	}
 
@@ -241,7 +228,7 @@ public final class QueryInfo extends AbstractQuery {
 	}
 
 	/**
-	 * <h3 class="en-US">Getter method for current page number</h3>
+	 * <h3 class="en-US">Getter method for the current page number</h3>
 	 * <h3 class="zh-CN">当前页数的Getter方法</h3>
 	 *
 	 * @return <span class="en-US">Current page number</span>
@@ -252,7 +239,7 @@ public final class QueryInfo extends AbstractQuery {
 	}
 
 	/**
-	 * <h3 class="en-US">Setter method for current page number</h3>
+	 * <h3 class="en-US">Setter method for the current page number</h3>
 	 * <h3 class="zh-CN">当前页数的Setter方法</h3>
 	 *
 	 * @param pageNo <span class="en-US">Current page number</span>
@@ -282,49 +269,5 @@ public final class QueryInfo extends AbstractQuery {
 	 */
 	public void setPageLimit(final int pageLimit) {
 		this.pageLimit = pageLimit;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for the query result using for update record</h3>
-	 * <h3 class="zh-CN">查询结果用于更新记录的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Query result using for update record</span>
-	 * <span class="zh-CN">查询结果用于更新记录</span>
-	 */
-	public boolean isForUpdate() {
-		return this.forUpdate;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for the query result using for update record</h3>
-	 * <h3 class="zh-CN">查询结果用于更新记录的Setter方法</h3>
-	 *
-	 * @param forUpdate <span class="en-US">Query result using for update record</span>
-	 *                  <span class="zh-CN">查询结果用于更新记录</span>
-	 */
-	public void setForUpdate(final boolean forUpdate) {
-		this.forUpdate = forUpdate;
-	}
-
-	/**
-	 * <h3 class="en-US">Getter method for the query record lock option</h3>
-	 * <h3 class="zh-CN">查询记录锁定选项的Getter方法</h3>
-	 *
-	 * @return <span class="en-US">Query record lock option</span>
-	 * <span class="zh-CN">查询记录锁定选项</span>
-	 */
-	public LockModeType getLockOption() {
-		return this.lockOption;
-	}
-
-	/**
-	 * <h3 class="en-US">Setter method for the query record lock option</h3>
-	 * <h3 class="zh-CN">查询记录锁定选项的Setter方法</h3>
-	 *
-	 * @param lockOption <span class="en-US">Query record lock option</span>
-	 *                   <span class="zh-CN">查询记录锁定选项</span>
-	 */
-	public void setLockOption(final LockModeType lockOption) {
-		this.lockOption = lockOption;
 	}
 }

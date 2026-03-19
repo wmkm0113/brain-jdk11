@@ -93,4 +93,11 @@
     <entry key="Read_Long_Value_Debug">Read {0} long value: {1}</entry>
     <entry key="Illegal_Transactional_Status">Illegal transactional status</entry>
     <entry key="Read_Only_Status">Read only mode</entry>
+    <entry key="Insert_Data_Empty">Insert data map is empty.</entry>
+    <entry key="Create_Connection_Running">Create connection thread is running or unpooled, ignore creating operate!</entry>
+    <entry key="Closed_Destroy_Connection">Destroy database connection because current connection was closed!</entry>
+    <entry key="Close_Statement_Error">Close statement error!</entry>
+    <entry key="Dialect_Sharding_Not_Support">Current dialect doesn’t support sharding! Dialect name: {0}</entry>
+    <entry key="Bind_IdentifyKey_Empty">Bind identify key is empty!</entry>
+    <entry key="Bind_IdentifyKey_Exists">Bind identify key was existed! Ignore current operate</entry>
 </properties>

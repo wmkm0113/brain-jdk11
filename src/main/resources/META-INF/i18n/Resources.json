@@ -1,6 +1,10 @@
 {
   "groupId": "org.nervousync",
   "bundle": "database",
+  "alias": {
+    "en": "en-US",
+    "zh": "zh-CN"
+  },
   "errors": {
     "0x00DB00000001": "Dialect_Not_Registered",
     "0x00DB00000003": "Table_Not_Found",
@@ -46,7 +50,9 @@
     "0x00DB00000047": "Query_From_Empty",
     "0x00DB00000048": "Query_Alias_Exists",
     "0x00DB00000049": "Illegal_Transactional_Status",
-    "0x00DB00000050": "Read_Only_Status"
+    "0x00DB00000050": "Read_Only_Status",
+    "0x00DB00000051": "Bind_IdentifyKey_Empty",
+    "0x00DB00000052": "Insert_Data_Empty"
   },
   "messages": {
     "en-US": {
@@ -76,6 +82,9 @@
       },
       "Read_Lob_Error": {
         "pattern": "Read {0} data error! "
+      },
+      "Insert_Data_Empty": {
+        "pattern": "Insert data map is empty."
       },
       "Insert_Columns_Not_Found": {
         "pattern": "Insert columns not found! "
@@ -159,7 +168,10 @@
         "pattern": "Destroy database connection because current connection was invalid! "
       },
       "Pool_Full_Destroy_Connection": {
-        "pattern": "Destroy database connection because current connection pool is full! "
+        "pattern": "Destroy database connection because unpooled, closed, or current connection pool is full! "
+      },
+      "Create_Connection_Running": {
+        "pattern": "Create connection thread is running or unpooled, ignore creating operate! "
       },
       "Create_Connection_Full": {
         "pattern": "Connection pool is full, ignore creating operate! "
@@ -172,6 +184,12 @@
       },
       "Create_Connection_End_Debug": {
         "pattern": "Finished create connection thread"
+      },
+      "Closed_Destroy_Connection": {
+        "pattern": "Destroy database connection because current connection was closed! "
+      },
+      "Close_Statement_Error": {
+        "pattern": "Close statement error! "
       },
       "Sharding_Template_Error": {
         "pattern": "Sharding template string not found parameter: {catalog}! JDBC url: {0}"
@@ -193,6 +211,9 @@
       },
       "Low_Query_Log": {
         "pattern": "Execute command: {0}, parameters: {1}, used time: {2}, out of timeout: {3}"
+      },
+      "Dialect_Sharding_Not_Support": {
+        "pattern": "Current dialect doesn’t support sharding! Dialect name: {0}"
       },
       "Unknown_Remote_Type": {
         "pattern": "Unknown remote type code! Type code: {0}"
@@ -274,6 +295,12 @@
       },
       "Read_Only_Status": {
         "pattern": "Read only mode"
+      },
+      "Bind_IdentifyKey_Empty": {
+        "pattern": "Bind identify key is empty!"
+      },
+      "Bind_IdentifyKey_Exists": {
+        "pattern": "Bind identify key was existed! Ignore current operate"
       }
     },
     "zh-CN": {
@@ -303,6 +330,9 @@
       },
       "Read_Lob_Error": {
         "pattern": "读取{0}数据出错！"
+      },
+      "Insert_Data_Empty": {
+        "pattern": "要插入的数据映射表为空"
       },
       "Insert_Columns_Not_Found": {
         "pattern": "要插入的数据列未找到！"
@@ -388,6 +418,9 @@
       "Pool_Full_Destroy_Connection": {
         "pattern": "由于数据库连接池已满，销毁当前数据库连接！"
       },
+      "Create_Connection_Running": {
+        "pattern": "创建连接线程已在运行或未使用连接池，忽略创建操作！"
+      },
       "Create_Connection_Full": {
         "pattern": "数据库连接池已满，忽略创建操作！"
       },
@@ -399,6 +432,12 @@
       },
       "Create_Connection_End_Debug": {
         "pattern": "完成执行创建数据库连接线程任务"
+      },
+      "Closed_Destroy_Connection": {
+        "pattern": "销毁已关闭的数据库连接!"
+      },
+      "Close_Statement_Error": {
+        "pattern": "销毁查询执行器出错!"
       },
       "Sharding_Template_Error": {
         "pattern": "分片模板字符串未找到参数：{shardingKey}！JDBC连接字符串：{0}"
@@ -420,6 +459,9 @@
       },
       "Low_Query_Log": {
         "pattern": "执行命令：{0}，参数：{1}，执行时间：{2}，超过临界值：{3}"
+      },
+      "Dialect_Sharding_Not_Support": {
+        "pattern": "当前数据库不支持分片操作！数据库：{0}"
       },
       "Unknown_Remote_Type": {
         "pattern": "未知的远程类型！类型代码：{0}"
@@ -501,6 +543,12 @@
       },
       "Read_Only_Status": {
         "pattern": "只读模式"
+      },
+      "Bind_IdentifyKey_Empty": {
+        "pattern": "绑定的识别代码为空！"
+      },
+      "Bind_IdentifyKey_Exists": {
+        "pattern": "绑定的识别代码已存在！忽略当前操作"
       }
     }
   }

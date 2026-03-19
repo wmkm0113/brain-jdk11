@@ -18,6 +18,7 @@
 package org.nervousync.brain.configs.secure;
 
 import jakarta.xml.bind.annotation.*;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.annotations.configs.Password;
 import org.nervousync.commons.Globals;
 
@@ -30,6 +31,7 @@ import java.io.Serializable;
  * @author Steven Wee	<a href="mailto:wmkm0113@gmail.com">wmkm0113@gmail.com</a>
  * @version $Revision: 1.0.0 $ $Date: Jul 12, 2020 16:22:41 $
  */
+@OutputConfig
 @XmlType(name = "trust_store", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "trust_store", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)

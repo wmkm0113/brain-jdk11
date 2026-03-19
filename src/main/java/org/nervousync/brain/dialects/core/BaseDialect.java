@@ -316,7 +316,7 @@ public abstract class BaseDialect implements Dialect {
 	 *                      <span class="zh-CN">生成的SQL命令时出现错误</span>
 	 */
 	protected final String columnCondition(final Map<String, String> aliasMap, final ColumnCondition columnCondition,
-	                                       final List<Object> values) throws SQLException {
+	                                       final List<Object> values, final boolean sharding) throws SQLException {
 		StringBuilder sqlBuilder = new StringBuilder();
 		if (StringUtils.notBlank(columnCondition.getFunctionName())) {
 			sqlBuilder.append(columnCondition.getFunctionName()).append(BrainCommons.BRACKETS_BEGIN);
@@ -377,7 +377,7 @@ public abstract class BaseDialect implements Dialect {
 		}
 
 		if (columnCondition.getConditionParameter() != null) {
-			sqlBuilder.append(this.parameterValue(aliasMap, columnCondition.getConditionParameter(), values));
+			sqlBuilder.append(this.parameterValue(aliasMap, columnCondition.getConditionParameter(), values, sharding));
 		}
 
 		return sqlBuilder.toString();
@@ -442,5 +442,5 @@ public abstract class BaseDialect implements Dialect {
 	 */
 	protected abstract String parameterValue(final Map<String, String> aliasMap,
 	                                         final AbstractParameter<?> abstractParameter,
-	                                         final List<Object> values) throws SQLException;
+	                                         final List<Object> values, final boolean sharding) throws SQLException;
 }

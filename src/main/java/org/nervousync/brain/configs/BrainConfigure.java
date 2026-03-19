@@ -19,6 +19,7 @@ package org.nervousync.brain.configs;
 
 import jakarta.xml.bind.annotation.*;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import org.nervousync.annotations.beans.OutputConfig;
 import org.nervousync.brain.commons.BrainCommons;
 import org.nervousync.brain.configs.schema.SchemaConfig;
 import org.nervousync.brain.configs.schema.impl.DistributeSchemaConfig;
@@ -39,6 +40,7 @@ import java.util.List;
  * @author Steven Wee	<a href="mailto:wmkm0113@Hotmail.com">wmkm0113@Hotmail.com</a>
  * @version $Revision: 1.0 $ $Date: Dec 20, 2018 15:43:52 $
  */
+@OutputConfig
 @XmlType(name = "brain_config", namespace = "https://nervousync.org/schemas/brain")
 @XmlRootElement(name = "brain_config", namespace = "https://nervousync.org/schemas/brain")
 @XmlAccessorType(XmlAccessType.NONE)

@@ -239,6 +239,7 @@ public abstract class SchemaConfigBuilder<P extends ParentBuilder, T extends Sch
 			this.schemaConfig.setMinConnections(Globals.DEFAULT_VALUE_INT);
 			this.schemaConfig.setMaxConnections(Globals.DEFAULT_VALUE_INT);
 		}
+		this.modified = Boolean.TRUE;
 		return builderClass.cast(this);
 	}
 
@@ -312,7 +313,8 @@ public abstract class SchemaConfigBuilder<P extends ParentBuilder, T extends Sch
 	 * @return <span class="en-US">Current builder instance object</span>
 	 * <span class="zh-CN">当前构建器实例对象</span>
 	 */
-	protected final <B> B x509Auth(@Nonnull final X509Certificate x509Certificate, final Class<B> builderClass) {
+	protected final <B> B x509Auth(@Nonnull final X509Certificate x509Certificate, final Class<B> builderClass)
+			throws CertificateEncodingException {
 		X509Authentication authentication = authentication(this.schemaConfig.getAuthentication(), x509Certificate);
 		if (this.schemaConfig.getAuthentication() == null) {
 			this.modified = Boolean.TRUE;
@@ -444,25 +446,22 @@ public abstract class SchemaConfigBuilder<P extends ParentBuilder, T extends Sch
 	 * <span class="zh-CN">证书库中X.509证书认证信息实例对象</span>
 	 */
 	private static X509Authentication authentication(final Authentication existAuth,
-	                                                 @Nonnull final X509Certificate x509Certificate) {
+	                                                 @Nonnull final X509Certificate x509Certificate)
+			throws CertificateEncodingException {
 		X509Authentication authentication;
 		if (existAuth instanceof X509Authentication) {
 			authentication = (X509Authentication) existAuth;
 		} else {
 			authentication = new X509Authentication();
 		}
-		try {
-			String certData = StringUtils.base64Encode(x509Certificate.getEncoded());
-			boolean modified = Boolean.FALSE;
-			if (!ObjectUtils.nullSafeEquals(authentication.getCertData(), certData)) {
-				authentication.setCertData(certData);
-				modified = Boolean.TRUE;
-			}
-			if (modified) {
-				authentication.setLastModified(DateTimeUtils.currentUTCTimeMillis());
-			}
-		} catch (CertificateEncodingException e) {
-			authentication = null;
+		String certData = StringUtils.base64Encode(x509Certificate.getEncoded());
+		boolean modified = Boolean.FALSE;
+		if (!ObjectUtils.nullSafeEquals(authentication.getCertData(), certData)) {
+			authentication.setCertData(certData);
+			modified = Boolean.TRUE;
+		}
+		if (modified) {
+			authentication.setLastModified(DateTimeUtils.currentUTCTimeMillis());
 		}
 		return authentication;
 	}
@@ -662,7 +661,8 @@ public abstract class SchemaConfigBuilder<P extends ParentBuilder, T extends Sch
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public ServerInfoBuilder<P> x509Auth(@Nonnull final X509Certificate x509Certificate) {
+		public ServerInfoBuilder<P> x509Auth(@Nonnull final X509Certificate x509Certificate)
+				throws CertificateEncodingException {
 			X509Authentication authentication = authentication(this.serverInfo.getAuthentication(), x509Certificate);
 			if (this.serverInfo.getAuthentication() == null) {
 				this.modified = Boolean.TRUE;
@@ -946,7 +946,8 @@ public abstract class SchemaConfigBuilder<P extends ParentBuilder, T extends Sch
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public DistributeConfigBuilder<P> x509Auth(@Nonnull final X509Certificate x509Certificate) {
+		public DistributeConfigBuilder<P> x509Auth(@Nonnull final X509Certificate x509Certificate)
+				throws CertificateEncodingException {
 			return super.x509Auth(x509Certificate, DistributeConfigBuilder.class);
 		}
 
@@ -1197,7 +1198,8 @@ public abstract class SchemaConfigBuilder<P extends ParentBuilder, T extends Sch
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public JdbcConfigBuilder<P> x509Auth(@Nonnull final X509Certificate x509Certificate) {
+		public JdbcConfigBuilder<P> x509Auth(@Nonnull final X509Certificate x509Certificate)
+				throws CertificateEncodingException {
 			return super.x509Auth(x509Certificate, JdbcConfigBuilder.class);
 		}
 
@@ -1558,7 +1560,8 @@ public abstract class SchemaConfigBuilder<P extends ParentBuilder, T extends Sch
 		 * @return <span class="en-US">Current builder instance object</span>
 		 * <span class="zh-CN">当前构建器实例对象</span>
 		 */
-		public RemoteConfigBuilder<P> x509Auth(@Nonnull final X509Certificate x509Certificate) {
+		public RemoteConfigBuilder<P> x509Auth(@Nonnull final X509Certificate x509Certificate)
+				throws CertificateEncodingException {
 			return super.x509Auth(x509Certificate, RemoteConfigBuilder.class);
 		}
 

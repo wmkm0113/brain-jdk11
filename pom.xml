@@ -97,6 +97,11 @@
 			<groupId>org.nervousync</groupId>
 			<artifactId>utils-net</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.nervousync</groupId>
+			<artifactId>utils-log4j</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<!-- Jersey Support -->
 		<dependency>
 			<groupId>org.glassfish.jersey.core</groupId>

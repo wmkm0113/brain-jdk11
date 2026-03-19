@@ -30,6 +30,7 @@ import org.nervousync.utils.logger.LoggerUtils;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <h2 class="en-US">Database dialect factory, running in singleton mode</h2>
@@ -51,7 +52,7 @@ public final class DialectFactory {
 	 * <span class="en-US">Registered dialect implementation class instance object</span>
 	 * <span class="zh-CN">已注册的方言实现类实例对象</span>
 	 */
-	private static final Hashtable<String, Dialect> REGISTERED_DIALECTS = new Hashtable<>();
+	private static final ConcurrentHashMap<String, Dialect> REGISTERED_DIALECTS = new ConcurrentHashMap<>();
 
 	static {
 		//  Load database dialect implementation class by Java SPI
@@ -72,11 +73,11 @@ public final class DialectFactory {
 		}
 		Optional.of(dialect.getClass().getAnnotation(SchemaDialect.class))
 				.ifPresent(schemaDialect -> {
-					if (registered(provider.name())) {
+					if (isRegistered(provider.name())) {
 						LOGGER.warn("Override_Registered_Dialect", provider.name(),
 								REGISTERED_DIALECTS.get(provider.name()).getClass().getName());
 					}
-					REGISTERED_DIALECTS.put(provider.name(), dialect);
+					REGISTERED_DIALECTS.putIfAbsent(provider.name(), dialect);
 				});
 	}
 
@@ -149,7 +150,7 @@ public final class DialectFactory {
 	 * @return <span class="en-US">Registered status</span>
 	 * <span class="zh-CN">已注册状态</span>
 	 */
-	public static boolean registered(final String dialectName) {
+	public static boolean isRegistered(final String dialectName) {
 		if (StringUtils.isEmpty(dialectName)) {
 			return Boolean.FALSE;
 		}

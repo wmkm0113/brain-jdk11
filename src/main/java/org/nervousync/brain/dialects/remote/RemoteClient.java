@@ -269,6 +269,29 @@ public interface RemoteClient {
 	 * <h3 class="en-US">Execute query record command</h3>
 	 * <h3 class="zh-CN">执行数据检索命令</h3>
 	 *
+	 * @param tableName     <span class="en-US">Data table name</span>
+	 *                      <span class="zh-CN">数据表名</span>
+	 * @param filterContent <span class="en-US">Retrieve filter information</span>
+	 *                      <span class="zh-CN">查询条件信息</span>
+	 * @param columns       <span class="en-US">Query column names</span>
+	 *                      <span class="zh-CN">查询数据列名</span>
+	 * @param forUpdate     <span class="en-US">Retrieve result using for update record</span>
+	 *                      <span class="zh-CN">检索结果用于更新记录</span>
+	 * @param lockMode      <span class="en-US">Lock option</span>
+	 *                      <span class="zh-CN">数据锁选项</span>
+	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>
+	 * <span class="zh-CN">检索到记录的数据映射表列表</span>
+	 */
+	String query(@Nonnull @WebParam @PathParam("tableName") final String tableName,
+	             @Nonnull @WebParam @QueryParam("filter") final String filterContent,
+	             @Nonnull @WebParam @QueryParam("columns") final String columns,
+	             @WebParam @QueryParam("lock") final boolean forUpdate,
+	             @Nonnull @WebParam @QueryParam("mode") final LockModeType lockMode);
+
+	/**
+	 * <h3 class="en-US">Execute query record command</h3>
+	 * <h3 class="zh-CN">执行数据检索命令</h3>
+	 *
 	 * @param queryInfo <span class="en-US">Query record information</span>
 	 *                  <span class="zh-CN">数据检索信息</span>
 	 * @return <span class="en-US">List of data mapping tables for retrieved records</span>

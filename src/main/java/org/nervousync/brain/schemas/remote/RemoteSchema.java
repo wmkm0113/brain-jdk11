@@ -94,11 +94,6 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	 */
 	private final ClientBuilder clientBuilder;
 	/**
-	 * <span class="en-US">The remote data source client instance object used by the current thread</span>
-	 * <span class="zh-CN">当前线程使用的远程数据源客户端实例对象</span>
-	 */
-	private final ThreadLocal<RemoteClient> operatorThreadLocal = new ThreadLocal<>();
-	/**
 	 * <span class="en-US">Using connection list</span>
 	 * <span class="zh-CN">使用中的连接列表</span>
 	 */
@@ -295,6 +290,7 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 
 	@Override
 	public void initialize() {
+		// Nothing to do
 	}
 
 	@Override
@@ -360,25 +356,50 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 
 	@Override
 	public int update(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> dataMap,
-	                  @Nonnull final Map<String, Object> filterMap) throws SQLException {
-		return this.client().update(tableDefine.getTableName(),
-				BeanUtils.objectToString(dataMap, StringType.JSON), BeanUtils.objectToString(filterMap, StringType.JSON));
+	                  @Nonnull final Map<String, Object> filterMap, final LockModeType lockMode) throws SQLException {
+		return Optional.ofNullable(this.client())
+				.map(remoteClient ->
+						remoteClient.update(tableDefine.getTableName(),
+								BeanUtils.objectToString(dataMap, StringType.JSON),
+								BeanUtils.objectToString(filterMap, StringType.JSON)))
+				.orElse(Globals.INITIALIZE_INT_VALUE);
 	}
 
 	@Override
 	public int delete(@Nonnull final TableDefine tableDefine, @Nonnull final Map<String, Object> filterMap) throws SQLException {
-		return this.client().delete(tableDefine.getTableName(),
-				BeanUtils.objectToString(filterMap, StringType.JSON));
+		return Optional.ofNullable(this.client())
+				.map(remoteClient ->
+						remoteClient.delete(tableDefine.getTableName(),
+								BeanUtils.objectToString(filterMap, StringType.JSON)))
+				.orElse(Globals.INITIALIZE_INT_VALUE);
 	}
 
 	@Override
 	public PartialCollection query(@Nonnull final QueryInfo queryInfo) throws SQLException {
-		return PartialCollection.parse(this.client().query(BeanUtils.objectToString(queryInfo, StringType.JSON)));
+		return Optional.ofNullable(this.client())
+				.map(remoteClient -> remoteClient.query(BeanUtils.objectToString(queryInfo, StringType.JSON)))
+				.map(PartialCollection::parse)
+				.orElse(new PartialCollection(Collections.emptyList(), Globals.INITIALIZE_INT_VALUE));
 	}
 
 	@Override
 	public Long queryTotal(final QueryInfo queryInfo) throws SQLException {
-		return this.client().queryTotal(BeanUtils.objectToString(queryInfo, StringType.JSON));
+		return Optional.ofNullable(this.client())
+				.map(remoteClient -> remoteClient.queryTotal(BeanUtils.objectToString(queryInfo, StringType.JSON)))
+				.orElse(Globals.DEFAULT_VALUE_LONG);
+	}
+
+	@Override
+	public PartialCollection query(@Nonnull final TableDefine tableDefine, final String columns,
+	                               @Nonnull final Map<String, Object> filterMap,
+	                               final boolean forUpdate, final LockModeType lockMode)
+			throws SQLException {
+		return Optional.ofNullable(this.client())
+				.map(remoteClient ->
+						remoteClient.query(tableDefine.getTableName(),
+								BeanUtils.objectToString(filterMap, StringType.JSON), columns, forUpdate, lockMode))
+				.map(PartialCollection::parse)
+				.orElse(new PartialCollection(Collections.emptyList(), Globals.INITIALIZE_INT_VALUE));
 	}
 
 	@Override
@@ -442,6 +463,10 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 		if (remoteClient == null) {
 			remoteClient = newClient();
 			if (TransactionalProxy.getTransactionalManager().inTransactional()) {
+				TransactionalConfig transactionalConfig =
+						TransactionalProxy.getTransactionalManager().get().getTransactionalConfig();
+				remoteClient.beginTransactional(transactionalConfig.getTransactionalCode(),
+						transactionalConfig.getIsolation(), transactionalConfig.getTimeout());
 				TransactionalProxy.getTransactionalManager().get().bind(this.schemaName, remoteClient);
 			}
 		}
@@ -449,35 +474,23 @@ public final class RemoteSchema extends BaseSchema<RemoteDialect> implements Rem
 	}
 
 	private RemoteClient newClient() throws SQLException {
-		RemoteClient remoteClient = this.operatorThreadLocal.get();
-		if (remoteClient == null) {
-			try {
-				RemoteClient newClient;
-				switch (this.remoteType) {
-					case SOAP:
-						newClient = this.dialect.soapClient(this.remoteAddress, this.configMap);
-						break;
-					case Restful:
-						newClient = this.dialect.restfulClient(this.remoteAddress, this.clientBuilder, this.configMap);
-						break;
-					default:
-						throw new MultilingualSQLException(0x00DB00000030L, this.remoteType);
-				}
-
-				Optional.ofNullable(TransactionalProxy.getTransactionalManager().get())
-						.ifPresent(transactionalContext -> {
-							TransactionalConfig transactionalConfig = transactionalContext.getTransactionalConfig();
-							newClient.beginTransactional(transactionalConfig.getTransactionalCode(),
-									transactionalConfig.getIsolation(), transactionalConfig.getTimeout());
-							transactionalContext.bind(this.schemaName, newClient);
-						});
-				remoteClient = newClient;
-				this.activeConnections.incrementAndGet();
-			} catch (MalformedURLException e) {
-				throw new MultilingualSQLException(0x00DB00000035L, e, this.remoteType.toString(), this.remoteAddress);
+		try {
+			RemoteClient newClient;
+			switch (this.remoteType) {
+				case SOAP:
+					newClient = this.dialect.soapClient(this.remoteAddress, this.configMap);
+					break;
+				case Restful:
+					newClient = this.dialect.restfulClient(this.remoteAddress, this.clientBuilder, this.configMap);
+					break;
+				default:
+					throw new MultilingualSQLException(0x00DB00000030L, this.remoteType);
 			}
-			this.operatorThreadLocal.set(remoteClient);
+
+			this.activeConnections.incrementAndGet();
+			return newClient;
+		} catch (MalformedURLException e) {
+			throw new MultilingualSQLException(0x00DB00000035L, e, this.remoteType.toString(), this.remoteAddress);
 		}
-		return remoteClient;
 	}
 }

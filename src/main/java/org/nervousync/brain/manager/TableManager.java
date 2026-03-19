@@ -71,7 +71,7 @@ public final class TableManager {
 	}
 
 	/**
-	 * <h3 class="en-US">Static method for obtain the data table manager instance object</h3>
+	 * <h3 class="en-US">Static method for get the data table manager instance object</h3>
 	 * <h3 class="zh-CN">静态方法用于获取数据表管理器的实例对象</h3>
 	 *
 	 * @return <span class="en-US">Data table manager instance object</span>
@@ -100,7 +100,7 @@ public final class TableManager {
 	}
 
 	/**
-	 * <h3 class="en-US">Get the registered table defines information</h3>
+	 * <h3 class="en-US">Get the registered table define information</h3>
 	 * <h3 class="zh-CN">获取注册的数据表定义信息</h3>
 	 *
 	 * @param identifyCode <span class="en-US">Data table identify code</span>

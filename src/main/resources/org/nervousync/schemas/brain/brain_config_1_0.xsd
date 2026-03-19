@@ -212,7 +212,7 @@
 			</xsd:element>
 			<xsd:element name="connect_timeout" type="xsd:int" default="-1">
 				<xsd:annotation>
-					<xsd:documentation>Timeout value of create connection (Unit: seconds)</xsd:documentation>
+					<xsd:documentation>Timeout value of creating connection (Unit: seconds)</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
 			<xsd:element name="pooled" type="xsd:boolean" default="false">
@@ -348,7 +348,7 @@
 										<xsd:documentation>Remote address</xsd:documentation>
 									</xsd:annotation>
 								</xsd:element>
-								<xsd:element ref="proxy:proxy_config" minOccurs="0">
+								<xsd:element name="proxy_config" type="proxy:proxy_config" minOccurs="0">
 									<xsd:annotation>
 										<xsd:documentation>Proxy configure information</xsd:documentation>
 									</xsd:annotation>
@@ -1181,28 +1181,6 @@
 						<xsd:annotation>
 							<xsd:documentation>Page limit records count</xsd:documentation>
 						</xsd:annotation>
-					</xsd:element>
-					<xsd:element name="for_update" type="xsd:boolean">
-						<xsd:annotation>
-							<xsd:documentation>Query result using for update record</xsd:documentation>
-						</xsd:annotation>
-					</xsd:element>
-					<xsd:element name="lock_option">
-						<xsd:annotation>
-							<xsd:documentation>Query record lock option</xsd:documentation>
-						</xsd:annotation>
-						<xsd:simpleType>
-							<xsd:restriction base="xsd:string">
-								<xsd:enumeration value="READ"/>
-								<xsd:enumeration value="WRITE"/>
-								<xsd:enumeration value="OPTIMISTIC"/>
-								<xsd:enumeration value="OPTIMISTIC_FORCE_INCREMENT"/>
-								<xsd:enumeration value="PESSIMISTIC_READ"/>
-								<xsd:enumeration value="PESSIMISTIC_WRITE"/>
-								<xsd:enumeration value="PESSIMISTIC_FORCE_INCREMENT"/>
-								<xsd:enumeration value="NONE"/>
-							</xsd:restriction>
-						</xsd:simpleType>
 					</xsd:element>
 				</xsd:sequence>
 			</xsd:extension>

@@ -78,12 +78,13 @@ public final class TransactionalContext {
 	 * @throws TransactionalException <span class="en-US">Parameters value invalid</span>
 	 *                                <span class="zh-CN">参数信息非法</span>
 	 */
-	public void bind(final String identifyKey, final Object object) throws TransactionalException {
-		if (StringUtils.isEmpty(identifyKey) || object == null) {
-			throw new TransactionalException(0x0L);
+	public void bind(@Nonnull final String identifyKey, @Nonnull final Object object) throws TransactionalException {
+		if (StringUtils.isEmpty(identifyKey)) {
+			throw new TransactionalException(0x00DB00000051L);
 		}
 		if (this.connections.containsKey(identifyKey)) {
-			this.logger.warn("");
+			this.logger.error("Bind_IdentifyKey_Exists");
+			return;
 		}
 		this.connections.put(identifyKey, object);
 	}
@@ -107,7 +108,7 @@ public final class TransactionalContext {
 	 *               <span class="zh-CN">识别码前缀</span>
 	 */
 	public void unbindAll(final String prefix) {
-		this.connections.entrySet().removeIf(entry -> entry.getKey().startsWith(prefix));
+		this.connections.entrySet().removeIf(entry -> entry.getKey().equalsIgnoreCase(prefix) || entry.getKey().startsWith(prefix));
 	}
 
 	/**
@@ -140,7 +141,7 @@ public final class TransactionalContext {
 		this.connections.entrySet().stream()
 				.filter(entry ->
 						(entry.getKey().equalsIgnoreCase(prefix) || entry.getKey().startsWith(prefix))
-								&& ClassUtils.isAssignable(entry.getValue().getClass(), targetClass))
+								&& ClassUtils.isAssignable(targetClass, entry.getValue().getClass()))
 				.forEach(entry -> objects.add(targetClass.cast(entry.getValue())));
 		return objects;
 	}
@@ -157,7 +158,7 @@ public final class TransactionalContext {
 		if (dataSource == null) {
 			return;
 		}
-		for (String identifyKey : this.connections.keySet()) {
+		for (String identifyKey : new ArrayList<>(this.connections.keySet())) {
 			String schemaName = Optional.of(identifyKey.indexOf(BrainCommons.DEFAULT_NAME_SPLIT))
 					.filter(index -> index > 0)
 					.map(index -> identifyKey.substring(0, index))
@@ -178,7 +179,7 @@ public final class TransactionalContext {
 		if (dataSource == null) {
 			return;
 		}
-		for (String identifyKey : this.connections.keySet()) {
+		for (String identifyKey : new ArrayList<>(this.connections.keySet())) {
 			String schemaName = Optional.of(identifyKey.indexOf(BrainCommons.DEFAULT_NAME_SPLIT))
 					.filter(index -> index > 0)
 					.map(index -> identifyKey.substring(0, index))
@@ -199,7 +200,7 @@ public final class TransactionalContext {
 		if (dataSource == null) {
 			return;
 		}
-		for (String identifyKey : this.connections.keySet()) {
+		for (String identifyKey : new ArrayList<>(this.connections.keySet())) {
 			String schemaName = Optional.of(identifyKey.indexOf(BrainCommons.DEFAULT_NAME_SPLIT))
 					.filter(index -> index > 0)
 					.map(index -> identifyKey.substring(0, index))
